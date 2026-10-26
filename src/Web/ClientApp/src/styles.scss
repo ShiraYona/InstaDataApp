@@ -1,0 +1,21 @@
+/* You can add global styles to this file, and also import other style files */
+
+html, body {
+  height: 100%;
+  font-family: 'Heebo', Arial, sans-serif;
+  direction: rtl;
+}
+
+body {
+  margin: 0;
+}
+
+/* PrimeNG RTL adjustments */
+.p-component {
+  font-family: 'Heebo', Arial, sans-serif;
+}
+
+.p-datatable .p-datatable-thead > tr > th,
+.p-datatable .p-datatable-tbody > tr > td {
+  text-align: right;
+}

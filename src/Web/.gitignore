@@ -1,0 +1,13 @@
+# Build results
+bin/
+obj/
+wwwroot/
+logs/
+
+# SPA
+ClientApp/node_modules/
+ClientApp/dist/
+
+# User-specific
+*.user
+.vs/

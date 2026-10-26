@@ -1,0 +1,6 @@
+@Gvia_AuxTools_Web_HostAddress = https://localhost:5001
+
+GET {{Gvia_AuxTools_Web_HostAddress}}/health
+Accept: application/json
+
+###

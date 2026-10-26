@@ -1,0 +1,14 @@
+global using Ardalis.GuardClauses;
+global using InstaDataApp.Application.Common.Interfaces;
+global using InstaDataApp.Application.Common.Models;
+global using InstaDataApp.Domain.Common;
+global using InstaDataApp.Infrastructure.Data;
+global using InstaDataApp.Infrastructure.Identity;
+global using MediatR;
+global using Microsoft.AspNetCore.Identity;
+global using Microsoft.EntityFrameworkCore;
+global using Microsoft.EntityFrameworkCore.Diagnostics;
+global using Microsoft.Extensions.Configuration;
+global using Microsoft.Extensions.DependencyInjection;
+global using Microsoft.Extensions.Hosting;
+global using Microsoft.Extensions.Logging;
