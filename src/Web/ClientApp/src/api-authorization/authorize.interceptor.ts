@@ -1,16 +1,16 @@
 import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest, HttpResponse } from '@angular/common/http';
-import { Inject, Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-
-import { BASE_URL } from '../app/core/base-url.token';
 
 @Injectable({ providedIn: 'root' })
 export class AuthorizeInterceptor implements HttpInterceptor {
   private readonly loginUrl: string;
 
-  constructor(@Inject(BASE_URL) private baseUrl: string) {
-    this.loginUrl = `${this.baseUrl}/Identity/Account/Login`;
+  constructor() {
+    const base = document.getElementsByTagName('base')[0];
+    const baseUrl = base ? base.href.replace(/\/$/, '') : '';
+    this.loginUrl = `${baseUrl}/Identity/Account/Login`;
   }
 
   intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
