@@ -148,6 +148,25 @@ body {
   box-sizing: border-box;
 }
 
+/* ה-checkbox של PrimeNG מכיל input שקוף מעל התיבה המצוירת —
+   אסור שיקבל את עיצוב שדות הטקסט (width/padding/border) */
+.p-checkbox,
+.p-checkbox input,
+.p-radiobutton,
+.p-radiobutton input,
+.p-checkbox .p-checkbox-box {
+  width: auto;
+  padding: 0;
+  border-width: 0;
+  background: none;
+  box-sizing: border-box;
+}
+
+.p-checkbox .p-checkbox-box {
+  border-width: 1px;
+  background: #fff;
+}
+
 .checks {
   display: flex;
   gap: 10px;

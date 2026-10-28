@@ -1,0 +1,376 @@
+// עיצוב הדיאלוג מועתק מקובץ הדמו:
+// .modalback / .modal / .modalhead / .modalbody / .banner / .formgrid /
+// .field / .full / .hint / .fieldset / .checks / .toggle / .actionrow / .panel / .close
+// ההבדל היחיד: אין גלילה בתוך הדיאלוג — הוא נפרס לגובה התוכן,
+// ואם התוכן גבוה מהמסך נגלל הרקע שמאחוריו.
+
+:host {
+  display: block;
+  direction: rtl;
+  text-align: right;
+  font-family: Arial, 'Segoe UI', sans-serif;
+  color: #19304d;
+
+  // בדמו ההגדרה גלובלית; כאן היא מוגבלת לרכיב
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  button {
+    font: inherit;
+    cursor: pointer;
+  }
+}
+
+// --- .modalback: שכבת הרקע של הדיאלוג ---
+// הרווח העליון קטן מהתחתון — הדיאלוג צמוד יותר לראש המסך
+:host ::ng-deep .p-dialog-mask {
+  background: #0b1837a8;
+  // הרווח התחתון גדול — כדי שיהיה אוויר מתחת לדיאלוג כשהגלילה בתחתית
+  padding: 10px 22px 120px;
+  // גלילת התוכן נעשית כאן, מחוץ לדיאלוג
+  align-items: flex-start;
+  overflow-y: auto;
+}
+
+// --- .modal ---
+:host ::ng-deep .new-data-dialog.p-dialog {
+  background: #fff;
+  border: 0;
+  border-radius: 17px;
+  width: min(100%, 1050px);
+  overflow: visible;
+  box-shadow: 0 20px 70px #06102c66;
+
+  .p-dialog-content {
+    padding: 0;
+    background: #fff;
+    overflow: visible;
+    border-radius: 17px;
+  }
+
+  // מסתירים את כפתור הסגירה המובנה של PrimeNG —
+  // משתמשים בכפתור שלנו בכותרת (.close), כמו בדמו
+  .p-dialog-close-button {
+    display: none;
+  }
+}
+
+// --- .modalhead ---
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 28px;
+  border-bottom: 1px solid #e7edf5;
+
+  strong {
+    font-size: 20px;
+    font-weight: 700;
+  }
+}
+
+// --- .close ---
+.close {
+  border: 0;
+  background: #f0f3f8;
+  color: #48617f;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  font-size: 23px;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+// --- .modalbody ---
+// רווח תחתון גדול מהצדדים — כדי שהכפתורים לא ייצמדו לקצה התחתון של הדיאלוג
+.modal-body {
+  padding: 24px 28px 36px;
+}
+
+// --- .banner ---
+.banner {
+  border-radius: 10px;
+  background: #eaf3ff;
+  color: #315c93;
+  font-size: 13px;
+  padding: 12px 15px;
+  margin-bottom: 18px;
+}
+
+// --- .formgrid ---
+.formgrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+// --- .field ---
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+
+  label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #465e7a;
+  }
+}
+
+// --- .full (מחלקה נפרדת בדמו) ---
+.full {
+  grid-column: 1 / -1;
+}
+
+// --- .hint ---
+.hint {
+  font-size: 12px;
+  color: #8c9db1;
+}
+
+// --- הודעת שגיאה (תוספת על הדמו: הדמו מציג הודעות ב-toast בלבד) ---
+.error {
+  font-size: 12px;
+  color: #e0322f;
+  margin-top: 8px;
+}
+
+// --- input, select ---
+// בדמו: input,select{width:100%;background:white;border:1px solid #d4dfeb;
+//   border-radius:8px;padding:10px;color:#223b5a;outline-color:#3684e7}
+:host ::ng-deep .field {
+  .p-inputtext,
+  .p-select {
+    width: 100%;
+  }
+
+  // התיבה עצמה (המסגרת) — לא התווית הפנימית.
+  // `border` כאן גובר על ה-token של ה-preset, ולכן המסגרת מוצגת גם כש-Aura
+  // מגדיר border-style:none. השדה המושבת מקבל אותה מסגרת בדיוק — רק הטקסט
+  // עמום יותר, כדי שיהיה ברור שאין מה לערוך.
+  .p-inputtext,
+  .p-select {
+    background: #fff;
+    border: 1px solid #d4dfeb;
+    border-radius: 8px;
+    color: #223b5a;
+  }
+
+  // ריפוד הפנים של השדה — כמו padding:10px בדמו
+  .p-inputtext,
+  .p-select-label {
+    padding: 10px;
+    color: #223b5a;
+    text-align: right;
+    background: transparent;
+    border: 0;
+  }
+
+  // החץ נשאר בצד שמאל, כמו <select> בדמו
+  .p-select-label {
+    display: flex;
+    align-items: center;
+    padding-left: 34px;
+  }
+
+  .p-select-dropdown {
+    width: 34px;
+    color: #223b5a;
+  }
+
+  .p-inputtext:enabled {
+    padding: 10px;
+  }
+
+  // "שדה תאריך" הוא שדה טקסט מושבת — לא נראה כמו שדה בחירה,
+  // ולכן אין לו סמן לחיץ.
+  // לא מגדירים כאן opacity/disability — Aura מחיל על .p-disabled
+  // אטימות על כל התיבה, וזה מוחק את המסגרת. במקום זה מחזירים במפורש
+  // את הרקע, המסגרת והצבע, כדי שהמסגרת תישאר גלויה.
+  .p-inputtext:disabled,
+  .p-inputtext.p-disabled {
+    background: #fff;
+    border: 1px solid #d4dfeb;
+    color: #223b5a;
+    opacity: 1;
+    cursor: default;
+
+    &::placeholder {
+      color: #223b5a;
+    }
+  }
+
+  .p-inputtext:enabled:focus,
+  .p-select:not(.p-disabled).p-focus {
+    outline: 2px solid #3684e7;
+    outline-offset: 1px;
+    box-shadow: none;
+  }
+
+  .p-select:not(.p-disabled):hover {
+    border-color: #d4dfeb;
+  }
+}
+
+// --- .fieldset ---
+.fieldset {
+  border-top: 1px solid #e7edf5;
+  margin-top: 21px;
+  padding-top: 21px;
+}
+
+// --- .checks ---
+.checks {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: #f6f9fc;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+}
+
+// --- .toggle ---
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+// --- ריבוע הסימון ---
+// חייבים ::ng-deep — התיבה עצמה נוצרת בתוך הרכיב של PrimeNG.
+// ב-PrimeNG 18 ה-input עצמו הוא `position:absolute; opacity:0` מעל התיבה,
+// והמצב המסומן מסומן במחלקה `p-checkbox-checked` על השורש (ולא ב-p-highlight).
+// לכן לא מגדירים כאן position — רק מידות וצבעים.
+:host ::ng-deep .p-checkbox {
+  display: inline-flex;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+
+:host ::ng-deep .p-checkbox .p-checkbox-box {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 1px solid #d4dfeb;
+  border-radius: 4px;
+  background: #fff;
+  color: transparent;
+}
+
+// אין צביעה של המצב המסומן כאן — הוא מגיע מה-preset ב-app.module.ts.
+// אם נצבע גם כאן, ה-hover של PrimeNG (darker background) נדרס.
+
+:host ::ng-deep .p-checkbox .p-checkbox-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+  font-size: 0.75rem;
+}
+
+// --- .actionrow ---
+.actionrow {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: 22px;
+
+  // הטקסט עצמו מודגש — ה-label של p-button הוא span פנימי,
+  // ולכן font-weight על הכפתור לא מספיק
+  :host ::ng-deep .p-button-label {
+    font-weight: 700;
+  }
+}
+
+// .btn
+:host ::ng-deep .actionrow .p-button:not(.p-button-outlined) {
+  background: #1765ce;
+  border: 1px solid #1765ce;
+  color: #fff;
+  padding: 11px 18px;
+  border-radius: 9px;
+  font-weight: 700;
+
+  // בדמו ה-overlay מחשיך את הרקע בלבד, המסגרת נשארת כחולה
+  &:hover {
+    background: #0d54b6;
+    border-color: #1765ce;
+    color: #fff;
+  }
+}
+
+// .btn.light — בדמו ה-hover יורש מ-.btn ומחשיך את הרקע
+:host ::ng-deep .actionrow .p-button-outlined {
+  background: #fff;
+  border: 1px solid #d7e1ee;
+  color: #2b4d77;
+  padding: 11px 18px;
+  border-radius: 9px;
+  font-weight: 700;
+
+  &:hover {
+    background: #0d54b6;
+    border-color: #1765ce;
+    color: #fff;
+  }
+}
+
+// --- .panel ---
+.panel {
+  background: #fff;
+  border: 1px solid #e2eaf4;
+  border-radius: 15px;
+  padding: 22px;
+  margin-top: 23px;
+  box-shadow: 0 4px 16px #16334c07;
+
+  strong {
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  p {
+    margin: 6px 0;
+    color: #6e8198;
+    line-height: 1.55;
+  }
+}
+
+@media (max-width: 760px) {
+  .formgrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+// --- פאנל הרשימה הנפתחת: רוחב זהה לשדה, כמו <select> בדמו ---
+:host ::ng-deep .demo-select-panel.p-select-overlay {
+  min-width: 0;
+  padding: 0;
+  border: 1px solid #d4dfeb;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 30px #06102c26;
+
+  // ביטול גלילה פנימית — הרשימה נפתחת במלואה כמו <select> בדמו
+  .p-select-list-container,
+  .p-select-list {
+    min-width: 0;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .p-select-option {
+    white-space: normal;
+    word-break: break-word;
+  }
+}

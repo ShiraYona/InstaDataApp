@@ -1,7 +1,20 @@
 <div class="home-container">
   <div class="content">
-    <h1>{{ title }}</h1>
-    <p>{{ description }}</p>
+    <div class="content-head">
+      <div>
+        <h1>{{ title }}</h1>
+        <p>{{ description }}</p>
+      </div>
+      <p-button
+        label="הוספת נתון חדש"
+        icon="pi pi-plus"
+        (onClick)="openNewDataDialog()" />
+    </div>
+
     <app-menue></app-menue>
   </div>
 </div>
+
+<app-adding-new-data-entry
+  [(visible)]="dialogVisible"
+  (saved)="onDataSaved($event)" />

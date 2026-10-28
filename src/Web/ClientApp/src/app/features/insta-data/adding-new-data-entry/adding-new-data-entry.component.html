@@ -1,0 +1,191 @@
+<p-dialog
+    [(visible)]="visible"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [focusOnShow]="false"
+    [rtl]="true"
+    [showHeader]="false"
+    [dismissableMask]="true"
+    [styleClass]="'new-data-dialog'"
+    [style]="{ width: 'min(100%, 1050px)' }"
+    (visibleChange)="visibleChange.emit($event)">
+
+    <div class="modal-head">
+        <strong>יצירת נתון חדש</strong>
+        <button type="button" class="close" aria-label="סגירה" (click)="cancel()">×</button>
+    </div>
+
+    <div class="modal-body">
+        <div class="banner">
+            מנגנון ההגדרות כאן פועל על נתוני דוגמה. חיבור למאגר הגבייה יצריך קטלוג מקורות מורשים ומיפוי שדות.
+        </div>
+
+        <form [formGroup]="form">
+
+            <div class="formgrid">
+                <div class="field full">
+                    <label for="eName">שם הנתון *</label>
+                    <input
+                        id="eName"
+                        pInputText
+                        maxlength="80"
+                        formControlName="name"
+                        placeholder="למשל: סכום עיקולים לפי מערכת" />
+                    @if (isFieldInvalid('name')) {
+                        <span class="error">יש להזין שם נתון</span>
+                    }
+                </div>
+
+                <div class="field">
+                    <label for="eSource">מקור נתונים *</label>
+                    <p-select
+                        inputId="eSource"
+                        formControlName="sourceId"
+                        [options]="sources"
+                        optionLabel="label"
+                        optionValue="id"
+                        panelStyleClass="demo-select-panel"
+                        [panelStyle]="{ width: '100%' }"
+                        appendTo="self" />
+                    @if (isFieldInvalid('sourceId')) {
+                        <span class="error">יש לבחור מקור נתונים</span>
+                    }
+                </div>
+
+                <div class="field">
+                    <label for="eIcon">סמל כרטיס</label>
+                    <p-select
+                        inputId="eIcon"
+                        formControlName="iconId"
+                        [options]="iconOptions"
+                        optionLabel="label"
+                        optionValue="id"
+                        panelStyleClass="demo-select-panel"
+                        [panelStyle]="{ width: '100%' }"
+                        appendTo="self" />
+                </div>
+            </div>
+
+            <div class="fieldset">
+                <div class="formgrid">
+                    <div class="field">
+                        <label for="eDate">שדה תאריך</label>
+                        <input
+                            id="eDate"
+                            pInputText
+                            [value]="dateFieldLabel"
+                            disabled />
+                        <span class="hint">מוגדר בקטלוג מקור הנתונים</span>
+                    </div>
+
+                    <div class="field">
+                        <label for="eRange">תקופת חישוב</label>
+                        <p-select
+                            inputId="eRange"
+                            formControlName="periodId"
+                            [options]="rangeOptions"
+                            optionLabel="label"
+                            optionValue="id"
+                            panelStyleClass="demo-select-panel"
+                            [panelStyle]="{ width: '100%' }"
+                            appendTo="self" />
+                    </div>
+
+                    <div class="field">
+                        <label for="eCalc">סוג חישוב *</label>
+                        <p-select
+                            inputId="eCalc"
+                            formControlName="calculationType"
+                            [options]="calculationTypeOptions"
+                            optionLabel="label"
+                            optionValue="value"
+                            panelStyleClass="demo-select-panel"
+                            [panelStyle]="{ width: '100%' }"
+                            appendTo="self" />
+                    </div>
+
+                    <!-- כמו בדמו: השדה קיים תמיד ומוסתר באמצעות display -->
+                    <div class="field" [style.display]="isSummaryVisible ? '' : 'none'">
+                        <label for="eSum">שדה לסיכום</label>
+                        <p-select
+                            inputId="eSum"
+                            formControlName="summaryFieldKey"
+                            [options]="summaryFields"
+                            optionLabel="label"
+                            optionValue="key"
+                            [disabled]="!selectedSource"
+                            panelStyleClass="demo-select-panel"
+                            [panelStyle]="{ width: '100%' }"
+                            appendTo="self" />
+                    </div>
+
+                    <div class="field full">
+                        <label for="eGroup">קיבוץ לפי</label>
+                        <p-select
+                            inputId="eGroup"
+                            formControlName="groupByFieldKey"
+                            [options]="groupByOptions"
+                            optionLabel="label"
+                            optionValue="key"
+                            panelStyleClass="demo-select-panel"
+                            [panelStyle]="{ width: '100%' }"
+                            appendTo="self" />
+                    </div>
+
+                    <div class="field full">
+                        <label>שדות להצגה בפירוט</label>
+                        <div class="checks">
+                            @for (option of detailFieldOptions; track option.key) {
+                                <label [for]="'detail-' + option.key">
+                                    <p-checkbox
+                                        [inputId]="'detail-' + option.key"
+                                        [value]="option.key"
+                                        formControlName="detailFields" />
+                                    {{ option.label }}
+                                </label>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="fieldset">
+                <label class="toggle" for="eActive">
+                    <p-checkbox
+                        [binary]="true"
+                        inputId="eActive"
+                        formControlName="showInDashboard" />
+                    הצגת הנתון במערכת הניהול והבקרה
+                </label>
+            </div>
+
+        </form>
+
+        <div class="actionrow">
+            <p-button label="שמירת נתון" [disabled]="previewing" (onClick)="save()" />
+            <p-button
+                label="תצוגה מקדימה"
+                severity="secondary"
+                [outlined]="true"
+                [disabled]="saving"
+                (onClick)="preview()" />
+            <p-button
+                label="ביטול"
+                severity="secondary"
+                [outlined]="true"
+                [disabled]="saving || previewing"
+                (onClick)="cancel()" />
+        </div>
+
+        <div id="preview">
+            @if (previewResult; as result) {
+                <div class="panel">
+                    <strong>תצוגה מקדימה</strong>
+                    <p>{{ draftName }} · {{ result.total }} · מקור: {{ selectedSource?.label }}</p>
+                </div>
+            }
+
+        </div>
+    </div>
+</p-dialog>
