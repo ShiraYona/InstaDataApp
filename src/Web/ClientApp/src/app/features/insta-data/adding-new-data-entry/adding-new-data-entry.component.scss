@@ -176,11 +176,21 @@
     display: flex;
     align-items: center;
     padding-left: 34px;
+    // מונע מהערך שנבחר לשבור את השורה ולשנות את גובה השדה
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .p-select-dropdown {
     width: 34px;
     color: #223b5a;
+  }
+
+  // התווית של p-select צריכה להיות flex על התיבה עצמה — אחרת החץ לא ממורכז
+  .p-select {
+    display: flex;
+    align-items: center;
   }
 
   .p-inputtext:enabled {
@@ -352,25 +362,72 @@
   }
 }
 
-// --- פאנל הרשימה הנפתחת: רוחב זהה לשדה, כמו <select> בדמו ---
+// --- פאנל הרשימה הנפתחת ---
+// הפאנל נוסף ל-DOM בתוך הרכיב (appendTo="self"), ולכן `:host ::ng-deep`
+// מגיע אליו — אבל הוא *לא* בתוך `.field`, ולכן אינו יורש את סגנון השדה.
+// כאן מגדירים אותו במפורש, בנפרד מהמסגרת של השדה עצמו.
 :host ::ng-deep .demo-select-panel.p-select-overlay {
   min-width: 0;
-  padding: 0;
+  padding: 5px;
   border: 1px solid #d4dfeb;
-  border-radius: 8px;
+  border-radius: 10px;
   background: #fff;
-  box-shadow: 0 10px 30px #06102c26;
+  box-shadow: 0 12px 32px #06102c1f;
+  overflow: hidden;
+  // הגובה נקבע לפי התוכן — לא נשאר גובה קבוע של ה-preset אחרי שהרשימה קצרה
+  height: auto;
+  max-height: none;
 
-  // ביטול גלילה פנימית — הרשימה נפתחת במלואה כמו <select> בדמו
-  .p-select-list-container,
-  .p-select-list {
-    min-width: 0;
-    max-height: none;
+  // הרשימה עצמה — בלי גלילה כלל: הפאנל נפתח בגובה שמספיק לכל הרשימה.
+  // (!important כי PrimeNG כותב max-height ישירות על האלמנט דרך [style.max-height])
+  .p-select-list-container {
+    padding: 0;
+    max-height: none !important;
     overflow: visible;
   }
 
+  .p-select-list {
+    padding: 0;
+    margin: 0;
+    gap: 0;
+  }
+
+  // שורה ברשימה — גובה אחיד, יישור לימין, בלי שבירת שורה
   .p-select-option {
-    white-space: normal;
-    word-break: break-word;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: right;
+    min-height: 40px;
+    padding: 8px 12px;
+    border-radius: 7px;
+    font-size: 14px;
+    // ערכת Aura מחזירה margin-inline-start על ה-check icon — מבטלים כדי
+    // שהאייקון והטקסט ייצמדו לימין ולא ייווצר רווח "תלוש"
+    gap: 10px;
+    color: #223b5a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    // Aura כבר צובעת את הנבחר ואת ה-focus — מחזירים רק גוונים תואמים לדיאלוג
+    &.p-select-option-selected,
+    &.p-select-option-selected.p-focus {
+      background: #eaf3ff;
+      color: #1765ce;
+      font-weight: 700;
+    }
+
+    &:not(.p-select-option-selected):not(.p-disabled).p-focus {
+      background: #f3f7fc;
+      color: #19304d;
+    }
+  }
+
+  .p-select-option-check-icon,
+  .p-select-option-blank-icon {
+    margin-inline-start: 0;
+    margin-inline-end: 0;
+    flex-shrink: 0;
   }
 }
