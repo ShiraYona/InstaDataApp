@@ -8,7 +8,6 @@ import { MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
 
 import { AuthorizeInterceptor } from '../api-authorization/authorize.interceptor';
-import { BASE_URL } from './core/base-url.token';
 import { routes } from './app.routes';
 
 export const MyPreset = definePreset(Aura, {
@@ -29,11 +28,6 @@ export const MyPreset = definePreset(Aura, {
   }
 });
 
-export function getBaseUrl(): string {
-  const base = document.getElementsByTagName('base')[0];
-  return base ? base.href.replace(/\/$/, '') : '';
-}
-
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
@@ -41,7 +35,6 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptorsFromDi()),
     { provide: HTTP_INTERCEPTORS, useClass: AuthorizeInterceptor, multi: true },
     provideAnimationsAsync(),
-    { provide: BASE_URL, useFactory: getBaseUrl },
     MessageService,
     providePrimeNG({
       theme: {

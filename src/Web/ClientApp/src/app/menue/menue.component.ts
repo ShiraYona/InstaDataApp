@@ -1,8 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { MenuItem } from 'primeng/api';
+import { Menu } from 'primeng/menu';
 
 @Component({
   selector: 'app-menue',
+  standalone: true,
+  imports: [Menu],
   templateUrl: './menue.component.html',
   styleUrls: ['./menue.component.scss']
 })
