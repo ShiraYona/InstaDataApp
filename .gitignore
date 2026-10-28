@@ -15,6 +15,11 @@ dist-server/
 logs/
 wwwroot/
 
+## AppSettings — local configuration (may contain secrets)
+appsettings*.json
+appsettings.*.json
+!appsettings.Example.json
+
 ## OS
 Thumbs.db
 .DS_Store
