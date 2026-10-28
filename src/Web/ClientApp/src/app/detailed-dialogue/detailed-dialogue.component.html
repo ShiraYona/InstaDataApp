@@ -1,0 +1,107 @@
+<!-- <div class="dialog-host" [attr.data-title]="'פירוט נתון: ' + (metric?.name ?? '')">
+  <div class="dd" dir="rtl"> -->
+<div class="dialog-backdrop" dir="rtl" (click)="closed.emit()">
+  <div class="dd-modal" (click)="$event.stopPropagation()">
+    <header class="dd-head">
+      <h2>{{ title ? 'פירוט נתון: ' + title : '' }}</h2>
+      <button type="button" class="btn light sm" (click)="closed.emit()">✕ סגירה</button>
+    </header>
+    <!-- ===== שורת סיכום ===== -->
+    <div class="stats">
+      @for (item of summary(); track item.key) {
+        <div class="stat">
+          <strong>{{ item.value }}</strong>
+          <span>{{ item.label }}</span>
+        </div>
+      }
+    </div>
+
+    <!-- ===== חלוקה לפי מערכת ===== -->
+    @if (groups().length) {
+      <div class="panel">
+        <div class="sectionhead">
+          <h2>חלוקה לפי {{ groupFieldLabel() }}</h2>
+          @if (selectedGroup() !== null) {
+            <span class="pill">מסונן: {{ selectedGroup() }}</span>
+          }
+        </div>
+
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ groupFieldLabel() }}</th>
+                <th>מספר רשומות</th>
+                <th>סה״כ סכום</th>
+                <th class="col-detail">פירוט</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (group of groups(); track group.value) {
+                <tr [class.is-active]="selectedGroup() === group.value">
+                  <td>{{ group.value }}</td>
+                  <td class="col-num">{{ group.records | number }}</td>
+                  <td class="col-amount">{{ formatCurrency(group.total) }}</td>
+                  <td class="col-detail">
+                    <button
+                      type="button"
+                      class="btn light sm"
+                      [class.is-on]="selectedGroup() === group.value"
+                      (click)="showRecords(group.value)">
+                      {{ selectedGroup() === group.value ? 'כל הרשומות' : 'הצגת רשומות' }}
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- ===== רשומות הנתון ===== -->
+    <div class="panel">
+      <div class="sectionhead">
+        <h2>רשומות הנתון</h2>
+        <div class="tools">
+          <input
+            type="search"
+            class="records-search"
+            placeholder="סינון רשומות"
+            [value]="search()"
+            (input)="onSearch($any($event.target).value)">
+          <button type="button" class="btn light sm" (click)="exportCsv()">ייצוא CSV</button>
+          <!-- טופס המשימה (task-editor) טרם נוצר — הכפתור יופעל כשהרכיב ייבנה -->
+          <button type="button" class="btn light sm" disabled title="בקרוב">פתיחת משימה</button>
+        </div>
+      </div>
+
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              @for (column of columns(); track column.key) {
+                <th>{{ column.label }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (record of visibleRecords(); track record.id) {
+              <tr>
+                @for (column of columns(); track column.key) {
+                  <td [class.col-amount]="column.key === 'amount'">{{ cell(record, column.key) }}</td>
+                }
+              </tr>
+            } @empty {
+              <tr>
+                <td [attr.colspan]="columns().length" class="empty-cell">לא נמצאו רשומות</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <p class="note">מוצגות עד {{ maxRows }} רשומות. הנתונים אינם נתוני אמת.</p>
+    </div>
+  </div>
+</div>

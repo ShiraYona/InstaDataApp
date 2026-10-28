@@ -1,0 +1,287 @@
+/* ===== תוכן חלון פירוט הנתון (המעטפת עצמה מגיעה מ-app-modal) ===== */
+
+:host {
+  display: block;
+  --dd-navy: #19304d;
+  --dd-muted: #6e8198;
+  --dd-border: #e7edf5;
+  --dd-border-soft: #eef1f6;
+  --dd-surface: #edf4fe;
+  --dd-blue: #1765ce;
+}
+
+.dd {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: var(--dd-navy);
+}
+
+/* ---- תג סינון ---- */
+.pill {
+  background: var(--dd-surface);
+  color: var(--dd-blue);
+  border-radius: 999px;
+  padding: 4px 11px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ---- כותרות ---- */
+h2 {
+  font-size: 20px;
+  margin: 0 0 16px;
+  color: var(--dd-navy);
+}
+
+.sectionhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+
+  h2 {
+    margin: 0;
+  }
+}
+
+/* ---- שורת סיכום ---- */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 13px;
+  margin: 0;
+}
+
+.stat {
+  background: var(--dd-surface);
+  border-radius: 11px;
+  padding: 15px;
+  min-width: 0;
+
+  strong {
+    font-size: 22px;
+    display: block;
+    color: var(--dd-navy);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  span {
+    font-size: 12px;
+    color: #6981a1;
+  }
+}
+
+/* ---- מקטעים ---- */
+.panel {
+  background: #fff;
+  border: 1px solid #e2eaf4;
+  border-radius: 15px;
+  padding: 22px;
+  box-shadow: 0 4px 16px rgba(22, 51, 76, 0.03);
+}
+
+/* ---- טבלאות ---- */
+.tablewrap {
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: right;
+  min-width: 520px;
+}
+
+th {
+  background: #f7f9fc;
+  font-size: 12px;
+  color: #71839b;
+  font-weight: 600;
+}
+
+td,
+th {
+  padding: 13px 14px;
+  border-bottom: 1px solid #e9eef5;
+  border-inline-end: 0;
+}
+
+td {
+  font-size: 13px;
+}
+
+tbody tr.is-active td {
+  background: #eef3fb;
+}
+
+.col-amount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.col-detail {
+  width: 10rem;
+  text-align: center;
+}
+
+/* הכפתורים בטבלת החלוקה – יישור כמו בתמונה */
+.panel tbody .btn {
+  min-width: 112px;
+}
+
+.note {
+  font-size: 12px;
+  color: var(--dd-muted);
+  margin: 12px 0 0;
+}
+
+.empty-cell {
+  text-align: center;
+  color: var(--dd-muted);
+  padding: 1.25rem !important;
+}
+
+/* ---- עמודת מספרים ---- */
+.col-num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- כותרת מקטע הרשומות + סרגל כלים ---- */
+.tools {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.records-search {
+  width: 200px;
+  background: #fff;
+  border: 1px solid #d4dfeb;
+  border-radius: 8px;
+  padding: 7px 11px;
+  color: #223b5a;
+  font: inherit;
+  font-size: 12px;
+  outline-color: #3684e7;
+  box-sizing: border-box;
+}
+
+/* ---- תצוגת פילוח ---- */
+.breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.breakdown-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--dd-border-soft);
+  border-radius: 0.4rem;
+
+  &__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  &__name {
+    font-weight: 600;
+    color: var(--dd-navy);
+    font-size: 0.85rem;
+  }
+
+  &__value {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--dd-navy);
+    font-size: 0.85rem;
+  }
+
+  &__meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--dd-muted);
+  }
+}
+
+.progress {
+  height: 6px;
+  background: #edf2f8;
+  border-radius: 999px;
+  overflow: hidden;
+
+  > div {
+    height: 100%;
+    background: #327cda;
+    border-radius: 999px;
+  }
+}
+
+/* ---- כפתורים ---- */
+.btn {
+  border: 1px solid transparent;
+  border-radius: 9px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+
+  &.light {
+    background: #fff;
+    font-weight: 400;
+    border-color: #d7e1ee;
+    color: #2b4d77;
+
+    &:hover {
+      background: #f5f8fc;
+    }
+  }
+
+  &.sm {
+    padding: 7px 11px;
+    font-size: 12px;
+  }
+
+  &.is-on {
+    background: #edf4fe;
+    border-color: #adc9f3;
+    color: var(--dd-blue);
+    font-weight: 700;
+  }
+}
+
+/* ---- התאמה למסכים צרים ---- */
+@media (max-width: 768px) {
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 30, 50, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 1000;
+}
+
+.dd-modal {
+  background: #fff;
+  border-radius: 18px;
+  padding: 24px;
+  width: min(1000px, 100%);
+  max-height: 88vh;
+  overflow: auto;
+}

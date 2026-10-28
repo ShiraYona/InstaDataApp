@@ -1,96 +1,71 @@
-<div class="cube-wrapper" dir="rtl">
-  <div class="cube-grid">
-    @for (metric of metrics; track metric.key) {
-      <p-card styleClass="cube-card">
-        <!-- כותרת: אייקון בצד שמאל, שם המדד בצד ימין -->
-        <div class="cube-card__header">
-          <span class="cube-card__title">{{ metric.title }}</span>
-          <span class="cube-card__icon">
-            <i [class]="metric.icon"></i>
-          </span>
-        </div>
+<div class="cube-cards" dir="rtl" [style.--cols]="columns + ''">
+  @for (metric of metrics; track metric.key) {
+    <article class="metric">
+      <!-- כותרת: שם הנתון + סמל -->
+      <div class="mh">
+        <div class="mname">{{ metric.title }}</div>
+        <div class="micon">{{ metric.icon }}</div>
+      </div>
 
-        <!-- ערך מרכזי -->
-        <div class="cube-card__value-row">
-          <span class="cube-card__value">{{ metric.value }}</span>
+      <!-- ערך מרכזי -->
+      <div>
+        <div class="value">
+          {{ metric.value }}
           @if (metric.unit) {
-            <span class="cube-card__unit">{{ metric.unit }}</span>
+            <span class="unit">{{ metric.unit }}</span>
           }
         </div>
 
         <!-- מקור + קישור לפירוט -->
-        <div class="cube-card__meta-row">
-          <span class="cube-card__source">{{ metric.source }}</span>
-          <span class="cube-card__link"  routerLink="/control-panel-dialog">
-            לפירוט
-            <i class="pi pi-arrow-left"></i>
-          </span>
+        <div class="mf">
+          <span>{{ metric.source }}</span>
+          <button type="button" class="click" (click)="openDetails(metric.key)">לפירוט ←</button>
         </div>
+      </div>
 
-        <!-- תגיות סטטוס: עיגול צבעוני + אייקון + כיתוב מרווח -->
-        <div class="cube-card__tags">
-          @if (metric.status === 'ok') {
-            <span class="cube-chip cube-chip--success">
-              <i class="pi pi-check-circle"></i>
-              <span class="cube-chip__text">ללא חריגה</span>
-            </span>
-          } @else if (metric.status === 'warn') {
-            <span class="cube-chip cube-chip--warn">
-              <i class="pi pi-exclamation-triangle"></i>
-              <span class="cube-chip__text">חריגה קלה</span>
-            </span>
-          } @else {
-            <span class="cube-chip cube-chip--danger">
-              <i class="pi pi-times-circle"></i>
-              <span class="cube-chip__text">חריגה</span>
-            </span>
-          }
-
-          @if (metric.updated) {
-            <span class="cube-chip cube-chip--success">
-              <i class="pi pi-sync"></i>
-              <span class="cube-chip__text">מעודכן</span>
-            </span>
-          } @else {
-            <span class="cube-chip cube-chip--warn">
-              <i class="pi pi-history"></i>
-              <span class="cube-chip__text">מידע ישן</span>
-            </span>
-          }
-        </div>
-
-        <!-- מגמה מול תקופה קודמת -->
-        <div class="cube-card__trend" [class.is-positive]="metric.trendPositive" [class.is-negative]="!metric.trendPositive">
-          <i [class]="metric.trendPositive ? 'pi pi-caret-up' : 'pi pi-caret-down'"></i>
-          <span>{{ metric.trend | number: '1.1-1' }}% מול תקופה קודמת</span>
-        </div>
-
-        @if (metric.targetText) {
-          <div class="cube-card__target">{{ metric.targetText }}</div>
+      <!-- תגיות סטטוס + מגמה + יעד -->
+      <div class="minirow">
+        @switch (metric.status) {
+          @case ('ok') { <span class="chip ok">ללא חריגה</span> }
+          @case ('warn') { <span class="chip warn">⚠ חריגה קלה</span> }
+          @default { <span class="chip bad">⚠ חריגה מסף</span> }
         }
+        @if (metric.updated) {
+          <span class="chip ok">● מעודכן</span>
+        } @else {
+          <span class="chip warn">◷ מידע ישן</span>
+        }
+      </div>
 
-        <!-- כפתורים: שלושה באותה שורה, עם מסגרת, ללא אייקונים -->
-        <div class="cube-card__actions">
-          <p-button
-            label="סף התראה"
-            severity="secondary"
-            [outlined]="true"
-            size="small"
-            styleClass="cube-action-btn" />
-          <p-button
-            label="יעד"
-            severity="secondary"
-            [outlined]="true"
-            size="small"
-            styleClass="cube-action-btn" />
-          <p-button
-            label="ניתוח עומק"
-            severity="secondary"
-            [outlined]="true"
-            size="small"
-            styleClass="cube-action-btn" />
-        </div>
-      </p-card>
-    }
-  </div>
+      <div class="minirow">
+        @if (metric.hasComparison === false) {
+          <span class="micro">ללא נתון להשוואה</span>
+        } @else {
+          <span class="micro" [class.trendup]="metric.trendPositive" [class.trenddown]="!metric.trendPositive">
+            {{ metric.trendPositive ? '▲' : '▼' }} {{ metric.trend | number: '1.1-1' }}% מול תקופה קודמת
+          </span>
+        }
+        @if (metric.targetText) {
+          <span class="micro">{{ metric.targetText }}</span>
+        }
+      </div>
+
+      <!-- פעולות -->
+      <div class="extra-actions">
+        <button type="button" class="btn light sm" (click)="alertRule.emit(metric.key)">סף התראה</button>
+        <button type="button" class="btn light sm" (click)="target.emit(metric.key)">יעד</button>
+        <button type="button" class="btn light sm" (click)="drill.emit(metric.key)">ניתוח עומק</button>
+      </div>
+    </article>
+  } @empty {
+    <p class="empty-cards">לא הוגדרו נתונים להצגה</p>
+  }
 </div>
+
+<!-- ===== חלון הפירוט — נפתח מתוך הכרטיס, סגירה מחזירה לכאן ===== -->
+@if (detailsId(); as id) {
+  <app-detailed-dialogue
+    [metricId]="id"
+    [title]="titleById().get(id) ?? ''"
+    (closed)="detailsId.set('')" />
+}
