@@ -1,26 +1,15 @@
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
-import { NgModule } from '@angular/core';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { BrowserModule } from '@angular/platform-browser';
+import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { RouterModule, Routes } from '@angular/router';
-import { ModalModule } from 'ngx-bootstrap/modal';
-import { MessageService } from 'primeng/api';
-import { MenuModule } from 'primeng/menu';
-import { providePrimeNG } from 'primeng/config';
-import Aura from '@primeng/themes/aura';
+import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { definePreset } from '@primeng/themes';
+import Aura from '@primeng/themes/aura';
+import { MessageService } from 'primeng/api';
+import { providePrimeNG } from 'primeng/config';
 
 import { AuthorizeInterceptor } from '../api-authorization/authorize.interceptor';
-import { AppComponent } from './app.component';
-import { HomeComponent } from './home/home.component';
-import { MenueComponent } from './menue/menue.component';
-
-const routes: Routes = [
-  { path: '', component: HomeComponent },
-  { path: 'home', component: HomeComponent },
-  { path: '**', redirectTo: '' }
-];
+import { BASE_URL } from './core/base-url.token';
+import { routes } from './app.routes';
 
 export const MyPreset = definePreset(Aura, {
   semantic: {
@@ -40,25 +29,20 @@ export const MyPreset = definePreset(Aura, {
   }
 });
 
-@NgModule({
-  declarations: [
-    AppComponent,
-    MenueComponent,
-    HomeComponent
-  ],
-  imports: [
-    BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),
-    ReactiveFormsModule,
-    FormsModule,
-    RouterModule.forRoot(routes),
-    ModalModule.forRoot(),
-    MenuModule
-  ],
+export function getBaseUrl(): string {
+  const base = document.getElementsByTagName('base')[0];
+  return base ? base.href.replace(/\/$/, '') : '';
+}
+
+export const appConfig: ApplicationConfig = {
   providers: [
-    MessageService,
-    { provide: HTTP_INTERCEPTORS, useClass: AuthorizeInterceptor, multi: true },
+    provideZoneChangeDetection({ eventCoalescing: true }),
+    provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withInterceptorsFromDi()),
+    { provide: HTTP_INTERCEPTORS, useClass: AuthorizeInterceptor, multi: true },
     provideAnimationsAsync(),
+    { provide: BASE_URL, useFactory: getBaseUrl },
+    MessageService,
     providePrimeNG({
       theme: {
         preset: MyPreset,
@@ -77,7 +61,5 @@ export const MyPreset = definePreset(Aura, {
         dayNames: ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת']
       }
     })
-  ],
-  bootstrap: [AppComponent]
-})
-export class AppModule { }
+  ]
+};

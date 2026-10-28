@@ -2,12 +2,14 @@
 
 html, body {
   height: 100%;
-  font-family: 'Heebo', Arial, sans-serif;
+  font-family: Arial, 'Segoe UI', sans-serif;
   direction: rtl;
 }
 
 body {
   margin: 0;
+  color: #19304d;
+  background: #f3f6fb;
 }
 
 /* PrimeNG RTL adjustments */
@@ -18,4 +20,206 @@ body {
 .p-datatable .p-datatable-thead > tr > th,
 .p-datatable .p-datatable-tbody > tr > td {
   text-align: right;
+}
+
+/* ---------- גלולות סטטוס (pill) — משותף לכל המסכים ---------- */
+.pill {
+  display: inline-block;
+  border-radius: 50px;
+  font-size: 12px;
+  padding: 5px 9px;
+  background: #e9f2ff;
+  color: #1a66bd;
+  border: 0;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.pill.gray  { background: #f0f3f7; color: #687c95; }
+.pill.red   { background: #ffeded; color: #c14246; }
+.pill.green { background: #e8f8ed; color: #23864f; }
+.pill.warn  { background: #fff3e0; color: #9a5b00; }
+.pill.bad   { background: #fee8e7; color: #a6373a; }
+.pill.ok    { background: #e5f6ed; color: #26744a; }
+
+/* ---------- כפתור קישור בתוך כרטיס ---------- */
+.link-button {
+  border: 0;
+  background: none;
+  color: #1765ce;
+  font-weight: 700;
+  padding: 0;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.link-button:hover { text-decoration: underline; }
+
+/* ---------- כפתורים משותפים לכל המסכים ---------- */
+.btn {
+  background: #1765ce;
+  color: #fff;
+  border: 1px solid #1765ce;
+  padding: 11px 18px;
+  border-radius: 9px;
+  font-weight: 700;
+  font-size: inherit;
+  cursor: pointer;
+  line-height: 1.2;
+}
+.btn:hover { background: #0d54b6; }
+
+.btn.light {
+  background: #fff;
+  border: 1px solid #d7e1ee;
+  color: #2b4d77;
+}
+.btn.light:hover { background: #f5f8fc; }
+
+.btn.warn {
+  background: #fff0ef;
+  border: 1px solid #ffd5d1;
+  color: #bb4338;
+}
+.btn.warn:hover { background: #ffe4e2; }
+
+.btn.sm { padding: 7px 11px; font-size: 12px; }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* ---------- פאנל תוכן ---------- */
+.panel {
+  background: #fff;
+  border: 1px solid #e2eaf4;
+  border-radius: 15px;
+  padding: 22px;
+  box-shadow: 0 4px 16px rgba(22, 51, 76, 0.03);
+}
+.panel + .panel { margin-top: 23px; }
+
+.sectionhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+.sectionhead h2 { margin: 0; }
+
+/* ---------- כותרת מסך ---------- */
+.headline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+.headline h1 { margin: 0 0 8px; }
+.headline p { margin: 6px 0; }
+
+/* ---------- טפסים ---------- */
+.formgrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.field label { font-size: 13px; font-weight: 700; color: #465e7a; }
+.field.full, .full { grid-column: 1 / -1; }
+.hint { font-size: 12px; color: #8c9db1; }
+
+.formgrid input,
+.formgrid select,
+.controls input,
+.controls select {
+  width: 100%;
+  background: #fff;
+  border: 1px solid #d4dfeb;
+  border-radius: 8px;
+  padding: 10px;
+  color: #223b5a;
+  font: inherit;
+  outline-color: #3684e7;
+  box-sizing: border-box;
+}
+
+.checks {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.checks label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: #f6f9fc;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  border: 1px solid #e6edf5;
+  cursor: pointer;
+}
+.checks input { width: auto; }
+
+.actionrow {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: 22px;
+}
+
+/* ---------- טבלאות ---------- */
+.tablewrap { overflow: auto; }
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: right;
+  min-width: 640px;
+}
+.data-table th {
+  background: #f7f9fc;
+  font-size: 12px;
+  color: #71839b;
+  font-weight: 700;
+}
+.data-table th,
+.data-table td {
+  padding: 13px 14px;
+  border-bottom: 1px solid #e9eef5;
+}
+.data-table td { font-size: 13px; }
+
+/* ---------- באנר הסבר ---------- */
+.banner {
+  border-radius: 10px;
+  background: #eaf3ff;
+  color: #315c93;
+  font-size: 13px;
+  padding: 12px 15px;
+  margin-bottom: 18px;
+}
+
+/* ---------- ריבועי נתונים ---------- */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 13px;
+}
+.stat {
+  background: #edf4fe;
+  border-radius: 11px;
+  padding: 15px;
+}
+.stat strong { font-size: 22px; display: block; }
+.stat span { font-size: 12px; color: #6981a1; }
+
+@media (max-width: 900px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .formgrid { grid-template-columns: 1fr; }
 }

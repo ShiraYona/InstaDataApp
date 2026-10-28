@@ -3,11 +3,13 @@ import { Inject, Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
+import { BASE_URL } from '../app/core/base-url.token';
+
 @Injectable({ providedIn: 'root' })
 export class AuthorizeInterceptor implements HttpInterceptor {
   private readonly loginUrl: string;
 
-  constructor(@Inject('BASE_URL') private baseUrl: string) {
+  constructor(@Inject(BASE_URL) private baseUrl: string) {
     this.loginUrl = `${this.baseUrl}/Identity/Account/Login`;
   }
 

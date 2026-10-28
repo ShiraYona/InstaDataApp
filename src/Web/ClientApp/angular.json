@@ -111,26 +111,6 @@
             ],
             "scripts": []
           }
-        },
-        "server": {
-          "builder": "@angular-devkit/build-angular:server",
-          "options": {
-            "outputPath": "dist-server",
-            "main": "src/main.server.ts",
-            "tsConfig": "tsconfig.server.json",
-            "optimization": false
-          },
-          "configurations": {
-            "production": {
-              "optimization": true,
-              "outputHashing": "media"
-            },
-            "development": {
-              "optimization": false,
-              "sourceMap": true
-            }
-          },
-          "defaultConfiguration": "production"
         }
       }
     }
