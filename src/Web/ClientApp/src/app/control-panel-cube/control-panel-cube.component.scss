@@ -1,0 +1,248 @@
+:host {
+  display: block;
+}
+
+.cube-wrapper {
+  background: #f7f7f4;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  min-height: 100%;
+}
+
+/* ---- פריסה אחידה של הכרטיסים ---- */
+.cube-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 1rem;
+  align-items: stretch;
+}
+
+/* ---- כרטיס ---- */
+::ng-deep .cube-card {
+  height: 100%;
+  border-radius: 0.875rem;
+  border: 1px solid #ececeb;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+
+  .p-card-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 0.5rem;
+    padding: 1rem 1.1rem;
+  }
+
+  .p-card-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 0.5rem;
+    padding: 0;
+  }
+
+  &:hover {
+    box-shadow: 0 6px 18px rgba(16, 24, 40, 0.08);
+    transform: translateY(-2px);
+  }
+}
+
+/* הכותרת בצד ימין (בזכות dir=rtl) והאייקון נדחף לשמאל */
+.cube-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  width: 100%;
+}
+
+.cube-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.6rem;
+  background: #f1f4f9;
+  color: #33415c;
+  font-size: 1rem;
+  flex: 0 0 auto;
+}
+
+.cube-card__title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #2b3445;
+  line-height: 1.3;
+  text-align: right;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.cube-card__value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.cube-card__value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #16202e;
+  letter-spacing: -0.01em;
+}
+
+.cube-card__unit {
+  font-size: 0.85rem;
+  color: #4c5c6d;
+}
+
+.cube-card__meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #4d5e7a;
+}
+
+.cube-card__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #3b6fd4;
+  font-weight: 500;
+  white-space: nowrap;
+
+  i {
+    font-size: 0.7rem;
+  }
+}
+
+/* ---- תגיות סטטוס: גלולה עם אייקון וכיתוב מרווח ---- */
+.cube-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.cube-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  border: 1px solid transparent;
+
+  i {
+    font-size: 0.8rem;
+  }
+
+  &__text {
+    letter-spacing: 0.01em;
+  }
+
+  &--success {
+    background: #eefaf2;
+    color: #1f7a4d;
+    border-color: #cdeedd;
+  }
+
+  &--warn {
+    background: #fff8e8;
+    color: #8a6100;
+    border-color: #f6e3b4;
+  }
+
+  &--danger {
+    background: #fdeeee;
+    color: #a32828;
+    border-color: #f6cfcf;
+  }
+}
+
+.cube-card__trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: #8b94a3;
+
+  &.is-positive i {
+    color: #1f9d55;
+  }
+
+  &.is-negative i {
+    color: #d64545;
+  }
+}
+
+.cube-card__target {
+  font-size: 0.78rem;
+  color: #adcbff;
+}
+
+/* שלושת הכפתורים באותה שורה, מחולקים שווה בשווה, עם מסגרת וללא אייקונים */
+.cube-card__actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.4rem;
+  margin-top: auto;
+  padding-top: 0.6rem;
+  border-top: 1px solid #f0f0ee;
+
+  > p-button {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  /* כפתור פריים — מסגרת דקה, רקע לבן */
+  ::ng-deep .p-button.cube-action-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.4rem 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    white-space: nowrap;
+    border: 1px solid #cdddf8;
+    background: #ffffff;
+    color: #33415c;
+
+    &:hover {
+      background: #f5f7fa;
+      border-color: #c4cad4;
+      color: #1d2836;
+    }
+
+    .p-button-label {
+      flex: 0 1 auto;
+    }
+  }
+}
+
+/* ---- התאמה למסכים צרים ---- */
+@media (max-width: 576px) {
+  .cube-wrapper {
+    padding: 0.75rem;
+  }
+
+  .cube-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* במסך צר מאוד — הכפתורים נשברים לשורה חדשה במקום להיחתך */
+  .cube-card__actions {
+    flex-wrap: wrap;
+
+    > p-button {
+      flex: 1 1 30%;
+    }
+  }
+}
