@@ -24,3 +24,6 @@ appsettings.json
 ## OS
 Thumbs.db
 .DS_Store
+
+## Local config (do not commit)
+src/Web/appsettings.json
