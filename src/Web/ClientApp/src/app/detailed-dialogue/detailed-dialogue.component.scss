@@ -82,6 +82,7 @@ h2 {
   border: 1px solid #e2eaf4;
   border-radius: 15px;
   padding: 22px;
+  margin-top: 23px;
   box-shadow: 0 4px 16px rgba(22, 51, 76, 0.03);
 }
 
@@ -260,28 +261,55 @@ tbody tr.is-active td {
   }
 }
 
-/* ---- התאמה למסכים צרים ---- */
-@media (max-width: 768px) {
-  .stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
+/* ===== מעטפת החלון ===== */
 .dialog-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 30, 50, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
+  background: #0b1837a8;
+  display: grid;
+  place-items: center;
+  padding: 22px;
   z-index: 1000;
 }
 
 .dd-modal {
   background: #fff;
-  border-radius: 18px;
-  padding: 24px;
-  width: min(1000px, 100%);
-  max-height: 88vh;
+  border-radius: 17px;
+  padding: 24px 28px;
+  width: min(100%, 1050px);
+  max-height: 91vh;
   overflow: auto;
+  box-shadow: 0 20px 70px #06102c66;
+  box-sizing: border-box;
+}
+
+.dd-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--dd-border);
+  margin-bottom: 24px;
+
+  h2 {
+    margin: 0;
+  }
+}
+
+/* שורת הסיכום נשארת בדיוק 4 אריחים בכל רוחב */
+.stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0 0 24px;
+}
+
+/* ---- התאמה למסכים צרים ---- */
+@media (max-width: 768px) {
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dd-modal {
+    padding: 18px 16px;
+  }
 }

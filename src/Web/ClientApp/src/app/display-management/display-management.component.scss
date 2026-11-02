@@ -1,0 +1,708 @@
+/* ==========================================================
+   ניהול תצוגה — עיצוב לפי עיצוב המערכת.
+   ========================================================== */
+
+:host {
+  display: block;
+  --dm-text: #1f2f4a;
+  --dm-text-muted: #6b7a90;
+  --dm-border: #e3e8f0;
+  --dm-surface: #ffffff;
+  --dm-bg: #f4f6fa;
+  --dm-primary: #3f6ba8;
+  --dm-success-bg: #e6f6ec;
+  /* גלולת "מוצג" — צבעים שנדגמו מהתמונה שהמשתמש שלח:
+     רקע מנטה אחיד (הצבע השולט ברקע הגלולה) וכיתוב ירוק (חציון פיקסלי הטקסט) */
+  /* גלולת "מוצג" — צבעים שנדגמו פיקסל־פיקסל מתמונת הדוגמה:
+     ירוק מנטה אחיד לכל שטח הגלולה, כיתוב ירוק כהה, בלי מסגרת ובלי צל */
+  --dm-pill-fill: #E8F8ED;
+  --dm-pill-bg: #E8F8ED;
+  --dm-pill-text: #3D936A;
+  /* כחול הכפתור "חזרה ללוח הבקרה" */
+  --dm-btn-blue: #0052d4;
+  --dm-btn-blue-hover: #0046b5;
+  --dm-btn-blue-active: #003c9c;
+  /* כיתוב בתוך תאי "סדר הכרטיסים" */
+  --dm-panel-heading: #24344d;
+}
+
+.display-page {
+  direction: rtl;
+  min-height: 100%;
+  padding: 1.75rem 2rem 2.5rem;
+  background: var(--dm-bg);
+  color: var(--dm-text);
+  font-family: 'Heebo', Arial, sans-serif;
+  box-sizing: border-box;
+}
+
+/* ---------- שורה עליונה ---------- */
+.top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.page-header {
+  text-align: right;
+}
+
+.page-title {
+  margin: 0 0 0.4rem;
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--dm-text);
+}
+
+.page-subtitle {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--dm-text-muted);
+  line-height: 1.6;
+}
+
+:host ::ng-deep .back-button {
+  background: var(--dm-btn-blue);
+  border: 1px solid var(--dm-btn-blue);
+  color: #fff;
+  border-radius: 10px;
+  padding: 0.6rem 1.4rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 82, 212, 0.25);
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+:host ::ng-deep .back-button:enabled:hover {
+  background: var(--dm-btn-blue-hover);
+  border-color: var(--dm-btn-blue-hover);
+  color: #fff;
+  box-shadow: 0 3px 8px rgba(0, 82, 212, 0.3);
+}
+
+:host ::ng-deep .back-button:enabled:active {
+  background: var(--dm-btn-blue-active);
+  border-color: var(--dm-btn-blue-active);
+}
+
+:host ::ng-deep .back-button .p-button-icon {
+  font-size: 0.85rem;
+  color: #fff;
+}
+
+/* ---------- מחוון שמירה ---------- */
+.save-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--dm-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+/* ---------- הפאנלים ---------- */
+.panels {
+  display: grid;
+  /* ב-RTL: העמודה הראשונה היא הימנית (סדר הכרטיסים), השנייה משמאל (הגדרות פריסה).
+     הפרופורציה בין הפאנלים: כ-63% / 37%. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.585fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.panel {
+  background: var(--dm-surface);
+  border: 1px solid var(--dm-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(31, 47, 74, 0.04);
+}
+
+.panel__title {
+  margin: 0 0 0.85rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--dm-text);
+}
+
+.panel__subtitle {
+  margin: 0 0 1rem;
+  font-size: 0.98rem;
+  font-weight: 400;
+  color: var(--dm-text-muted);
+  line-height: 1.6;
+}
+
+/* ---------- פאנל הגדרות פריסה ---------- */
+.panel__title--page {
+  font-size: 1.35rem;
+  font-weight: 800;
+  margin-bottom: 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.field__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--dm-text);
+}
+
+/* תיבת הבחירה של PrimeNG — full width, פינות מעודנות */
+:host ::ng-deep .cards-per-row-select.p-select {
+  width: 100%;
+  border-radius: 9px;
+  border-color: #d8e0eb;
+  background: #fff;
+  min-height: 2.6rem;
+}
+
+:host ::ng-deep .cards-per-row-select.p-select:not(.p-disabled).p-focus {
+  border-color: var(--dm-primary);
+  box-shadow: 0 0 0 3px rgba(63, 107, 168, 0.15);
+}
+
+:host ::ng-deep .cards-per-row-select .p-select-label {
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  color: var(--dm-text);
+  padding: 0.55rem 0.85rem;
+}
+
+:host ::ng-deep .cards-per-row-select .p-select-dropdown {
+  color: var(--dm-text-muted);
+}
+
+/* ---------- רשימת האפשרויות (Overlay) ---------- */
+
+/*
+  למה הרשימה נפתחה בכל רוחב העמוד:
+  ב-PrimeNG 18 הרשימה מרונדרת *בתוך* <p-select>, ושם כלל בונה-הנושא
+  `.p-select .p-select-overlay { min-width: 100% }` הופך אותה ל-100% מרוחב
+  העמוד (ההורה הוא ה-<p-select>, שרוחבו רוחב השדה).
+  הדרישה: הרשימה נפתחת תמיד ברוחב *בדיוק* של השדה, מתחתיו, כשהיא
+  ממורכזת ביחס אליו. PrimeNG כותב בעצמו min-width בשורה (inline) לפי רוחב
+  השדה, אבל ה-min-width: 100% של בונה-הנושא דורס אותו. ביטול הכלל הזה
+  (min-width: 0) מחזיר את הרשימה לרוחב השדה — בדיוק כמו שהוא מודד אותו.
+  הכלל יושב ב-styles.scss הגלובלי: Angular מדביק בקובץ רכיב תגית
+  אנקפסולציה [_ngcontent-xxx] על אותו אלמנט כמו ה-selector, וזה מעלה את
+  ה-specificity ל-0,1,0 — ואז הכלל מפסיד לכלל של בונה-הנושא.
+*/
+
+/*
+  הרשימה נפתחת ב-appendTo="body", כלומר היא *מחוץ* לרכיב — ולכן אי אפשר לעצב
+  אותה מקובץ ה-SCSS של הרכיב (הסלקטורים שם מתויגים ב-מזהה הרכיב).
+  לכן כל עיצוב הרשימה מרוכז כאן ב-:host ::ng-deep, שמוציא אותה מכלל האנקפסולציה
+  בלי לפגוע בשאר האפליקציה (המחלקה ייחודית ל-select הזה).
+  "לא מעוצב" = העיצוב לא הגיע לרשימה ולכן נשארו ברירות המחדל של הדפדפן/הנושא.
+*/
+:host ::ng-deep .cards-per-row-select-panel.p-select-overlay {
+  min-width: 0;
+  padding: 0.25rem;
+  border: 1px solid #d4dfeb;
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(6, 16, 44, 0.15);
+}
+
+:host ::ng-deep .cards-per-row-select-panel .p-select-list {
+  padding: 0;
+}
+
+:host ::ng-deep .cards-per-row-select-panel .p-select-option {
+  font-size: 0.9rem;
+  color: var(--dm-text);
+  padding: 0.55rem 0.85rem;
+  border-radius: 7px;
+}
+
+:host ::ng-deep .cards-per-row-select-panel .p-select-option:hover,
+:host ::ng-deep .cards-per-row-select-panel .p-select-option.p-focus {
+  background: #eef3fb;
+}
+
+:host ::ng-deep .cards-per-row-select-panel .p-select-option.p-selected {
+  background: #e2ecfa;
+  color: var(--dm-primary);
+  font-weight: 600;
+}
+
+/* ---------- תצוגה מקדימה ---------- */
+.preview-block {
+  margin: 1.4rem 0 1.5rem;
+}
+
+.preview-block__title {
+  margin: 0 0 0.7rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--dm-text);
+}
+
+.preview-grid {
+  display: grid;
+  /* כיוון מפורש RTL: פריט 1 בפינה הימנית העליונה, ומילוי משמאל לימין בכל שורה */
+  direction: rtl;
+  gap: 0.4rem;
+  /* היחידה שממנה נגזרים גם הריווח וגם גודל הספרה — מתכווצת יחד עם המשבצות */
+  container-type: inline-size;
+}
+
+/* כל משבצת — מלבן מעוגל בתכלת בהיר עם מסגרת כחלחלה דקה,
+   ומספר כחול־בינוני קטן וממורכז (פרופורציית הספרה לריבוע כמו בתמונת הדוגמה) */
+.preview-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 16 / 9;
+  background: #e7edf9;
+  border: 1px solid #cfe0f5;
+  border-radius: 7px;
+  color: #4f7fc4;
+  /* הספרה גדלה יחד עם המשבצת ושומרת על אותה פרופורציה בכל רוחב מסך.
+     cqw = אחוז מרוחב הגריד (container query unit), ולכן גם כשמספר העמודות
+     משתנה (2–6) הגודל מתאים את עצמו אוטומטית. */
+  font-size: clamp(0.6rem, 4.2cqw, 1.15rem);
+  font-weight: 500;
+  line-height: 1;
+}
+
+.preview-block__note {
+  margin: 0.7rem 0 0;
+  font-size: 0.78rem;
+  color: var(--dm-text-muted);
+  line-height: 1.55;
+}
+
+/* כפתור האיפוס — בהיר עם מסגרת, ברוחב מלא */
+:host ::ng-deep .reset-button {
+  width: 100%;
+  justify-content: center;
+  border-radius: 9px;
+  font-weight: 600;
+  color: var(--dm-panel-heading);
+  border-color: #d8e0eb;
+  background: #fff;
+}
+
+:host ::ng-deep .reset-button:enabled:hover {
+  background: #f5f8fc;
+  border-color: #c4d2e3;
+  color: var(--dm-panel-heading);
+}
+
+/* ---------- רשימת הכרטיסים ---------- */
+.card-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* כרטיס לבן נפרד עם מסגרת בהירה — כמו בתמונה */
+.card-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--dm-border);
+  border-radius: 8px;
+  background: var(--dm-surface);
+  box-shadow: 0 1px 2px rgba(31, 47, 74, 0.04);
+  min-height: 3.15rem;
+  box-sizing: border-box;
+  cursor: grab;
+  /* מאפשר גרירה גם במסך מגע, וכיבוי בחירת טקסט בזמן גרירה */
+  touch-action: none;
+  user-select: none;
+}
+
+.card-row:active {
+  cursor: grabbing;
+}
+
+/* ---------- גרירה (CDK) ---------- */
+/* הכרטיסייה שמונפת בזמן הגרירה — אטומה לחלוטין (CDK שם לה ברירת מחדל
+   של opacity + transform, ולכן מחזירים אותה למצב מלא) */
+.card-row.cdk-drag-preview {
+  box-sizing: border-box;
+  opacity: 1 !important;
+  background: var(--dm-surface) !important;
+  border: 1px solid #b5c8dd;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(31, 47, 74, 0.18);
+  color: var(--dm-panel-heading);
+}
+
+/* המקום שהכרטיסייה "השאירה" ברשימה — גם הוא אטום, לא שקוף.
+   CDK מסתיר אותו לגמרי; כאן הוא נשאר לבן עם מסגרת מקווקוות עדינה
+   כדי שיהיה ברור לאן הכרטיסייה תיפול, בלי מראה שקוף. */
+.card-row.cdk-drag-placeholder {
+  opacity: 1 !important;
+  background: #ffffff !important;
+  border: 1px dashed #a9c2dd !important;
+  border-radius: 8px;
+  box-shadow: none !important;
+}
+
+.card-row.cdk-drag-placeholder > * {
+  visibility: hidden;
+}
+
+.cdk-drag-animating {
+  transition: transform 180ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.card-list.cdk-drop-list-dragging .card-row:not(.cdk-drag-placeholder) {
+  transition: transform 180ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* מספר הכרטיס — עיגול בהיר בקצה הימני */
+.card-row__index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 50%;
+  background: #eef2f7;
+  border: 1px solid #e3e8f0;
+  color: var(--dm-panel-heading);
+  font-size: 0.82rem;
+  font-weight: 600;
+  flex-shrink: 0;
+  order: -2;
+}
+
+/* שם הכרטיס — צמוד למספר, נדחף עם שאר התוכן לימין */
+.card-row__label {
+  flex: 0 0 auto;
+  margin-inline-end: auto;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--dm-panel-heading);
+  text-align: right;
+  order: -1;
+}
+
+/* החצים — בקצה השמאלי של השורה, כמו בתמונה: ריבוע מעוגל לבן עם מסגרת כחלחלה */
+.card-row__arrows {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+  order: 2;
+}
+
+/* כפתור חץ — ריבוע לבן כמעט מושלם (פינות מעוגלות קלות מאוד),
+   מסגרת כחלחלה דקה, וחץ V כהה עבה בפנים — בדיוק כמו בתמונה */
+.arrow-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 1.85rem;
+  height: 1.85rem;
+  padding: 0;
+  margin: 0;
+  background: #ffffff;
+  border: 1px solid #cddbea;
+  border-radius: 7px;
+  color: #2b3a50;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.arrow-btn:not(:disabled):hover {
+  background: #f5f8fc;
+  border-color: #b5c8dd;
+  color: #1b283c;
+}
+
+.arrow-btn:not(:disabled):active {
+  background: #eaf0f7;
+}
+
+.arrow-btn:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.arrow-btn:focus-visible {
+  outline: 2px solid var(--dm-primary);
+  outline-offset: 1px;
+}
+
+/* החץ עצמו — קו אנכי ישר עם ראש חץ משולש בקצה, קצוות מעוגלים */
+.arrow-btn__icon {
+  display: block;
+  width: 0.95rem;
+  height: 1.3rem;
+  pointer-events: none;
+}
+
+/* כפתור ההצגה/הסתרה — גלולה ירוקה מלאה.
+   בתמונת הדוגמה: ירוק מנטה אחיד (#E8F8ED) על כל השטח, כיתוב ירוק כהה
+   (#298B5B) במשקל רגיל, ללא מסגרת וללא צל. רדיוס הפינות = חצי מהגובה.
+   שני המצבים חולקים בדיוק את אותו מבנה וגודל; ההבדל היחיד הוא הצבע.
+   שים לב: ב-PrimeNG 18 המצב השמור מסומן ב-[data-p-checked="true"] על ה-button
+   ולא במחלקת .p-togglebutton-checked (שאינה קיימת בגרסה זו). */
+:host ::ng-deep .visibility-toggle.p-togglebutton {
+  flex-shrink: 0;
+  order: 1;
+  margin-inline-start: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* מידות לפי תמונת הדוגמה: 84×51px — יחס 1.65:1 (גלולה כמעט עגולה).
+     הגובה 1.65rem קובע את כולם; הרוחב נגזר ממנו.
+     min-width ולא width — כדי שמצב "מוסתר" (מילה ארוכה יותר) לא ייחתך */
+  min-width: 3.1rem;
+  height: 1.65rem;
+  padding: 0 0.7rem;
+  border: 0 !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  background-image: none !important;
+  font-family: 'Heebo', inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* מצב "מוסתר" — אפור מרוסן */
+:host ::ng-deep .visibility-toggle.p-togglebutton[data-p-checked="false"] {
+  background-color: #eef1f5 !important;
+  color: var(--dm-text-muted) !important;
+}
+
+/* מצב "מוצג" — ירוק מנטה אחיד + כיתוב ירוק, כמו בתמונת הדוגמה */
+:host ::ng-deep .visibility-toggle.p-togglebutton[data-p-checked="true"] {
+  background-color: var(--dm-pill-fill) !important;
+  color: var(--dm-pill-text) !important;
+}
+
+:host ::ng-deep .visibility-toggle.p-togglebutton .p-togglebutton-label {
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+}
+
+/* ב-PrimeNG 18 הצביעה של המצב הנבחר נמצאת על הפסאודו-אלמנט ::before
+   (ראה primeng-togglebutton.mjs: .p-togglebutton.p-togglebutton-checked::before),
+   ולא על ה-button או על p-togglebutton-content. הוא ממוקם בהיסט 0.25rem
+   ומצוייר בלבן — זה מה שיצר "מסגרת לבנה" והשאיר רק פס ירוק בקצוות.
+   מבטלים את ההיסט, את הרדיוס הנפרד ואת הצל, כדי שהמילוי ימלא את כל
+   הגלולה ויקבל את הצבע שלנו. */
+:host ::ng-deep .visibility-toggle.p-togglebutton::before {
+  inset-inline-start: 0 !important;
+  top: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: inherit !important;
+  box-shadow: none !important;
+}
+
+:host ::ng-deep .visibility-toggle.p-togglebutton[data-p-checked="true"]::before {
+  background: var(--dm-pill-fill) !important;
+}
+
+:host ::ng-deep .visibility-toggle.p-togglebutton[data-p-checked="false"]::before {
+  background: #eef1f5 !important;
+}
+
+/* התוכן הפנימי עצמו — רק פריסה, בלי רקע משלו, כדי שלא יכסה את ה-::before */
+:host ::ng-deep .visibility-toggle.p-togglebutton .p-togglebutton-content {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+:host ::ng-deep .visibility-toggle.p-togglebutton[data-p-checked="false"]:enabled:hover {
+  background-color: #e4e9f0 !important;
+  color: var(--dm-text) !important;
+}
+
+:host ::ng-deep .visibility-toggle.p-togglebutton[data-p-checked="true"]:enabled:hover {
+  background-color: var(--dm-pill-fill) !important;
+  color: var(--dm-pill-text) !important;
+}
+
+:host ::ng-deep .visibility-toggle.p-togglebutton[data-p-checked="true"]:enabled:hover::before {
+  background: #dcf2e4 !important;
+}
+
+
+:host ::ng-deep .visibility-toggle.p-togglebutton:focus-visible {
+  outline: 2px solid var(--dm-primary);
+  outline-offset: 2px;
+}
+
+/* ---------- חלון אישור האיפוס ----------
+   ה-dialog ממוקם ב-body (appendTo), ולכן הכללים כאן גלובליים —
+   אך מוגבלים למחלקה .dm-confirm-dialog ולא משפיעים על דיאלוגים אחרים. */
+.dm-confirm-dialog {
+  direction: rtl;
+  width: min(28rem, calc(100vw - 2rem));
+  border-radius: 14px;
+  border: 1px solid #e3e8f0;
+  box-shadow: 0 18px 48px rgba(31, 47, 74, 0.2);
+  font-family: 'Heebo', Arial, sans-serif;
+  overflow: hidden;
+}
+
+.dm-confirm-dialog .p-dialog-header {
+  padding: 1.15rem 1.4rem 0.6rem;
+  gap: 0.8rem;
+  /* אייקון מימין, כותרת משמאל לו */
+  justify-content: flex-start;
+}
+
+.dm-confirm-dialog .p-dialog-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1f2f4a;
+  text-align: right;
+}
+
+.dm-confirm-dialog .p-dialog-header-icon {
+  order: 2;
+  margin-inline-start: auto;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
+  color: #6b7a90;
+}
+
+.dm-confirm-dialog .p-dialog-header-icon:hover {
+  background: #f1f4f9;
+  color: #1f2f4a;
+}
+
+.dm-confirm-dialog .p-dialog-content {
+  padding: 0 1.4rem 1.2rem;
+  color: #4a5a72;
+  font-size: 0.98rem;
+  line-height: 1.7;
+  text-align: right;
+  /* מפריד קווי בין הכותרת לגוף ההודעה */
+  border-top: 1px solid #eef1f6;
+  margin-top: 0.6rem;
+  padding-top: 1.1rem;
+}
+
+/* אייקון האזהרה — עיגול ענבר בהיר */
+.dm-confirm-dialog .p-confirm-dialog-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  background: #fff4e5;
+  color: #c77700;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.dm-confirm-dialog .p-confirm-dialog-message {
+  margin: 0;
+}
+
+.dm-confirm-dialog .p-dialog-footer {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.6rem;
+  padding: 0 1.4rem 1.3rem;
+  border: 0;
+}
+
+/* כפתור האישור — כחול המערכת, כמו "חזרה ללוח הבקרה" */
+.dm-confirm-dialog .p-button.dm-confirm__accept {
+  background: #0052d4;
+  border: 1px solid #0052d4;
+  color: #fff;
+  border-radius: 10px;
+  padding: 0.55rem 1.35rem;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0, 82, 212, 0.25);
+}
+
+.dm-confirm-dialog .p-button.dm-confirm__accept:enabled:hover {
+  background: #0046b5;
+  border-color: #0046b5;
+  color: #fff;
+}
+
+.dm-confirm-dialog .p-button.dm-confirm__accept:enabled:active {
+  background: #003c9c;
+  border-color: #003c9c;
+}
+
+/* כפתור הביטול — לבן עם מסגרת, כמו כפתור האיפוס */
+.dm-confirm-dialog .p-button.dm-confirm__reject {
+  background: #fff;
+  border: 1px solid #d8e0eb;
+  color: #24344d;
+  border-radius: 10px;
+  padding: 0.55rem 1.35rem;
+  font-weight: 600;
+}
+
+.dm-confirm-dialog .p-button.dm-confirm__reject:enabled:hover {
+  background: #f5f8fc;
+  border-color: #c4d2e3;
+  color: #24344d;
+}
+
+.dm-confirm-dialog .p-button:focus-visible {
+  outline: 2px solid #3f6ba8;
+  outline-offset: 2px;
+}
+
+/* ---------- התאמה למסכים צרים ---------- */
+@media (max-width: 900px) {
+  .display-page {
+    padding: 1.25rem 1rem 2rem;
+  }
+
+  .panels {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .top-row {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .top-row .page-header {
+    text-align: right;
+  }
+
+  .page-title {
+    font-size: 1.75rem;
+  }
+
+  :host ::ng-deep .back-button {
+    align-self: flex-start;
+  }
+
+  .card-row {
+    gap: 0.6rem;
+  }
+}
