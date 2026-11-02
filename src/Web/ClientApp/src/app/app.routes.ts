@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { DisplayManagementComponent } from './display-management/display-management.component';
 
 export const routes: Routes = [
   {
@@ -24,5 +25,6 @@ export const routes: Routes = [
         m => m.AddingNewDataEntryComponent
       )
   },
-  { path: '**', redirectTo: '' }
+  { path: 'display-management', component: DisplayManagementComponent },
+  { path: '**', redirectTo: '' },
 ];
