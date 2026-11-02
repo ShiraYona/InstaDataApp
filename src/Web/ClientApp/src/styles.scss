@@ -242,3 +242,210 @@ body {
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .formgrid { grid-template-columns: 1fr; }
 }
+
+
+
+/* ---------- כותרות העמודות בטבלת "ניהול נתונים" ----------
+   כמו th בדמו: רקע #f7f9fc, גופן 13px מודגש, צבע #71839b,
+   ריפוד 13px 14px וקו תחתון 1px #e9eef5.
+   כאן ולא ב-SCSS של הרכיב, כי ה-theme של PrimeNG מוזרק בזמן ריצה
+   אחרי סגנונות הרכיב וגובר עליהם. */
+.catalogTable .p-datatable-thead > tr > th {
+  padding: 13px 14px;
+  background: #f7f9fc;
+  color: #71839b;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: right;
+  white-space: nowrap;
+  vertical-align: middle;
+  border-width: 0 0 1px;
+  border-style: solid;
+  border-color: #e9eef5;
+  box-shadow: none;
+}
+
+/* תוכן הכותרת והאייקון יורשים את הגדרות התא ואינם מוסיפים גופן או ריפוד משלהם */
+.catalogTable .p-datatable-thead > tr > th .p-datatable-column-header-content,
+.catalogTable .p-datatable-thead > tr > th .p-datatable-sortable-column-icon {
+  padding: 0;
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  color: inherit;
+  text-align: inherit;
+}
+
+/* בתאי הנתונים — אותו גופן ואותו גובה שורה בדיוק כמו בכותרת */
+.catalogTable .p-datatable-tbody > tr > td {
+  height: 52px;
+  padding: 13px 14px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  vertical-align: middle;
+}
+
+/* ---------- כפתורי פעולות בטבלת "ניהול נתונים" ----------
+   נדרש כאן (ולא ב-SCSS של הרכיב) משני טעמים:
+   1. סדר ה-CSS: ה-theme של PrimeNG מוזרק בזמן ריצה אחרי סגנונות הרכיב,
+      ולכן רק גיליון גלובלי (טעון ב-head) בטוח לגבור עליו.
+   2. p-button מוסיף את ה-styleClass (למשל actionButton--delete) רק
+      ב-Angular-18-תואם-לאחר-Init, כלומר בפועל אחרי הצביעה הראשונית.
+   שלושת הכפתורים — מידה זהה (12px / ריפוד 7px 11px כמו .btn.sm בדמו). */
+
+p-button.actionButton {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.catalogTable .actionButton.p-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 3.4rem;
+  height: 1.75rem;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  border: 1px solid #d7e1ee;
+  border-radius: 9px;      /* ← ערך ה-border-radius של כפתורי הפעולה */
+  background: #ffffff;
+  color: #2b4d77;
+  box-shadow: none;
+  outline: none;
+  transition: none;
+}
+
+/* כל מעבר-עכבר/מיקוד על כפתורי הפעולה — ללא שינוי עיצובי כלשהו.
+   ה-theme של PrimeNG מוזרק בזמן ריצה אחרי הקובץ הזה, ולכן נדרש גם
+   ה-scope שלו (.p-button) כאן, אחרת כללי ה-hover שלו גוברים. */
+.catalogTable .actionButton.p-button:not(:disabled):hover,
+.catalogTable .actionButton.p-button:not(:disabled):active,
+.catalogTable .actionButton.p-button:not(:disabled):focus,
+.catalogTable .actionButton.p-button:not(:disabled):focus-visible {
+  box-shadow: none;
+  outline: none;
+  transform: none;
+  filter: none;
+  opacity: 1;
+}
+
+.catalogTable .actionButton.p-button .p-button-label {
+  flex: initial;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+.catalogTable .actionButton--outlined.p-button,
+.catalogTable .actionButton--light.p-button,
+.catalogTable .actionButton--outlined.p-button:not(:disabled),
+.catalogTable .actionButton--light.p-button:not(:disabled),
+.catalogTable .actionButton--outlined.p-button:not(:disabled):hover,
+.catalogTable .actionButton--light.p-button:not(:disabled):hover,
+.catalogTable .actionButton--outlined.p-button:not(:disabled):active,
+.catalogTable .actionButton--light.p-button:not(:disabled):active,
+.catalogTable .actionButton--outlined.p-button:not(:disabled):focus,
+.catalogTable .actionButton--light.p-button:not(:disabled):focus,
+.catalogTable .actionButton--outlined.p-button:not(:disabled):focus-visible,
+.catalogTable .actionButton--light.p-button:not(:disabled):focus-visible {
+  background: #ffffff;
+  border: 1px solid #d7e1ee;
+  border-radius: 9px;
+  color: #2b4d77;
+  box-shadow: none;
+  outline: none;
+}
+
+.catalogTable .actionButton--outlined.p-button .p-button-label,
+.catalogTable .actionButton--light.p-button .p-button-label {
+  color: #2b4d77;
+}
+
+/* מחיקה — .btn.warn בדמו: #fff0ef / #ffd5d1 / #bb4338 */
+.catalogTable .actionButton--delete.p-button,
+.catalogTable .actionButton--delete.p-button:not(:disabled),
+.catalogTable .actionButton--delete.p-button:not(:disabled):hover,
+.catalogTable .actionButton--delete.p-button:not(:disabled):active,
+.catalogTable .actionButton--delete.p-button:not(:disabled):focus,
+.catalogTable .actionButton--delete.p-button:not(:disabled):focus-visible {
+  background: #fff0ef;
+  border: 1px solid #ffd5d1;
+  border-radius: 9px;      /* חייב לחזור כאן: ה-border מוצהר מחדש ומאפס את הרדיוס */
+  color: #bb4338;
+  box-shadow: none;
+  outline: none;
+}
+
+.catalogTable .actionButton--delete.p-button .p-button-label {
+  color: #bb4338;
+}
+
+/* ---------- הודעה קופצת במסך "ניהול נתונים" ----------
+   זהה ל-.toast בדמו: bottom:23px; left:25px; background:#1c3d60; color:#fff;
+   padding:13px 19px; border-radius:10px; box-shadow:0 5px 22px #162b4388.
+   כאן ולא ב-SCSS של הרכיב, כי ה-theme של PrimeNG מוזרק בזמן ריצה
+   אחרי סגנונות הרכיב וגובר עליהם. */
+.demoToast.p-toast {
+  top: auto;
+  right: auto;
+  bottom: 23px;
+  left: 25px;
+  width: auto;
+  max-width: min(420px, calc(100vw - 50px));
+  white-space: pre-line;
+  word-break: normal;
+  direction: rtl;
+  text-align: right;
+}
+
+.demoToast.p-toast .p-toast-message {
+  margin: 0;
+  background: #1c3d60;
+  color: #ffffff;
+  padding: 13px 19px;
+  border: 0;
+  border-radius: 10px;
+  box-shadow: 0 5px 22px #162b4388;
+  transform: none;
+  opacity: 1;
+}
+
+.demoToast.p-toast .p-toast-message-content {
+  padding: 0;
+  gap: 0;
+  align-items: center;
+}
+
+.demoToast.p-toast .p-toast-message-text {
+  margin: 0;
+  gap: 0;
+}
+
+.demoToast.p-toast .p-toast-summary,
+.demoToast.p-toast .p-toast-detail {
+  margin: 0;
+  padding: 0;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #ffffff;
+  text-align: right;
+}
+
+.demoToast.p-toast .p-toast-icon-close,
+.demoToast.p-toast .p-toast-message-icon,
+.demoToast.p-toast .p-toast-close-button {
+  display: none;
+}

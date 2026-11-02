@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { DataManagementScreen } from './DataManagementScreen/DataManagementScreen';
 
 export const routes: Routes = [
   {
@@ -24,5 +25,7 @@ export const routes: Routes = [
         m => m.AddingNewDataEntryComponent
       )
   },
-  { path: '**', redirectTo: '' }
+  {path: 'data-management', component: DataManagementScreen},
+  { path: '**', redirectTo: '' },
+   
 ];
