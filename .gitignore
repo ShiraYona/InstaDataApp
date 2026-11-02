@@ -19,6 +19,7 @@ wwwroot/
 appsettings*.json
 appsettings.*.json
 !appsettings.Example.json
+appsettings.json
 
 ## OS
 Thumbs.db
