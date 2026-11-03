@@ -2,7 +2,7 @@
   <p-toast position="bottom-left" styleClass="demoToast"></p-toast>
 
   <!-- דיאלוג יצירת / עריכת נתון -->
-  <app-adding-new-data-entry [(visible)]="dialogVisible"></app-adding-new-data-entry>
+  <!-- <app-adding-new-data-entry [(visible)]="dialogVisible"></app-adding-new-data-entry> -->
 
   <!-- כותרת המסך: כותרת ותת-כותרת מימין, כפתור "יצירת נתון חדש" משמאל -->
   <header class="screenHeader">
@@ -35,9 +35,10 @@
     <div class="panel__table">
       <p-table
         [value]="rows"
-        dataKey="id"
+        dataKey="metricId"
         styleClass="catalogTable"
         showGridlines="false"
+        [loading]="isLoading"
         [scrollable]="true">
 
         <ng-template pTemplate="header">
@@ -53,13 +54,13 @@
 
         <ng-template pTemplate="body" let-row>
           <tr>
-            <td class="cellName"><strong>{{ row.name }}</strong></td>
-            <td>{{ row.source }}</td>
-            <td>{{ row.calculation }}</td>
-            <td>{{ row.grouping }}</td>
+            <td class="cellName"><strong>{{ row.metricName }}</strong></td>
+            <td>{{ row.sourceId }}</td>
+            <td>{{ row.calculationType }}</td>
+            <td>{{ row.groupFieldId }}</td>
             <td class="colStatus">
-              <span class="statusPill" [class.statusPill--off]="!row.active">
-                {{ row.active ? 'פעיל' : 'מושבת' }}
+              <span class="statusPill" [class.statusPill--off]="!row.isActive">
+                {{ row.isActive ? 'פעיל' : 'מושבת' }}
               </span>
             </td>
             <td class="colActions">
@@ -71,7 +72,7 @@
                 </p-button>
 
                 <p-button
-                  [label]="row.active ? 'השבתה' : 'הפעלה'"
+                  [label]="row.isActive ? 'השבתה' : 'הפעלה'"
                   styleClass="actionButton actionButton--light"
                   (onClick)="toggleRow(row)">
                 </p-button>
