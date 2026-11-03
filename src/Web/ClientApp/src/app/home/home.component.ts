@@ -5,10 +5,12 @@ import { AddingNewDataEntryComponent } from '../features/insta-data/adding-new-d
 import { MenueComponent } from '../menue/menue.component';
 import { RouterLink } from '@angular/router';
 
+import { RouterLink } from '@angular/router';
+
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [MenueComponent, ButtonModule, AddingNewDataEntryComponent,RouterLink],
+  imports: [MenueComponent, ButtonModule, AddingNewDataEntryComponent , RouterLink],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss']
 })
