@@ -1,139 +1,73 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, delay, map, of, throwError, tap } from 'rxjs';
+import { Observable, map } from 'rxjs';
 
+import { environment } from '../../../environments/environment';
 import {
+  CardIconOption,
   DataDefinitionDraft,
   DataSource,
   LookupOption,
   PreviewResult
 } from '../models/data-definition.model';
 
-/** ערכי ברירת מחדל של קטלוגי עזר (בשרת יגיעו מטבלאות) */
-export const CARD_ICON_OPTIONS: LookupOption[] = [
-  { id: 1, label: '▦ נתון' },
-  { id: 2, label: '₪ כספי' },
-  { id: 3, label: '▤ שומה' },
-  { id: 4, label: '◉ התראה' },
-  { id: 5, label: '🏷 הנחה' },
-  { id: 6, label: '🧾 שובר' },
-  { id: 7, label: '⚖ תביעה' }
-];
-
-export const CALCULATION_PERIOD_OPTIONS: LookupOption[] = [
-  { id: 1, label: 'לפי מסנן הלוח' },
-  { id: 2, label: '7 ימים' },
-  { id: 3, label: '30 ימים' },
-  { id: 4, label: '90 ימים' }
-];
-
 /**
- * מקורות נתונים לדוגמה (Mock).
- * כל מקור חושף שדות משלו — בדיוק כמו שיעשה ה-endpoint האמיתי.
- */
-const MOCK_SOURCES: DataSource[] = [
-  {
-    id: 1,
-    label: 'מקור נתונים 1',
-    fields: [
-      { key: 'createdAt', label: 'תאריך יצירה', kind: 'date' },
-      { key: 'amount', label: 'סכום', kind: 'number' },
-      { key: 'quantity', label: 'כמות', kind: 'number' },
-      { key: 'system', label: 'מערכת', kind: 'text' },
-      { key: 'accountNumber', label: 'מספר חשבון', kind: 'text' },
-      { key: 'status', label: 'סטטוס', kind: 'text' }
-    ],
-    dateMode: { field: 'createdAt', label: 'לפי מסנן הלוח', note: 'מוגדר בקטלוג מקור הנתונים' }
-  },
-  {
-    id: 2,
-    label: 'מקור נתונים 2',
-    fields: [
-      { key: 'updatedAt', label: 'תאריך עדכון', kind: 'date' },
-      { key: 'total', label: 'סכום כולל', kind: 'number' },
-      { key: 'accountNumber', label: 'מספר חשבון', kind: 'text' },
-      { key: 'system', label: 'מערכת', kind: 'text' },
-      { key: 'status', label: 'סטטוס', kind: 'text' }
-    ],
-    dateMode: { field: 'updatedAt', label: 'לפי תאריך העדכון', note: 'מוגדר בקטלוג מקור הנתונים' }
-  },
-  {
-    id: 3,
-    label: 'מקור נתונים 3',
-    fields: [
-      { key: 'createdAt', label: 'תאריך יצירה', kind: 'date' },
-      { key: 'amount', label: 'סכום', kind: 'number' },
-      { key: 'system', label: 'מערכת', kind: 'text' }
-    ],
-    dateMode: { field: 'createdAt', label: 'לפי תאריך יצירה', note: 'מוגדר בקטלוג מקור הנתונים' }
-  }
-];
-
-/**
- * שירות נתוני ההגדרה — כרגע Mock בצד הלקוח בלבד.
- * כשהשרת יהיה מוכן, מחליפים את גופי המתודות בקריאות HttpClient
- * והחתימות נשארות זהות.
+ * שירות נתוני ההגדרה — כל הקריאות לשרת מרוכזות כאן.
+ * הרכיבים תלויים בשירות הזה בלבד; החלפת מקור הנתונים
+ * (כגון שירות חיצוני לחלוטין) מתבצעת בקובץ הזה ולא בהם.
  */
 @Injectable({ providedIn: 'root' })
 export class DataDefinitionService {
-  /** המתנה קצרה כדי לדמות קריאת רשת ולהציג מצב טעינה */
-  private readonly simulatedLatencyMs = 250;
+  private readonly http = inject(HttpClient);
+  private readonly baseUrl = `${environment.baseUrl}/api/data-definitions`;
 
   getSources(): Observable<LookupOption[]> {
-    return of(MOCK_SOURCES.map(({ id, label }) => ({ id, label }))).pipe(delay(this.simulatedLatencyMs));
+    return this.http.get<LookupOption[]>(`${this.baseUrl}/sources`);
   }
 
   /** השדות שהוגדרו עבור מקור — נטען בעת בחירת מקור */
   getSourceFields(sourceId: number): Observable<DataSource> {
-    const source = MOCK_SOURCES.find(s => s.id === sourceId);
-    if (!source) {
-      return throwError(() => new Error('מקור נתונים לא נמצא'));
-    }
-    return of(source).pipe(delay(this.simulatedLatencyMs));
+    return this.http.get<DataSource>(`${this.baseUrl}/sources/${sourceId}`);
+  }
+
+  /** סמלי הכרטיס — הסמל מורכב מהתווית והסימן */
+  getCardIcons(): Observable<CardIconOption[]> {
+    return this.http.get<CardIconOption[]>(`${this.baseUrl}/card-icons`);
+  }
+
+  getCalculationPeriods(): Observable<LookupOption[]> {
+    return this.http.get<LookupOption[]>(`${this.baseUrl}/calculation-periods`);
+  }
+
+  /** חישוב תצוגה מקדימה — ללא שמירה */
+  preview(draft: DataDefinitionDraft): Observable<PreviewResult> {
+    return this.http.post<PreviewResult>(`${this.baseUrl}/preview`, this.toWire(draft));
+  }
+
+  /** שמירת נתון חדש — מחזיר את המזהה שנקבע בשרת */
+  save(draft: DataDefinitionDraft): Observable<number> {
+    return this.http
+      .post<{ id: number }>(this.baseUrl, this.toWire(draft), { withCredentials: true })
+      .pipe(map(response => response.id));
   }
 
   /**
-   * חישוב תצוגה מקדימה — ללא שמירה.
-   * מחזיר תוצאה דטרמיניסטית לפי ההגדרות, כדי שהדמו יהיה יציב.
+   * הפורמט שהשרת מצפה לו (DataDefinitionDraftDto).
+   * השמות שונים מהמודל המקומי (sourceId ↦ dataSourceId וכו'),
+   * ולכן ההמרה ממוקמת במקום אחד בלבד.
    */
-  preview(draft: DataDefinitionDraft): Observable<PreviewResult> {
-    const groupKey = draft.groupByFieldKey ?? draft.dateFieldKey ?? 'all';
-    const seed = `${draft.sourceId}-${groupKey}-${draft.calculationType}-${draft.summaryFieldKey}`;
-
-    const rowCount = draft.calculationType === 'COUNT' ? 3 : 4;
-    const rows = Array.from({ length: rowCount }, (_, i) => ({
-      key: `${groupKey}-${i + 1}`,
-      label: `פריט ${i + 1}`,
-      value: this.pseudoRandom(seed + i)
-    }));
-
-    const total = rows.reduce((sum, row) => sum + row.value, 0);
-    return of({ rows, total }).pipe(delay(this.simulatedLatencyMs));
-  }
-
-  /** שמירה בקטלוג המרכזי — Mock: מחזיר מזהה חדש */
-  save(draft: DataDefinitionDraft): Observable<number> {
-    return of({}).pipe(
-      delay(this.simulatedLatencyMs),
-      tap(() => savedDefinitions.push({ ...draft })),
-      // המזהה מחושב רק לאחר שהרשומה נוספה בפועל
-      map(() => savedDefinitions.length)
-    );
-  }
-
-  /** הנתונים שנשמרו — נדרש להצגה ברשימה (לוח הבקרה אינו בטווח) */
-  getSaved(): DataDefinitionDraft[] {
-    return [...savedDefinitions];
-  }
-
-  /** חישוב דטרמיניסטי פשוט — רק כדי שהתצוגה המקדימה תיראה הגיונית */
-  private pseudoRandom(seed: string): number {
-    let hash = 0;
-    for (let i = 0; i < seed.length; i++) {
-      hash = (hash * 31 + seed.charCodeAt(i)) | 0;
-    }
-    return Math.abs(hash % 1000) + 10;
+  private toWire(draft: DataDefinitionDraft) {
+    return {
+      name: draft.name,
+      dataSourceId: draft.sourceId,
+      cardIconId: draft.iconId,
+      calculationPeriodId: draft.periodId,
+      calculationType: draft.calculationType === 'SUM' ? 1 : 0,
+      summaryFieldKey: draft.summaryFieldKey,
+      groupByFieldKey: draft.groupByFieldKey,
+      dateFieldKey: draft.dateFieldKey,
+      detailFields: draft.detailFields,
+      showInDashboard: draft.showInDashboard
+    } satisfies Record<string, unknown>;
   }
 }
-
-// מחסן דמו לשמירות — להסרה עם חיבור ה-API האמיתי
-const savedDefinitions: DataDefinitionDraft[] = [];
