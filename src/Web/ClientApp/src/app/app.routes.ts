@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router';
+import { DataManagementScreen } from './DataManagementScreen/DataManagementScreen';
+import { DisplayManagementComponent } from './display-management/display-management.component';
 
 export const routes: Routes = [
   {
