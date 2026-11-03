@@ -26,6 +26,10 @@ export const routes: Routes = [
         m => m.AddingNewDataEntryComponent
       )
   },
-  { path: 'display-management', component: DisplayManagementComponent },
+  {
+    path: 'data-management',
+    loadComponent: () => import('./DataManagementScreen/DataManagementScreen').then(m => m.DataManagementScreen)
+  },
   { path: '**', redirectTo: '' },
+   
 ];

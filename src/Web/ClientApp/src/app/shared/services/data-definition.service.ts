@@ -1,7 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
-
 import { environment } from '../../../environments/environment';
 import {
   CardIconOption,
@@ -10,6 +9,28 @@ import {
   LookupOption,
   PreviewResult
 } from '../models/data-definition.model';
+import { DataCatalogClient, Metric, SetMetricActiveRequest } from '../../web-api-client';
+
+/**
+ * ערכי ברירת מחדל של קטלוגי העזר (בשרת יגיעו מטבלאות עזר).
+ * משמשים כערכי התחלה בטופס ובערכי ברירת המחדל שלו.
+ */
+export const CARD_ICON_OPTIONS: CardIconOption[] = [
+  { id: 1, label: '▦ נתון' },
+  { id: 2, label: '₪ כספי' },
+  { id: 3, label: '▤ שומה' },
+  { id: 4, label: '◉ התראה' },
+  { id: 5, label: '🏷 הנחה' },
+  { id: 6, label: '🧾 שובר' },
+  { id: 7, label: '⚖ תביעה' }
+];
+
+export const CALCULATION_PERIOD_OPTIONS: LookupOption[] = [
+  { id: 1, label: 'לפי מסנן הלוח' },
+  { id: 2, label: '7 ימים' },
+  { id: 3, label: '30 ימים' },
+  { id: 4, label: '90 ימים' }
+];
 
 /**
  * שירות נתוני ההגדרה — כל הקריאות לשרת מרוכזות כאן.
@@ -19,6 +40,8 @@ import {
 @Injectable({ providedIn: 'root' })
 export class DataDefinitionService {
   private readonly http = inject(HttpClient);
+  private readonly dataCatalogClient = inject(DataCatalogClient);
+
   private readonly baseUrl = `${environment.baseUrl}/api/data-definitions`;
 
   getSources(): Observable<LookupOption[]> {
@@ -70,4 +93,27 @@ export class DataDefinitionService {
       showInDashboard: draft.showInDashboard
     } satisfies Record<string, unknown>;
   }
+
+
+  //הוספות של הני
+  
+    /** קטלוג הנתונים — כל הנתונים מטבלת CTRL_Metrics */
+  getAllMetrics(): Observable<Metric[]> {
+    return this.dataCatalogClient.get();
+  }
+    /** שינוי מצב פעיל / מושבת — נשמר ב-DB */
+  setMetricActive(metricId: number, isActive: boolean): Observable<void> {
+    return this.dataCatalogClient
+      .setActive(metricId, new SetMetricActiveRequest({ isActive }))
+      .pipe(map(() => undefined));
+  }
+
+      /** מחיקת נתון — נמחקת מ-DB */
+  deleteMetric(metricId: number): Observable<void> {
+    return this.dataCatalogClient
+      .delete(metricId)
+      .pipe(map(() => undefined));
+  }
+
+
 }
