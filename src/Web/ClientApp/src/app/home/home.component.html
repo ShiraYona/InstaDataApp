@@ -15,6 +15,7 @@
   </div>
 </div>
 
+<!-- הדיאלוג מוטמע במסך שממנו הוא נפתח — הרקע שמאחוריו נשאר גלוי ומטושטש -->
 <app-adding-new-data-entry
-  [(visible)]="dialogVisible"
-  (saved)="onDataSaved($event)" />
+    [(visible)]="newDataVisible"
+    (saved)="onNewDataSaved()" />

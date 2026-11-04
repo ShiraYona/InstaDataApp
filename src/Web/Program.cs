@@ -20,7 +20,7 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
-builder.Services.AddWebServices(builder.Configuration);
+builder.Services.AddWebServices(builder.Configuration, builder.Environment);
 
 builder.Services.AddCors(options =>
 {
@@ -35,9 +35,15 @@ builder.Services
     .AddAuthentication(NegotiateDefaults.AuthenticationScheme)
     .AddNegotiate();
 
+var launchProfile = Environment.GetEnvironmentVariable("DOTNET_LAUNCH_PROFILE");
+var allowAnonymousInDevelopment = builder.Environment.IsDevelopment()
+    && !string.Equals(launchProfile, "IIS Express", StringComparison.OrdinalIgnoreCase);
+
 builder.Services.AddAuthorization(options =>
 {
-    options.FallbackPolicy = options.DefaultPolicy;
+    options.FallbackPolicy = allowAnonymousInDevelopment
+        ? new AuthorizationPolicyBuilder().RequireAssertion(_ => true).Build()
+        : options.DefaultPolicy;
 });
 
 builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = null);
@@ -60,10 +66,7 @@ app.UseSerilogRequestLogging();
 
 app.UseHttpsRedirection();
 
-// Static files (favicon.ico, SPA assets...) are served before authentication.
-// Browsers request favicon.ico anonymously and in parallel with the page request;
-// letting it reach Negotiate throws "An anonymous request was received in between
-// authentication handshake requests."
+
 app.UseStaticFiles();
 
 app.UseCors("AllowAngular");
@@ -73,8 +76,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Status-code re-execution runs AFTER authentication, so the fallback policy has
-// already been applied once and does not re-enter the challenge loop.
+
 app.UseStatusCodePagesWithReExecute("/Error", "?code={0}");
 
 app.MapHealthChecks("/health").AllowAnonymous();

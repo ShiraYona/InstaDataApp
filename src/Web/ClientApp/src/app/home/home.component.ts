@@ -15,15 +15,15 @@ export class HomeComponent {
   title = 'כותרת';
   description = 'טקסט לדוגמה';
 
-  /** שליטה בפתיחת דיאלוג "יצירת נתון חדש" */
-  dialogVisible = false;
+  /** הדיאלוג "יצירת נתון חדש" נפתח מעל המסך הזה — אין ניווט */
+  newDataVisible = false;
 
   openNewDataDialog(): void {
-    this.dialogVisible = true;
+    this.newDataVisible = true;
   }
 
-  /** נקרא אחרי שמירה מוצלחת — כאן המקום לרענון רשימות בעתיד */
-  onDataSaved(_id: number): void {
-    // TODO: לרענן את הרשימה/לוח הבקרה כשיהיה חיבור לנתונים האמיתיים
+  /** הנתון נשמר — סגירת הדיאלוג נעשתה ברכיב; כאן מרעננים את המסך */
+  onNewDataSaved(): void {
+    this.newDataVisible = false;
   }
 }

@@ -15,4 +15,759 @@ import { HttpClient, HttpHeaders, HttpResponse, HttpResponseBase } from '@angula
 
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
 
+@Injectable({
+    providedIn: 'root'
+})
+export class DataDefinitionsClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
 
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(API_BASE_URL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    getSources(): Observable<LookupOptionDto[]> {
+        let url_ = this.baseUrl + "/api/data-definitions/sources";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetSources(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGetSources(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<LookupOptionDto[]>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<LookupOptionDto[]>;
+        }));
+    }
+
+    protected processGetSources(response: HttpResponseBase): Observable<LookupOptionDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(LookupOptionDto.fromJS(item));
+            }
+            else {
+                result200 = <any>null;
+            }
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    getSource(sourceId: number): Observable<DataSourceDto> {
+        let url_ = this.baseUrl + "/api/data-definitions/sources/{sourceId}";
+        if (sourceId === undefined || sourceId === null)
+            throw new Error("The parameter 'sourceId' must be defined.");
+        url_ = url_.replace("{sourceId}", encodeURIComponent("" + sourceId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetSource(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGetSource(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<DataSourceDto>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<DataSourceDto>;
+        }));
+    }
+
+    protected processGetSource(response: HttpResponseBase): Observable<DataSourceDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = DataSourceDto.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    getCardIcons(): Observable<LookupOptionDto[]> {
+        let url_ = this.baseUrl + "/api/data-definitions/card-icons";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetCardIcons(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGetCardIcons(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<LookupOptionDto[]>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<LookupOptionDto[]>;
+        }));
+    }
+
+    protected processGetCardIcons(response: HttpResponseBase): Observable<LookupOptionDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(LookupOptionDto.fromJS(item));
+            }
+            else {
+                result200 = <any>null;
+            }
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    getCalculationPeriods(): Observable<LookupOptionDto[]> {
+        let url_ = this.baseUrl + "/api/data-definitions/calculation-periods";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetCalculationPeriods(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGetCalculationPeriods(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<LookupOptionDto[]>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<LookupOptionDto[]>;
+        }));
+    }
+
+    protected processGetCalculationPeriods(response: HttpResponseBase): Observable<LookupOptionDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(LookupOptionDto.fromJS(item));
+            }
+            else {
+                result200 = <any>null;
+            }
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    getCalculationTypes(): Observable<LookupOptionDto[]> {
+        let url_ = this.baseUrl + "/api/data-definitions/calculation-types";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetCalculationTypes(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGetCalculationTypes(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<LookupOptionDto[]>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<LookupOptionDto[]>;
+        }));
+    }
+
+    protected processGetCalculationTypes(response: HttpResponseBase): Observable<LookupOptionDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(LookupOptionDto.fromJS(item));
+            }
+            else {
+                result200 = <any>null;
+            }
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    preview(draft: MetricDraftDto): Observable<PreviewResultDto> {
+        let url_ = this.baseUrl + "/api/data-definitions/preview";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(draft);
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processPreview(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processPreview(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<PreviewResultDto>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<PreviewResultDto>;
+        }));
+    }
+
+    protected processPreview(response: HttpResponseBase): Observable<PreviewResultDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = PreviewResultDto.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    create(draft: MetricDraftDto): Observable<number> {
+        let url_ = this.baseUrl + "/api/data-definitions";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(draft);
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processCreate(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processCreate(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<number>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<number>;
+        }));
+    }
+
+    protected processCreate(response: HttpResponseBase): Observable<number> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+                result200 = resultData200 !== undefined ? resultData200 : <any>null;
+    
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+}
+
+export class LookupOptionDto implements ILookupOptionDto {
+    value?: string;
+    label?: string;
+    icon?: string | undefined;
+
+    constructor(data?: ILookupOptionDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.value = _data["value"];
+            this.label = _data["label"];
+            this.icon = _data["icon"];
+        }
+    }
+
+    static fromJS(data: any): LookupOptionDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new LookupOptionDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["value"] = this.value;
+        data["label"] = this.label;
+        data["icon"] = this.icon;
+        return data;
+    }
+}
+
+export interface ILookupOptionDto {
+    value?: string;
+    label?: string;
+    icon?: string | undefined;
+}
+
+export class DataSourceDto implements IDataSourceDto {
+    sourceId?: number;
+    label?: string;
+    dateFieldId?: number | undefined;
+    fields?: DataSourceFieldDto[];
+
+    constructor(data?: IDataSourceDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.sourceId = _data["sourceId"];
+            this.label = _data["label"];
+            this.dateFieldId = _data["dateFieldId"];
+            if (Array.isArray(_data["fields"])) {
+                this.fields = [] as any;
+                for (let item of _data["fields"])
+                    this.fields!.push(DataSourceFieldDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): DataSourceDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new DataSourceDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["sourceId"] = this.sourceId;
+        data["label"] = this.label;
+        data["dateFieldId"] = this.dateFieldId;
+        if (Array.isArray(this.fields)) {
+            data["fields"] = [];
+            for (let item of this.fields)
+                data["fields"].push(item.toJSON());
+        }
+        return data;
+    }
+}
+
+export interface IDataSourceDto {
+    sourceId?: number;
+    label?: string;
+    dateFieldId?: number | undefined;
+    fields?: DataSourceFieldDto[];
+}
+
+export class DataSourceFieldDto implements IDataSourceFieldDto {
+    fieldId?: number;
+    label?: string;
+    dataType?: string;
+    isSummable?: boolean;
+    isGroupable?: boolean;
+
+    constructor(data?: IDataSourceFieldDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.fieldId = _data["fieldId"];
+            this.label = _data["label"];
+            this.dataType = _data["dataType"];
+            this.isSummable = _data["isSummable"];
+            this.isGroupable = _data["isGroupable"];
+        }
+    }
+
+    static fromJS(data: any): DataSourceFieldDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new DataSourceFieldDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["fieldId"] = this.fieldId;
+        data["label"] = this.label;
+        data["dataType"] = this.dataType;
+        data["isSummable"] = this.isSummable;
+        data["isGroupable"] = this.isGroupable;
+        return data;
+    }
+}
+
+export interface IDataSourceFieldDto {
+    fieldId?: number;
+    label?: string;
+    dataType?: string;
+    isSummable?: boolean;
+    isGroupable?: boolean;
+}
+
+export class PreviewResultDto implements IPreviewResultDto {
+    rows?: PreviewRowDto[];
+    total?: number;
+
+    constructor(data?: IPreviewResultDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["rows"])) {
+                this.rows = [] as any;
+                for (let item of _data["rows"])
+                    this.rows!.push(PreviewRowDto.fromJS(item));
+            }
+            this.total = _data["total"];
+        }
+    }
+
+    static fromJS(data: any): PreviewResultDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new PreviewResultDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.rows)) {
+            data["rows"] = [];
+            for (let item of this.rows)
+                data["rows"].push(item.toJSON());
+        }
+        data["total"] = this.total;
+        return data;
+    }
+}
+
+export interface IPreviewResultDto {
+    rows?: PreviewRowDto[];
+    total?: number;
+}
+
+export class PreviewRowDto implements IPreviewRowDto {
+    key?: string;
+    label?: string;
+    value?: number;
+
+    constructor(data?: IPreviewRowDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.key = _data["key"];
+            this.label = _data["label"];
+            this.value = _data["value"];
+        }
+    }
+
+    static fromJS(data: any): PreviewRowDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new PreviewRowDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["key"] = this.key;
+        data["label"] = this.label;
+        data["value"] = this.value;
+        return data;
+    }
+}
+
+export interface IPreviewRowDto {
+    key?: string;
+    label?: string;
+    value?: number;
+}
+
+export class MetricDraftDto implements IMetricDraftDto {
+    name?: string;
+    sourceId?: number;
+    calculationType?: string;
+    sumFieldId?: number | undefined;
+    groupFieldId?: number | undefined;
+    dateRangeType?: string;
+    iconCode?: string | undefined;
+    detailFieldIds?: number[];
+    displayInDashboard?: boolean;
+
+    constructor(data?: IMetricDraftDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["name"];
+            this.sourceId = _data["sourceId"];
+            this.calculationType = _data["calculationType"];
+            this.sumFieldId = _data["sumFieldId"];
+            this.groupFieldId = _data["groupFieldId"];
+            this.dateRangeType = _data["dateRangeType"];
+            this.iconCode = _data["iconCode"];
+            if (Array.isArray(_data["detailFieldIds"])) {
+                this.detailFieldIds = [] as any;
+                for (let item of _data["detailFieldIds"])
+                    this.detailFieldIds!.push(item);
+            }
+            this.displayInDashboard = _data["displayInDashboard"];
+        }
+    }
+
+    static fromJS(data: any): MetricDraftDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new MetricDraftDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        data["sourceId"] = this.sourceId;
+        data["calculationType"] = this.calculationType;
+        data["sumFieldId"] = this.sumFieldId;
+        data["groupFieldId"] = this.groupFieldId;
+        data["dateRangeType"] = this.dateRangeType;
+        data["iconCode"] = this.iconCode;
+        if (Array.isArray(this.detailFieldIds)) {
+            data["detailFieldIds"] = [];
+            for (let item of this.detailFieldIds)
+                data["detailFieldIds"].push(item);
+        }
+        data["displayInDashboard"] = this.displayInDashboard;
+        return data;
+    }
+}
+
+export interface IMetricDraftDto {
+    name?: string;
+    sourceId?: number;
+    calculationType?: string;
+    sumFieldId?: number | undefined;
+    groupFieldId?: number | undefined;
+    dateRangeType?: string;
+    iconCode?: string | undefined;
+    detailFieldIds?: number[];
+    displayInDashboard?: boolean;
+}
+
+export class ApiException extends Error {
+    override message: string;
+    status: number;
+    response: string;
+    headers: { [key: string]: any; };
+    result: any;
+
+    constructor(message: string, status: number, response: string, headers: { [key: string]: any; }, result: any) {
+        super();
+
+        this.message = message;
+        this.status = status;
+        this.response = response;
+        this.headers = headers;
+        this.result = result;
+    }
+
+    protected isApiException = true;
+
+    static isApiException(obj: any): obj is ApiException {
+        return obj.isApiException === true;
+    }
+}
+
+function throwException(message: string, status: number, response: string, headers: { [key: string]: any; }, result?: any): Observable<any> {
+    if (result !== null && result !== undefined)
+        return _observableThrow(result);
+    else
+        return _observableThrow(new ApiException(message, status, response, headers, null));
+}
+
+function blobToText(blob: any): Observable<string> {
+    return new Observable<string>((observer: any) => {
+        if (!blob) {
+            observer.next("");
+            observer.complete();
+        } else {
+            let reader = new FileReader();
+            reader.onload = event => {
+                observer.next((event.target as any).result);
+                observer.complete();
+            };
+            reader.readAsText(blob);
+        }
+    });
+}

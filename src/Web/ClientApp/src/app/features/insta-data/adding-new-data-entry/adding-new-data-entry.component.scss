@@ -1,8 +1,7 @@
 // עיצוב הדיאלוג מועתק מקובץ הדמו:
 // .modalback / .modal / .modalhead / .modalbody / .banner / .formgrid /
 // .field / .full / .hint / .fieldset / .checks / .toggle / .actionrow / .panel / .close
-// ההבדל היחיד: אין גלילה בתוך הדיאלוג — הוא נפרס לגובה התוכן,
-// ואם התוכן גבוה מהמסך נגלל הרקע שמאחוריו.
+// ההבדל היחיד: אין גלילה בתוך הדיאלוג — הוא נפרס לגובה התוכן.
 
 :host {
   display: block;
@@ -24,13 +23,21 @@
   }
 }
 
-// --- .modalback: שכבת הרקע של הדיאלוג ---
-// הרווח העליון קטן מהתחתון — הדיאלוג צמוד יותר לראש המסך
-:host ::ng-deep .p-dialog-mask {
-  background: #0b1837a8;
-  // הרווח התחתון גדול — כדי שיהיה אוויר מתחת לדיאלוג כשהגלילה בתחתית
-  padding: 10px 22px 120px;
-  // גלילת התוכן נעשית כאן, מחוץ לדיאלוג
+// --- שכבת ה-mask: הרקע שמאחורי הדיאלוג ---
+// ה-mask נדחף ל-DOM של <body> (appendTo ברירת המחדל), ולכן ::ng-deep כאן חל גלובלית.
+// המסך שמאחוריו נשאר גלוי, אך מטושטש (backdrop-filter) ומוחשך מעט,
+// כדי שהדיאלוג יבלוט. השכבה נעלמת עם סגירת הדיאלוג.
+.new-data-dialog-mask.p-dialog-mask {
+  background: rgba(6, 16, 44, 0.25);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+// --- .modalback: המסגרת החיצונית של הדיאלוג ---
+// מסיבה זו אין כאן רקע: רקע על המסגרת היה מצייר "וילון" קבוע על המסך.
+// הרקע מונח על שכבת ה-mask (ראו maskStyleClass בתבנית), והיא נעלמת בסגירה.
+.new-data-dialog {
+  // הדיאלוג נפרס לגובה התוכן; אם הוא גבוה מהמסך — נגלל רק הוא
   align-items: flex-start;
   overflow-y: auto;
 }
@@ -127,6 +134,31 @@
   grid-column: 1 / -1;
 }
 
+// --- .source-row ---
+// "מקור נתונים" + "סמל כרטיס" זו לצד זה, כמו שתי הרשימות בדמו.
+// הרשימה של המקור רחבה יותר — שמות מקורות ארוכים יותר משמות סמלים.
+.source-row {
+  display: grid;
+  // ב-RTL העמודה הראשונה היא הימנית — ולכן המקור מקבל את היחס הגדול
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 15px;
+}
+
+// ערך/שורה בתוך רשימה נפתחת — אייקון משמאל וטקסט מימין
+:host ::ng-deep .select-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  i {
+    font-size: 14px;
+    color: #5b7391;
+  }
+}
+
 // --- .hint ---
 .hint {
   font-size: 12px;
@@ -144,8 +176,13 @@
 // בדמו: input,select{width:100%;background:white;border:1px solid #d4dfeb;
 //   border-radius:8px;padding:10px;color:#223b5a;outline-color:#3684e7}
 :host ::ng-deep .field {
-  .p-inputtext,
+  p-select,
   .p-select {
+    width: 100%;
+  }
+
+  // ה-inputElementHandler עוטף את ה-input — בלי רוחב מלא התיבה נשארת ברוחב הטקסט
+  .p-inputtext {
     width: 100%;
   }
 
@@ -235,12 +272,14 @@
 }
 
 // --- .checks ---
+// הפריט הוא div (ולא label) — ל-p-checkbox יש label פנימי, ו-label בתוך label
+// מבטל את ה-click של ה-input ולכן הסימון לא מתהפך.
 .checks {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
 
-  label {
+  .check-item {
     display: flex;
     align-items: center;
     gap: 7px;
@@ -248,6 +287,11 @@
     padding: 9px 12px;
     border-radius: 8px;
     font-size: 13px;
+
+    // ה-label שבתוך הפריט — הטקסט לחיץ ומעביר את הלחיצה לתיבה
+    label {
+      cursor: pointer;
+    }
   }
 }
 
@@ -256,6 +300,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
+
+  label {
+    cursor: pointer;
+  }
 }
 
 // --- ריבוע הסימון ---
@@ -289,17 +337,26 @@
 }
 
 // --- .actionrow ---
+// שורה אחת: הכפתורים בצד ימין (תחילת השורה ב-RTL) והצ'קבוקס בצד שמאל
 .actionrow {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 9px;
   flex-wrap: wrap;
   margin-top: 22px;
 
   // הטקסט עצמו מודגש — ה-label של p-button הוא span פנימי,
   // ולכן font-weight על הכפתור לא מספיק
-  :host ::ng-deep .p-button-label {
+  ::ng-deep .p-button-label {
     font-weight: 700;
   }
+}
+
+.actionrow__buttons {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
 }
 
 // .btn
@@ -335,6 +392,16 @@
   }
 }
 
+:host ::ng-deep .toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #465e7a;
+  cursor: pointer;
+  user-select: none;
+}
+
 // --- .panel ---
 .panel {
   background: #fff;
@@ -354,11 +421,37 @@
     color: #6e8198;
     line-height: 1.55;
   }
+
+  // שורות הפירוט — שורה לכל שדה, עם קו הפרדה דק
+  &__rows {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+      color: #223b5a;
+      padding: 8px 0;
+      border-top: 1px solid #eef2f8;
+
+      &:first-child {
+        border-top: 0;
+      }
+    }
+  }
 }
 
 @media (max-width: 760px) {
-  .formgrid {
+  .formgrid,
+  .source-row {
     grid-template-columns: 1fr;
+  }
+
+  .actionrow {
+    justify-content: flex-start;
   }
 }
 

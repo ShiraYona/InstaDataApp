@@ -8,6 +8,7 @@
     [showHeader]="false"
     [dismissableMask]="true"
     [styleClass]="'new-data-dialog'"
+    [maskStyleClass]="'new-data-dialog-mask'"
     [style]="{ width: 'min(100%, 1050px)' }"
     (visibleChange)="visibleChange.emit($event)">
 
@@ -37,33 +38,76 @@
                     }
                 </div>
 
-                <div class="field">
+                <!-- כמו בדמו: "מקור נתונים" עם שתי רשימות זו לצד זו —
+                     הראשונה למקור, השנייה לסמל הכרטיס.
+                     בשתי הרשימות הערך שנבחר (המקור / הסמל) מוצג בתוך השדה;
+                     שם השדה נשאר בתווית שמעליו. -->
+                <div class="field full">
                     <label for="eSource">מקור נתונים *</label>
-                    <p-select
-                        inputId="eSource"
-                        formControlName="sourceId"
-                        [options]="sources"
-                        optionLabel="label"
-                        optionValue="id"
-                        panelStyleClass="demo-select-panel"
-                        [panelStyle]="{ width: '100%' }"
-                        appendTo="self" />
+                    <div class="source-row">
+                        <!-- optionValue="value" — הערך בטופס הוא המחרוזת שמוחזרת בשרת -->
+                        <p-select
+                            inputId="eSource"
+                            formControlName="sourceId"
+                            aria-label="מקור נתונים"
+                            [options]="sources"
+                            optionLabel="label"
+                            optionValue="value"
+                            placeholder="בחירת מקור"
+                            panelStyleClass="demo-select-panel"
+                            [panelStyle]="{ width: '100%' }"
+                            appendTo="self">
+                            <ng-template let-option pTemplate="item">
+                                <span class="select-item">
+                                    @if (option.icon) {
+                                        <i [class]="option.icon"></i>
+                                    }
+                                    {{ option.label }}
+                                </span>
+                            </ng-template>
+                            <ng-template let-option pTemplate="selectedItem">
+                                <span class="select-item">
+                                    @if (option.icon) {
+                                        <i [class]="option.icon"></i>
+                                    }
+                                    {{ option.label }}
+                                </span>
+                            </ng-template>
+                        </p-select>
+                        <!-- "סמל כרטיס" — מהרשימה שבטבלת העזר CTRL_CardIcons (תווית + אייקון מהמסד).
+                             הערך שנבחר כאן מעדכן את iconCode שנשלח לשרת -->
+                        <p-select
+                            inputId="eIcon"
+                            formControlName="cardSourceId"
+                            aria-label="סמל כרטיס"
+                            [options]="cardIcons"
+                            optionLabel="label"
+                            optionValue="value"
+                            placeholder="בחירת סמל"
+                            panelStyleClass="demo-select-panel"
+                            [panelStyle]="{ width: '100%' }"
+                            appendTo="self">
+                            <ng-template let-option pTemplate="item">
+                                <span class="select-item">
+                                    @if (option.icon) {
+                                        <i [class]="option.icon"></i>
+                                    }
+                                    {{ option.label }}
+                                </span>
+                            </ng-template>
+                            <ng-template let-option pTemplate="selectedItem">
+                                <span class="select-item">
+                                    @if (option.icon) {
+                                        <i [class]="option.icon"></i>
+                                    }
+                                    {{ option.label }}
+                                </span>
+                            </ng-template>
+                        </p-select>
+                    </div>
                     @if (isFieldInvalid('sourceId')) {
                         <span class="error">יש לבחור מקור נתונים</span>
                     }
-                </div>
-
-                <div class="field">
-                    <label for="eIcon">סמל כרטיס</label>
-                    <p-select
-                        inputId="eIcon"
-                        formControlName="iconId"
-                        [options]="iconOptions"
-                        optionLabel="label"
-                        optionValue="id"
-                        panelStyleClass="demo-select-panel"
-                        [panelStyle]="{ width: '100%' }"
-                        appendTo="self" />
                 </div>
             </div>
 
@@ -83,13 +127,19 @@
                         <label for="eRange">תקופת חישוב</label>
                         <p-select
                             inputId="eRange"
-                            formControlName="periodId"
+                            formControlName="dateRangeType"
                             [options]="rangeOptions"
                             optionLabel="label"
-                            optionValue="id"
+                            optionValue="value"
                             panelStyleClass="demo-select-panel"
                             [panelStyle]="{ width: '100%' }"
-                            appendTo="self" />
+                            appendTo="self">
+                            <ng-template let-option pTemplate="item">{{ labelOf(rangeOptions, option.value) }}</ng-template>
+                            <ng-template let-option pTemplate="selectedItem">{{ labelOf(rangeOptions, option.value) }}</ng-template>
+                        </p-select>
+                        @if (isFieldInvalid('dateRangeType')) {
+                            <span class="error">יש לבחור תקופת חישוב</span>
+                        }
                     </div>
 
                     <div class="field">
@@ -107,85 +157,114 @@
 
                     <!-- כמו בדמו: השדה קיים תמיד ומוסתר באמצעות display -->
                     <div class="field" [style.display]="isSummaryVisible ? '' : 'none'">
-                        <label for="eSum">שדה לסיכום</label>
+                        <label for="eSum">שדה לסיכום *</label>
                         <p-select
                             inputId="eSum"
-                            formControlName="summaryFieldKey"
+                            formControlName="sumFieldId"
                             [options]="summaryFields"
                             optionLabel="label"
-                            optionValue="key"
-                            [disabled]="!selectedSource"
+                            optionValue="fieldId"
+                            [readonly]="!selectedSource"
+                            placeholder="בחירת שדה"
                             panelStyleClass="demo-select-panel"
                             [panelStyle]="{ width: '100%' }"
                             appendTo="self" />
+                        @if (isFieldInvalid('sumFieldId')) {
+                            <span class="error">יש לבחור שדה לסיכום</span>
+                        }
                     </div>
 
-                    <div class="field full">
+                    <div class="field">
                         <label for="eGroup">קיבוץ לפי</label>
                         <p-select
                             inputId="eGroup"
-                            formControlName="groupByFieldKey"
+                            formControlName="groupFieldId"
                             [options]="groupByOptions"
                             optionLabel="label"
-                            optionValue="key"
+                            optionValue="fieldId"
                             panelStyleClass="demo-select-panel"
                             [panelStyle]="{ width: '100%' }"
                             appendTo="self" />
+                        @if (!selectedSource) {
+                            <span class="hint">בחירת מקור נתונים תציג את השדות הזמינים לקיבוץ</span>
+                        }
                     </div>
 
                     <div class="field full">
                         <label>שדות להצגה בפירוט</label>
                         <div class="checks">
-                            @for (option of detailFieldOptions; track option.key) {
-                                <label [for]="'detail-' + option.key">
+                            @for (option of detailFieldOptions; track option.fieldId) {
+                                <!-- div ולא label: ל-p-checkbox יש label פנימי משלו,
+                                     ו-label בתוך label מבטל את ה-click של ה-input -->
+                                <div class="check-item">
                                     <p-checkbox
-                                        [inputId]="'detail-' + option.key"
-                                        [value]="option.key"
-                                        formControlName="detailFields" />
-                                    {{ option.label }}
-                                </label>
+                                        [inputId]="'detail-' + option.fieldId"
+                                        [value]="option.fieldId"
+                                        formControlName="detailFieldIds" />
+                                    <label [for]="'detail-' + option.fieldId">{{ option.label }}</label>
+                                </div>
+                            } @empty {
+                                <span class="hint">בחירת מקור נתונים תציג את השדות הזמינים</span>
                             }
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="fieldset">
-                <label class="toggle" for="eActive">
+            <!-- שורת התחתית: הכפתורים מימין, הצ'קבוקס בקצה שמאל — כמו בדמו -->
+            <div class="actionrow">
+                <div class="actionrow__buttons">
+                    <p-button label="שמירת נתון" [loading]="saving" [disabled]="previewing" (onClick)="save()" />
+                    <p-button
+                        label="תצוגה מקדימה"
+                        severity="secondary"
+                        [outlined]="true"
+                        [loading]="previewing"
+                        [disabled]="saving"
+                        (onClick)="preview()" />
+                    <p-button
+                        label="ביטול"
+                        severity="secondary"
+                        [outlined]="true"
+                        [disabled]="saving || previewing"
+                        (onClick)="cancel()" />
+                </div>
+
+                <!-- div במקום label — מאותה סיבה כמו בשדות הפירוט -->
+                <div class="toggle">
                     <p-checkbox
+                        inputId="eDisplayInDashboard"
                         [binary]="true"
-                        inputId="eActive"
-                        formControlName="showInDashboard" />
-                    הצגת הנתון במערכת הניהול והבקרה
-                </label>
+                        formControlName="displayInDashboard" />
+                    <label for="eDisplayInDashboard">הצגת הנתון במערכת הניהול והבקרה</label>
+                </div>
             </div>
 
         </form>
-
-        <div class="actionrow">
-            <p-button label="שמירת נתון" [disabled]="previewing" (onClick)="save()" />
-            <p-button
-                label="תצוגה מקדימה"
-                severity="secondary"
-                [outlined]="true"
-                [disabled]="saving"
-                (onClick)="preview()" />
-            <p-button
-                label="ביטול"
-                severity="secondary"
-                [outlined]="true"
-                [disabled]="saving || previewing"
-                (onClick)="cancel()" />
-        </div>
 
         <div id="preview">
             @if (previewResult; as result) {
                 <div class="panel">
                     <strong>תצוגה מקדימה</strong>
-                    <p>{{ draftName }} · {{ result.total }} · מקור: {{ selectedSource?.label }}</p>
+                    <p>
+                        {{ draftName || 'ללא שם' }}
+                        · סה"כ {{ result.total }}
+                        · מקור: {{ selectedSource?.label ?? 'ללא' }}
+                    </p>
+                    @if (result.rows.length > 0) {
+                        <ul class="panel__rows">
+                            @for (row of result.rows; track row.key) {
+                                <li>
+                                    <span>{{ row.label }}</span>
+                                    <span>{{ row.value }}</span>
+                                </li>
+                            }
+                        </ul>
+                    } @else {
+                        <p class="hint">אין שדות פירוט להצגה — יש לבחור שדות להצגה בפירוט</p>
+                    }
                 </div>
             }
-
         </div>
     </div>
 </p-dialog>

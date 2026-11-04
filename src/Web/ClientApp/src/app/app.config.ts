@@ -24,6 +24,16 @@ export const MyPreset = definePreset(Aura, {
       800: '#20355a',
       900: '#1a2b48',
       950: '#101b2e'
+    },
+    // Aura ברירת מחדל: sm=4px, md=6px, lg=8px, xl=12px — שדות וכפתורים kv=6px.
+    // העמודים המצולמים עגולים יותר, לכן מרימים את הסקלה בעקביות (הכל נגזר מכאן).
+    border: {
+      radius: {
+        sm: '6px',
+        md: '8px',
+        lg: '10px',
+        xl: '14px'
+      }
     }
   }
 });

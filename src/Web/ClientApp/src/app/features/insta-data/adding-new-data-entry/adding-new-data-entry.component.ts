@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
@@ -9,34 +9,34 @@ import { SelectModule } from 'primeng/select';
 import { Subscription } from 'rxjs';
 
 import {
-  CALCULATION_TYPE_OPTIONS,
   CalculationType,
-  DataDefinitionDraft,
   DataSource,
   LookupOption,
+  MetricDraft,
   PreviewResult
 } from '../../../shared/models/data-definition.model';
-import {
-  CALCULATION_PERIOD_OPTIONS,
-  CARD_ICON_OPTIONS,
-  DataDefinitionService
-} from '../../../shared/services/data-definition.service';
-import { NotificationService } from '../../../shared/services/notification.service';
+import { DataDefinitionService } from '../../../shared/services/data-definition.service';
 
-/** ערכי ברירת המחדל של טופס חדש — לפי האפיון: "ערכי ברירת מחדל" */
 const DEFAULT_CALCULATION_TYPE: CalculationType = 'COUNT';
 
-/** כמה שדות מסומנים כברירת מחדל ב"שדות להצגה בפירוט" — כמו בדמו */
 const DEFAULT_DETAIL_FIELD_COUNT = 3;
 
-/** ערך "קיבוץ לפי" שפירושו ללא קיבוץ — כמו בדמו */
-const NO_GROUPING = 'none';
+const INCOMPLETE_FORM_MESSAGE = 'יש למלא את כל שדות החובה המסומנים ב-*';
 
-/**
- * טופס יצירת נתון חדש, המוצג כדיאלוג של PrimeNG.
- * כל הלוגיקה של האפיון יושבת כאן; הרכיב אינו שומר דבר בעצמו —
- * את השמירה מבצע השירות, והאב שולט בפתיחה/סגירה דרך [(visible)].
- */
+const NO_GROUPING = 0;
+
+const BOARD_FILTER = 'BOARD_FILTER';
+
+const SUM_CALCULATION_TYPE: CalculationType = 'SUM';
+
+
+const LEGACY_LOOKUP_LABELS: Record<string, string> = {
+  MONTH: 'חודש נוכחי',
+  QUARTER: 'רבעון נוכחי',
+  YEAR: 'שנה נוכחית'
+};
+
+
 @Component({
   selector: 'app-adding-new-data-entry',
   standalone: true,
@@ -54,20 +54,23 @@ const NO_GROUPING = 'none';
 export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(DataDefinitionService);
-  private readonly notifications = inject(NotificationService);
-  private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
+  private readonly messages = inject(MessageService);
   private readonly subscriptions = new Subscription();
 
-  /** האם הדיאלוג פתוח */
-  @Input({ required: true }) visible = false;
+
+  @Input() visible = false;
   @Output() visibleChange = new EventEmitter<boolean>();
-  /** נפלט לאחר שמירה מוצלחת — האב מרענן את הרשימה */
+
   @Output() saved = new EventEmitter<number>();
 
-  readonly iconOptions: LookupOption[] = CARD_ICON_OPTIONS;
-  readonly calculationTypeOptions = CALCULATION_TYPE_OPTIONS;
-  readonly rangeOptions: LookupOption[] = CALCULATION_PERIOD_OPTIONS;
+  /** מספר הימים לחישוב — נטען מ-CTRL_CalculationDays */
+  rangeOptions: LookupOption[] = [];
+
+  /** סוגי החישוב — נטענים מ-CTRL_CalculationTypes */
+  calculationTypeOptions: LookupOption[] = [];
+
+  /** סמלי הכרטיס — נטענים מ-CTRL_Symbols */
+  cardIcons: LookupOption[] = [];
 
   /** רשימת מקורות הנתונים — נטענת פעם אחת */
   sources: LookupOption[] = [];
@@ -79,55 +82,58 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
   /** תוצאת תצוגה מקדימה אחרונה — מוצגת בפאנל שמעל הכפתורים */
   previewResult: PreviewResult | null = null;
 
-  /** נשמר כדי לזהות שינוי אמיתי במקור (מול טופס שנוקה) */
-  private lastSourceId: number | null = null;
+ 
+  private lastSourceId: string | null = null;
+
+  private sourceRequest?: Subscription;
 
   readonly form = this.fb.group({
     name: this.fb.control<string>('', { nonNullable: true, validators: [Validators.required] }),
-    sourceId: this.fb.control<number | null>(null, { validators: [Validators.required] }),
-    iconId: this.fb.control<number>(CARD_ICON_OPTIONS[0].id, { nonNullable: true }),
-    periodId: this.fb.control<number>(CALCULATION_PERIOD_OPTIONS[0].id, { nonNullable: true }),
+    // המזהה נשמר כמחרוזת, בהתאמה ל-optionValue של p-select ול-LookupOption.value
+    sourceId: this.fb.control<string | null>(null, { validators: [Validators.required] }),
+   
+    cardSourceId: this.fb.control<string | null>(null),
+
+    iconCode: this.fb.control<string | null>(null),
+    dateRangeType: this.fb.control<string | null>(null, { validators: [Validators.required] }),
     calculationType: this.fb.control<CalculationType>(DEFAULT_CALCULATION_TYPE, { nonNullable: true }),
-    summaryFieldKey: this.fb.control<string | null>(null, { validators: [Validators.required] }),
-    groupByFieldKey: this.fb.control<string | null>(NO_GROUPING),
-    detailFields: this.fb.control<string[]>([], { nonNullable: true }),
-    // ברירת המחדל: הנתון מוצג במערכת — לפי האפיון
-    showInDashboard: this.fb.control<boolean>(true, { nonNullable: true })
+    sumFieldId: this.fb.control<number | null>(null, { validators: [Validators.required] }),
+    groupFieldId: this.fb.control<number | null>(null),
+    detailFieldIds: this.fb.control<number[]>([], { nonNullable: true }),
+    /** "הצגת הנתון במערכת הניהול והבקרה" — מסומן כברירת מחדל */
+    displayInDashboard: this.fb.control<boolean>(true, { nonNullable: true })
   });
 
   // --- רשימות נגזרות ---
 
   get isSummaryVisible(): boolean {
-    return this.form.controls.calculationType.value === 'SUM';
+
+    return this.form.controls.calculationType.value === SUM_CALCULATION_TYPE;
   }
 
-  /** שדות הפירוט — כמו בדמו, מתוך השדות שהוגדרו במקור הנבחר */
-  get detailFieldOptions(): Array<{ key: string; label: string }> {
-    return this.selectedSource ? this.selectedSource.fields : [];
+  /** שדות הפירוט — מתוך השדות שהוגדרו במקור הנבחר */
+  get detailFieldOptions(): DataSourceFieldOption[] {
+    return this.selectedSource?.fields ?? [];
   }
 
   /**
    * "שדה תאריך" אינו שדה בחירה — הוא מוצג כשדה טקסט מושבת,
-   * והערך שלו מגיע מקטלוג מקור הנתונים (dateMode.field), כמו בדמו.
+   * והערך שלו מגיע מקטלוג מקור הנתונים (dateFieldId).
    */
   get dateFieldLabel(): string {
-    const key = this.selectedSource?.dateMode.field;
-    return key ? this.fieldLabel(key) : '';
+    const id = this.selectedSource?.dateFieldId;
+    return id != null ? this.fieldLabel(id) : '';
   }
 
-  /** רק שדות מספריים יכולים לשמש לסיכום */
-  get summaryFields() {
-    return this.selectedSource ? this.selectedSource.fields.filter(f => f.kind === 'number') : [];
+  /** רק שדות שמסומנים כניתנים לסיכום יכולים לשמש לסיכום */
+  get summaryFields(): DataSourceFieldOption[] {
+    return this.selectedSource ? this.selectedSource.fields.filter(f => f.isSummable) : [];
   }
 
-  /** כמו בדמו: כל שדות המקור זמינים לקיבוץ (התאריך והמספרים כולל) */
-  get groupByFields() {
-    return this.selectedSource ? this.selectedSource.fields : [];
-  }
 
-  /** אפשרויות "קיבוץ לפי" — כוללות "ללא קיבוץ" בראש הרשימה */
-  get groupByOptions(): Array<{ key: string; label: string }> {
-    return [{ key: NO_GROUPING, label: 'ללא קיבוץ' }, ...this.groupByFields];
+  get groupByOptions(): Array<{ fieldId: number; label: string }> {
+    const fields = this.selectedSource ? this.selectedSource.fields.filter(f => f.isGroupable) : [];
+    return [{ fieldId: NO_GROUPING, label: 'ללא קיבוץ' }, ...fields.map(f => ({ fieldId: f.fieldId, label: f.label }))];
   }
 
   /** שם הנתון כפי שהוזן — לתצוגה המקדימה */
@@ -135,15 +141,26 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
     return this.form.controls.name.value.trim();
   }
 
+  /** תווית עברית לשורה שנבחרה ברשימה נפתחת (הערך עצמו נשמר כמו שהוא) */
+  labelOf(options: LookupOption[], code: string | null): string {
+    if (code == null) {
+      return '';
+    }
+    return options.find(option => option.value === code)?.label
+      ?? LEGACY_LOOKUP_LABELS[code]
+      ?? code;
+  }
+
   constructor() {
-    // כשהרכיב נטען כנתיב עצמאי — הדיאלוג נפתח מיד עם הכניסה למסך
-    this.visible = true;
-    this.loadSources();
+    this.loadLookups();
+    // הרשימות והמנויים מוכנים לפני שבוחרים ברירת מחדל — אחרת הבחירה לא נרשמת
     this.watchSourceChanges();
+    this.watchCardSourceChanges();
     this.watchCalculationTypeChanges();
     // שינוי בהגדרות מייתר תצוגה מקדימה קודמת
     this.subscriptions.add(this.form.valueChanges.subscribe(() => (this.previewResult = null)));
-    this.selectDefaultSource();
+    // טעינת המקורות קובעת את ברירת המחדל של "מקור נתונים" — אחרי שהמנוי כבר קיים
+    this.loadSources();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -159,31 +176,119 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
 
   // ---------------------------------------------------------------- טעינה
 
-  private loadSources(): void {
+  /** טוען את תקופות החישוב וקובע את ברירת המחדל לפי מה שחוזר מהשרת */
+  private loadLookups(): void {
     this.subscriptions.add(
-      this.service.getSources().subscribe({
-        next: sources => {
-          this.sources = sources;
-          this.selectDefaultSource();
+      this.service.getCalculationPeriods().subscribe({
+        next: periods => {
+          this.rangeOptions = periods;
+          this.selectDefaultPeriod();
         },
-        error: () => {
-          this.notifications.error('לא ניתן היה לטעון את מקורות הנתונים');
-        }
+        error: () => this.messages.add({
+          severity: 'error',
+          summary: 'שגיאה',
+          detail: 'טעינת תקופות החישוב נכשלה',
+          life: 4000
+        })
+      })
+    );
+
+    this.subscriptions.add(
+      this.service.getCardIcons().subscribe({
+        next: icons => {
+          this.cardIcons = icons;
+          this.selectDefaultIcon();
+        },
+        error: () => this.messages.add({
+          severity: 'error',
+          summary: 'שגיאה',
+          detail: 'טעינת סמלי הכרטיס נכשלה',
+          life: 4000
+        })
+      })
+    );
+
+    this.subscriptions.add(
+      this.service.getCalculationTypes().subscribe({
+        next: types => {
+          this.calculationTypeOptions = types;
+          // רשימת הסוגים משמשת לתצוגה בלבד; הוולידציה של שדה הסיכום נגזרת מהערך עצמו
+          this.applyCalculationType(this.form.controls.calculationType.value);
+        },
+        error: () => this.messages.add({
+          severity: 'error',
+          summary: 'שגיאה',
+          detail: 'טעינת סוגי החישוב נכשלה',
+          life: 4000
+        })
       })
     );
   }
 
   /**
-   * כמו בדמו: הדיאלוג נפתח עם מקור הנתונים הראשון כבר בחור,
-   * ולכן "שדה תאריך" ו"שדות להצגה בפירוט" אינם ריקים בפתיחה.
-   * הרשימה נטענת אחרי שהדיאלוג כבר פתוח, ולכן משלימים רק כשיש רשימה
-   * ועדיין לא נבחר מקור — כדי לא לדרוס בחירה של המשתמש.
+   * "סמל כרטיס" הוא בחירה עצמאית מרשימת CTRL_CardIcons,
+   * והערך הנבחר הוא ה-IconCode שנשמר ב-CTRL_Metrics.IconCode.
    */
+  private watchCardSourceChanges(): void {
+    this.subscriptions.add(
+      this.form.controls.cardSourceId.valueChanges.subscribe(iconCode => {
+        // emitEvent: false — iconCode הוא ערך נגזר, לא קלט של המשתמש (מונע לולאה)
+        this.form.controls.iconCode.setValue(iconCode, { emitEvent: false });
+      })
+    );
+  }
+
+  /** ברירת מחדל ל"סמל כרטיס": הסמל הראשון בטבלת העזר */
+  private selectDefaultIcon(): void {
+    if (this.cardIcons.length === 0 || this.form.controls.cardSourceId.value !== null) {
+      return;
+    }
+    // ערך הסמל (IconCode) הוא מה שנשמר ב-CTRL_Metrics.IconCode
+    this.form.controls.cardSourceId.setValue(this.cardIcons[0].value);
+    this.form.controls.iconCode.setValue(this.cardIcons[0].value);
+  }
+
+  /**
+   * בורר ברירת מחדל לתקופה — רק אם המשתמש לא בחר בינתיים.
+   * בדמו "לפי מסנן הלוח" היא הברירה הראשונה (BOARD_FILTER); אם השרת לא החזיר אותה,
+   * נופלים חזרה לתקופה הראשונה ברשימה.
+   */
+  private findBoardFilterPeriod(): string | null {
+    return this.rangeOptions.find(option => option.value === BOARD_FILTER)?.value
+      ?? this.rangeOptions[0]?.value
+      ?? null;
+  }
+
+  private selectDefaultPeriod(): void {
+    if (this.rangeOptions.length > 0 && this.form.controls.dateRangeType.value === null) {
+      this.form.controls.dateRangeType.setValue(this.findBoardFilterPeriod());
+    }
+  }
+
+  private loadSources(): void {
+    this.subscriptions.add(
+      this.service.getSources().subscribe({
+        next: sources => {
+          this.sources = sources;
+          this.selectDefaultIcon();
+          this.selectDefaultSource();
+        },
+        error: () => this.messages.add({
+          severity: 'error',
+          summary: 'שגיאה',
+          detail: 'טעינת מקורות הנתונים נכשלה',
+          life: 4000
+        })
+      })
+    );
+  }
+
   private selectDefaultSource(): void {
     if (this.sources.length === 0 || this.form.controls.sourceId.value !== null) {
       return;
     }
-    this.form.controls.sourceId.setValue(this.sources[0].id);
+    // הערך נשמר כמחרוזת כמו שהוא — p-select משווה אותו ל-optionValue של השורה
+    this.form.controls.sourceId.setValue(this.sources[0].value);
   }
 
   /**
@@ -206,17 +311,22 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
           return;
         }
 
-        this.subscriptions.add(
-          this.service.getSourceFields(sourceId).subscribe({
+        // מעקב אחרי הבקשה האחרונה: בחירה מהירה של שני מקורות עלולה להחזיר
+        // את תשובת המקור הקודם אחרי החדש, ואז השדות מוצגים של מקור שאינו נבחר.
+        this.sourceRequest?.unsubscribe();
+        this.sourceRequest = // המזהה בטופס הוא מחרוזת; הנתיב בשרת מצפה למספר
+          this.service.getSourceFields(Number(sourceId)).subscribe({
             next: source => {
               this.selectedSource = source;
               this.applyDefaultsAfterSourceSelected(source);
             },
-            error: () => {
-              this.notifications.error('לא ניתן היה לטעון את שדות המקור');
-            }
-          })
-        );
+            error: () => this.messages.add({
+              severity: 'error',
+              summary: 'שגיאה',
+              detail: 'טעינת שדות המקור נכשלה',
+              life: 4000
+            })
+          });
       })
     );
   }
@@ -233,40 +343,42 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
   // ---------------------------------------------------------------- לוגיקה
 
   /**
-   * אחרי טעינת שדות — כמו editorFields(src, {}) בדמו:
-   * כל השדות התלויים במקור חוזרים לברירת מחדל, והפירוט הוא שלושת השדות הראשונים.
+   * אחרי טעינת שדות: כל השדות התלויים במקור חוזרים לברירת מחדל,
+   * והפירוט הוא שלושת השדות הראשונים.
    */
   private applyDefaultsAfterSourceSelected(source: DataSource): void {
     this.form.patchValue({
       calculationType: DEFAULT_CALCULATION_TYPE,
-      periodId: CALCULATION_PERIOD_OPTIONS[0].id,
-      groupByFieldKey: NO_GROUPING,
-      summaryFieldKey: source.fields.find(f => f.kind === 'number')?.key ?? null,
-      detailFields: source.fields.slice(0, DEFAULT_DETAIL_FIELD_COUNT).map(f => f.key)
+      dateRangeType: this.findBoardFilterPeriod(),
+      groupFieldId: NO_GROUPING,
+      sumFieldId: source.fields.find(f => f.isSummable)?.fieldId ?? null,
+      detailFieldIds: source.fields.slice(0, DEFAULT_DETAIL_FIELD_COUNT).map(f => f.fieldId)
     });
 
     this.applyCalculationType(this.form.controls.calculationType.value);
   }
 
   private applyCalculationType(type: CalculationType): void {
-    const summaryControl = this.form.controls.summaryFieldKey;
-    if (type === 'COUNT') {
-      // הסתרת הסיכום — מנקים גם את הערך כדי שלא יישמר שדה מוסתר
-      summaryControl.setValue(null);
-      summaryControl.clearValidators();
+    const sumControl = this.form.controls.sumFieldId;
+    // הדרישה לסיכום נקבעת לפי סוג החישוב: רק SUM דורש שדה סיכום
+    if (type === SUM_CALCULATION_TYPE) {
+      sumControl.setValidators([Validators.required]);
     } else {
-      summaryControl.setValidators([Validators.required]);
+      // הסתרת הסיכום — מנקים גם את הערך כדי שלא יישמר שדה מוסתר
+      sumControl.setValue(null);
+      sumControl.clearValidators();
     }
-    summaryControl.updateValueAndValidity();
+    sumControl.updateValueAndValidity();
   }
 
   /** איפוס שדות שתלויים במקור — אחרת נשארים ערכים של מקור אחר */
   private resetDependentFields(): void {
     this.form.patchValue(
       {
-        summaryFieldKey: null,
-        groupByFieldKey: NO_GROUPING,
-        detailFields: []
+        sumFieldId: null,
+        groupFieldId: NO_GROUPING,
+        detailFieldIds: [],
+        // "סמל כרטיס" אינו תלוי במקור — נשמר כפי שהוא
       },
       { emitEvent: false }
     );
@@ -279,13 +391,15 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
     this.form.reset({
       name: '',
       sourceId: null,
-      iconId: CARD_ICON_OPTIONS[0].id,
-      periodId: CALCULATION_PERIOD_OPTIONS[0].id,
+      cardSourceId: null,
+      iconCode: null,
+      dateRangeType: this.findBoardFilterPeriod(),
       calculationType: DEFAULT_CALCULATION_TYPE,
-      summaryFieldKey: null,
-      groupByFieldKey: NO_GROUPING,
-      detailFields: [],
-      showInDashboard: true
+      sumFieldId: null,
+      // "ללא קיבוץ" ברשימה = 0, ואילו בטופס נשמר null — כך ה-select מציג את השורה
+      groupFieldId: NO_GROUPING,
+      detailFieldIds: [],
+      displayInDashboard: true
     });
     // reset מעדכן ערכים בלי emitEvent, לכן מסדירים את הוולידטורים ידנית
     this.applyCalculationType(DEFAULT_CALCULATION_TYPE);
@@ -293,9 +407,9 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
 
   // ---------------------------------------------------------------- פעולות
 
-  /** תווית השדה של המקור — לתצוגת "שדה תאריך" (הערך עצמו אינו נבחר בטופס) */
-  fieldLabel(key: string): string {
-    return this.selectedSource?.fields.find(f => f.key === key)?.label ?? '';
+  /** תווית השדה לפי מזההו — לתצוגת "שדה תאריך" (הערך עצמו אינו נבחר בטופס) */
+  fieldLabel(fieldId: number): string {
+    return this.selectedSource?.fields.find(f => f.fieldId === fieldId)?.label ?? '';
   }
 
   isFieldInvalid(controlName: keyof typeof this.form.controls): boolean {
@@ -303,11 +417,33 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
     return control.invalid && (control.dirty || control.touched);
   }
 
-  /** תצוגה מקדימה — מחשבת על בסיס ההגדרות בלי לשמור דבר */
+  /**
+   * טופס לא תקין → סימון כל השדות כנגועים (כדי שיודגשו) והודעת שגיאה כללית אחת.
+   * אין פירוט איזה שדה חסר — ההודעה זהה בכל מקרה.
+   */
+  private reportIncompleteForm(): void {
+    this.form.markAllAsTouched();
+    this.messages.add({
+      severity: 'error',
+      summary: 'שגיאה',
+      detail: INCOMPLETE_FORM_MESSAGE,
+      life: 4000
+    });
+  }
+
+  /**
+   * תצוגה מקדימה — מחשבת על בסיס ההגדרות בלי לשמור דבר.
+   * נדרשים רק השדות המזעריים (שם ומקור); שאר ההגדרות נשלחות רק אם מולאו,
+   * כדי שלא לחסום תצוגה מקדימה בגלל שדה סיכום שלא נבחר במצב SUM.
+   */
   preview(): void {
-    if (!this.form.valid) {
-      this.form.markAllAsTouched();
-      this.notifications.error('יש למלא את כל שדות החובה');
+    const name = this.form.controls.name;
+    const sourceId = this.form.controls.sourceId;
+
+    if (name.invalid || sourceId.invalid) {
+      name.markAsTouched();
+      sourceId.markAsTouched();
+      this.reportIncompleteForm();
       return;
     }
 
@@ -317,10 +453,21 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
         next: result => {
           this.previewing = false;
           this.previewResult = result;
+          this.messages.add({
+            severity: 'info',
+            summary: 'תצוגה מקדימה',
+            detail: `התקבלו ${result.rows.length} שורות · סה"כ ${result.total}`,
+            life: 3000
+          });
         },
         error: () => {
           this.previewing = false;
-          this.notifications.error('לא ניתן היה להפיק תצוגה מקדימה');
+          this.messages.add({
+            severity: 'error',
+            summary: 'שגיאה',
+            detail: 'לא ניתן היה להפיק תצוגה מקדימה',
+            life: 4000
+          });
         }
       })
     );
@@ -329,8 +476,7 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
   /** שמירה בקטלוג המרכזי */
   save(): void {
     if (!this.form.valid) {
-      this.form.markAllAsTouched();
-      this.notifications.error('יש למלא את כל שדות החובה');
+      this.reportIncompleteForm();
       return;
     }
 
@@ -339,13 +485,23 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
       this.service.save(this.buildDraft()).subscribe({
         next: id => {
           this.saving = false;
-          this.notifications.success('הנתון נשמר והוא זמין כעת');
+          this.messages.add({
+            severity: 'success',
+            summary: 'נשמר',
+            detail: 'הנתון נוסף לקטלוג',
+            life: 3000
+          });
           this.saved.emit(id);
           this.cancel();
         },
         error: () => {
           this.saving = false;
-          this.notifications.error('לא ניתן היה לשמור את הנתון');
+          this.messages.add({
+            severity: 'error',
+            summary: 'שגיאה',
+            detail: 'שמירת הנתון נכשלה',
+            life: 4000
+          });
         }
       })
     );
@@ -355,37 +511,26 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
   cancel(): void {
     this.visible = false;
     this.visibleChange.emit(false);
-    // כשהדיאלוג פתוח ישירות מנתיב — אין לאן לסגור, לכן יוצאים מהמסך
-    this.leaveIfRouted();
   }
 
-  /**
-   * הרכיב משמש בשני אופנים: כדיאלוג שנפתח על ידי האב (דרך @Input visible),
-   * או כמסך שנטען ישירות מנתיב. בנתיב אין מי שיסגור את הדיאלוג,
-   * ולכן יוצאים חזרה למסך הבית.
-   */
-  private leaveIfRouted(): void {
-    const onDedicatedRoute = !!this.route.snapshot.routeConfig?.path;
-    if (onDedicatedRoute) {
-      void this.router.navigate(['/']);
-    }
-  }
-
-  private buildDraft(): DataDefinitionDraft {
+  private buildDraft(): MetricDraft {
     const value = this.form.getRawValue();
     return {
       name: value.name.trim(),
-      sourceId: value.sourceId,
-      // שדה התאריך נקבע בקטלוג המקור, לא בטופס
-      dateFieldKey: this.selectedSource?.dateMode.field ?? null,
+      // המזהה מחרוזת בטופס; השרת מצפה ל-int
+      sourceId: value.sourceId === null ? null : Number(value.sourceId),
       calculationType: value.calculationType,
-      summaryFieldKey: value.calculationType === 'SUM' ? value.summaryFieldKey : null,
-      // "ללא קיבוץ" הוא ערך תצוגה בלבד — נשמר כ-null
-      groupByFieldKey: value.groupByFieldKey === NO_GROUPING ? null : value.groupByFieldKey,
-      detailFields: [...value.detailFields],
-      iconId: value.iconId,
-      periodId: value.periodId,
-      showInDashboard: value.showInDashboard
+      sumFieldId: value.calculationType === 'SUM' ? value.sumFieldId : null,
+      // 0 ברשימה = "ללא קיבוץ"; השרת שומר null
+      groupFieldId: value.groupFieldId === NO_GROUPING ? null : value.groupFieldId,
+      // ברירת מחדל סבירה אם הקטלוג עדיין לא נטען
+      dateRangeType: value.dateRangeType ?? this.findBoardFilterPeriod() ?? '',
+      iconCode: value.iconCode,
+      detailFieldIds: [...value.detailFieldIds],
+      displayInDashboard: value.displayInDashboard
     };
   }
 }
+
+/** אפשרות שדה בתבנית — תואמת לשדות שחוזרים מהשרת */
+type DataSourceFieldOption = DataSource['fields'][number];

@@ -1,11 +1,15 @@
 using InstaDataApp.Application.Common.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 
 namespace InstaDataApp.Web.Infrastructure;
 
 public class CustomExceptionHandler : IExceptionHandler
 {
+    // 2 = "Could not find server" (named pipes / TCP). השרת SQL פשוט לא מאזין.
+    private const int DatabaseUnavailableErrorNumber = 2;
+
     private readonly Dictionary<Type, Func<HttpContext, Exception, Task>> _exceptionHandlers;
 
     public CustomExceptionHandler()
@@ -27,6 +31,14 @@ public class CustomExceptionHandler : IExceptionHandler
         if (_exceptionHandlers.TryGetValue(exceptionType, out var handler))
         {
             await handler.Invoke(httpContext, exception);
+            return true;
+        }
+
+        // מסד הנתונים לא זמין (שרת כבוי / כתובת שגויה): מחזירים 503 קריא ל-SPA
+        // במקום לעטוף את ה-SqlException ב-ExceptionHandler שיכנס לתצוגת שגיאה כללית.
+        if (exception is SqlException { Number: DatabaseUnavailableErrorNumber })
+        {
+            await HandleDatabaseUnavailableException(httpContext);
             return true;
         }
 
@@ -70,6 +82,19 @@ public class CustomExceptionHandler : IExceptionHandler
             Status = StatusCodes.Status401Unauthorized,
             Title = "אין הרשאה.",
             Type = "https://tools.ietf.org/html/rfc7235#section-3.1"
+        });
+    }
+
+    private async Task HandleDatabaseUnavailableException(HttpContext httpContext)
+    {
+        httpContext.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+
+        await httpContext.Response.WriteAsJsonAsync(new ProblemDetails
+        {
+            Status = StatusCodes.Status503ServiceUnavailable,
+            Title = "לא ניתן להתחבר למסד הנתונים.",
+            Detail = "יש לוודא ששירות SQL Server פעיל ושה-ConnectionString ב-appsettings מוביל לשרת הנכון.",
+            Type = "https://tools.ietf.org/html/rfc7231#section-6.6.4"
         });
     }
 
