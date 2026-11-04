@@ -1,0 +1,99 @@
+<div class="dataManagement" dir="rtl">
+  <p-toast position="bottom-left" styleClass="demoToast"></p-toast>
+
+  <!-- דיאלוג יצירת / עריכת נתון -->
+  <!-- <app-adding-new-data-entry [(visible)]="dialogVisible"></app-adding-new-data-entry> -->
+
+  <!-- כותרת המסך: כותרת ותת-כותרת מימין, כפתור "יצירת נתון חדש" משמאל -->
+  <header class="screenHeader">
+    <div class="screenHeader__titles">
+      <h1 class="screenHeader__title">ניהול נתונים</h1>
+      <p class="screenHeader__subtitle">
+        הגדרת מקור נתונים, אופן החישוב, קיבוץ ושדות הפירוט – ללא שינוי קוד.
+      </p>
+    </div>
+
+    <p-button
+      label="+ יצירת נתון חדש"
+      styleClass="createButton"
+      (onClick)="createRow()">
+    </p-button>
+  </header>
+
+  <!-- הודעת מידע כללית -->
+  <div class="infoBanner">
+    מקורות הנתונים והשדות המוצגים כאן הם דוגמה לצורך המחשה. שמות הטבלאות והשדות
+    במערכת הגבייה יוגדרו לאחר מיפוי מול מסד הנתונים.
+  </div>
+
+  <section class="panel">
+    <div class="panel__head">
+      <h2 class="panel__title">קטלוג הנתונים</h2>
+      <span class="countPill">{{ rows.length }} נתונים</span>
+    </div>
+
+    <div class="panel__table">
+      <p-table
+        [value]="rows"
+        dataKey="metricId"
+        styleClass="catalogTable"
+        showGridlines="false"
+        [loading]="isLoading"
+        [scrollable]="true">
+
+        <ng-template pTemplate="header">
+          <tr>
+            <th>שם הנתון</th>
+            <th>מקור נתונים</th>
+            <th>חישוב</th>
+            <th>קיבוץ</th>
+            <th class="colStatus">מצב</th>
+            <th class="colActions">פעולות</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-row>
+          <tr>
+            <td class="cellName"><strong>{{ row.metricName }}</strong></td>
+            <td>{{ row.sourceId }}</td>
+            <td>{{ row.calculationType }}</td>
+            <td>{{ row.groupFieldId }}</td>
+            <td class="colStatus">
+              <span class="statusPill" [class.statusPill--off]="!row.isActive">
+                {{ row.isActive ? 'פעיל' : 'מושבת' }}
+              </span>
+            </td>
+            <td class="colActions">
+              <div class="actions">
+                <p-button
+                  label="עריכה"
+                  styleClass="actionButton actionButton--light"
+                  (onClick)="editRow(row)">
+                </p-button>
+
+                <p-button
+                  [label]="row.isActive ? 'השבתה' : 'הפעלה'"
+                  styleClass="actionButton actionButton--light"
+                  (onClick)="toggleRow(row)">
+                </p-button>
+
+                <p-button
+                  label="מחיקה"
+                  outlined="true"
+                  styleClass="actionButton actionButton--delete"
+                  (onClick)="deleteRow(row)">
+                </p-button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="6" class="emptyMessage">אין נתונים להצגה</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </section>
+</div>
