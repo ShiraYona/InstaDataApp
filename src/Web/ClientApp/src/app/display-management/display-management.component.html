@@ -19,18 +19,6 @@
     ></p-button>
   </div>
 
-  <!-- מחוון שמירה אוטומטית (מוסתר עד שיש פעולה) -->
-  <span
-    class="save-indicator"
-    *ngIf="saveState !== 'idle'"
-    [class.save-indicator--saving]="saveState === 'saving'"
-  >
-    <ng-container *ngIf="saveState === 'saving'">
-      <i class="pi pi-spin pi-spinner"></i>
-      <span>שומר…</span>
-    </ng-container>
-  </span>
-
   <!-- ===== הפאנלים ===== -->
   <div class="panels">
     <!-- פאנל סדר הכרטיסים -->

@@ -3,6 +3,7 @@ import {
   DestroyRef,
   OnInit,
   inject,
+  signal,
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
@@ -17,8 +18,8 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
-import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
-import { DisplayLayout, DisplayLayoutService } from './display-layout.service';
+import { Subject, debounceTime, take } from 'rxjs';
+import { DisplayLayoutService, MetricSettingItem } from './display-layout.service';
 
 export interface DisplayCard {
   id: number;
@@ -47,7 +48,7 @@ export interface DisplayCard {
   templateUrl: './display-management.component.html',
   styleUrl: './display-management.component.scss'
 })
-export class DisplayManagementComponent implements OnInit{
+export class DisplayManagementComponent implements OnInit {
   private readonly layoutService = inject(DisplayLayoutService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly confirmationService = inject(ConfirmationService);
@@ -55,13 +56,19 @@ export class DisplayManagementComponent implements OnInit{
   /** מצב השמירה האוטומטית — לתצוגה למשתמש */
   saveState: 'idle' | 'saving' = 'idle';
 
-  /** צינור השמירה: אוסף שינויים ומשדר שמירה אחת אחרי רגיעה קצרה */
-  private readonly saveTrigger$ = new Subject<DisplayLayout>();
+  /** מצב טעינה — לתצוגה למשתמש */
+  loading = signal(true);
 
-  /** השינוי שממתין ל-debounce — נשמר מיד ביציאה מהמסך */
-  private pendingLayout: DisplayLayout | null = null;
+  /** הודעת שגיאה אם הטעינה נכשלה */
+  loadError = signal<string | null>(null);
 
-  /** מספר הכרטיסים בשורה (נשמר בפריסה) */
+  /** צינור שמירת מספר הכרטיסים בשורה בלבד */
+  private readonly cardsPerRowTrigger$ = new Subject<number>();
+
+  /** צינור שמירת סדר ונראות הכרטיסים — debounce כדי לא להציף את השרת */
+  private readonly orderTrigger$ = new Subject<void>();
+
+  /** מספר הכרטיסים בשורה (נשמר בשרת) */
   cardsPerRow = 4;
 
   /** האפשרויות בתפריט "מספר כרטיסים בשורה" */
@@ -71,27 +78,14 @@ export class DisplayManagementComponent implements OnInit{
     { value: 4, label: '4 כרטיסים' },
   ];
 
-  /** ברירת המחדל של מספר הכרטיסים — לאיפוס */
+  /** ברירת המחדל של מספר הכרטיסים — לאיפוס ולמקרה שהשרת לא עונה */
   private readonly defaultCardsPerRow = 4;
 
   /** הכרטיסים לפי הסדר הנוכחי שלהם בלוח הבקרה */
   cards: DisplayCard[] = [];
 
-  /** ברירת המחדל — משמשת לאיפוס הדמו */
-  private readonly defaultCards: DisplayCard[] = [
-    { id: 1, label: 'שוברים שנוצרו במסלקה', visible: true },
-    { id: 2, label: 'סכום שוברים במסלקה', visible: true },
-    { id: 3, label: 'הנחות שנוצרו', visible: true },
-    { id: 4, label: 'חשבונות חדשים', visible: true },
-    { id: 5, label: 'תביעות פעילות חדשות', visible: true },
-    { id: 6, label: 'התראות שנשלחו', visible: true },
-    { id: 7, label: 'חילופי מחזיקים', visible: true },
-    { id: 8, label: 'שינויי שומה', visible: true },
-    { id: 9, label: 'הסדרים שהוקמו', visible: true },
-    { id: 10, label: 'עיקולים שנשלחו', visible: true },
-    { id: 11, label: 'עסקאות בקופה', visible: true },
-    { id: 12, label: 'סכום הנחות', visible: true },
-  ];
+  /** הנתון המלא מהשרת — נדרש כדי לשמור בחזרה (metricName, iconCode) */
+  private serverItems = new Map<number, MetricSettingItem>();
 
   /**
    * כרטיסי התצוגה המקדימה — 12 משבצות (3 שורות × 4), כמו בתמונה.
@@ -100,26 +94,62 @@ export class DisplayManagementComponent implements OnInit{
   readonly previewSlots: number[] = Array.from({ length: 12 }, (_, i) => i + 1);
 
   ngOnInit(): void {
-    // קודם בונים את המצב ההתחלתי, אחר כך משחזרים פריסה שמורה (אם יש).
-    this.cards = this.defaultCards.map(c => ({ ...c }));
-    this.restoreSavedLayout();
+    // 1. מספר הכרטיסים בשורה — מהשרת (שמירה על הקיים).
+    this.layoutService
+      .loadCardsPerRow()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(value => {
+        this.cardsPerRow = value ?? this.defaultCardsPerRow;
+      });
 
-    // שמירה אוטומטית: ממתינים לרגיעה של 500ms בין שינויים
-    this.saveTrigger$
+    // 2. הכרטיסים — מהשרת, מסודרים לפי הסדר האישי של המשתמש.
+    this.loadCards();
+
+    // 3. שמירת מספר הכרטיסים בשורה — בקשה אחת אחרי רגיעה.
+    this.cardsPerRowTrigger$
       .pipe(
-        debounceTime(500),
-        distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
+        debounceTime(300),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe(layout => this.persist(layout));
+      .subscribe(value => this.persistCardsPerRow(value));
 
-    // שינוי שממתין ל-debounce בזמן יציאה מהמסך היה הולך לאיבוד — שומרים אותו עכשיו.
-    this.destroyRef.onDestroy(() => {
-      if (this.pendingLayout) {
-        this.layoutService.save(this.pendingLayout);
-        this.pendingLayout = null;
-      }
-    });
+    // 4. שמירת סדר/נראות — בקשה אחת אחרי רגיעה.
+    this.orderTrigger$
+      .pipe(
+        debounceTime(400),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(() => this.persistOrder());
+  }
+
+  /** טעינת הכרטיסים מהשרת */
+  private loadCards(): void {
+    this.loading.set(true);
+    this.loadError.set(null);
+
+    this.layoutService
+      .loadMetricSettings()
+      .pipe(take(1))
+      .subscribe({
+        next: response => {
+          const items = response?.items ?? [];
+
+          // שמירת הנתון המלא לפי מזהה — נדרש לשמירה חוזרת
+          this.serverItems = new Map(items.map(i => [i.metricId, i]));
+
+          this.cards = items.map(i => ({
+            id: i.metricId,
+            label: i.metricName,
+            visible: i.isVisible,
+          }));
+
+          this.loading.set(false);
+        },
+        error: () => {
+          this.loadError.set('לא ניתן לטעון את הכרטיסים. נסו לרענן את העמוד.');
+          this.loading.set(false);
+        },
+      });
   }
 
   /** הזזת כרטיס מעלה/מטה ברשימה (כפתורי החצים) */
@@ -133,7 +163,7 @@ export class DisplayManagementComponent implements OnInit{
     const [moved] = reordered.splice(index, 1);
     reordered.splice(target, 0, moved);
     this.cards = reordered;
-    this.scheduleSave();
+    this.queueOrderSave();
   }
 
   /** גרירה ידנית של כרטיס למקום אחר ברשימה */
@@ -144,7 +174,7 @@ export class DisplayManagementComponent implements OnInit{
     const reordered = [...this.cards];
     moveItemInArray(reordered, event.previousIndex, event.currentIndex);
     this.cards = reordered;
-    this.scheduleSave();
+    this.queueOrderSave();
   }
 
   /** עדכון מצב ההצגה של כרטיס — בלי להחליף את אובייקט הכרטיס */
@@ -152,16 +182,16 @@ export class DisplayManagementComponent implements OnInit{
     card.visible = visible;
     // יצירת מערך חדש כדי שהתבנית תתרענן גם אם השינוי בתוך האובייקט לא מזוהה
     this.cards = [...this.cards];
-    this.scheduleSave();
+    this.queueOrderSave();
   }
 
-  /** שינוי מספר הכרטיסים בשורה — משפיע על התצוגה המקדימה ועל הפריסה */
+  /** שינוי מספר הכרטיסים בשורה — נשלח לשמירה בשרת */
   setCardsPerRow(value: number): void {
     if (value === this.cardsPerRow) {
       return;
     }
     this.cardsPerRow = value;
-    this.scheduleSave();
+    this.cardsPerRowTrigger$.next(value);
   }
 
   /** לחיצה על "איפוס הדמו" — מבקשת אישור לפני שמאפסים את המסך */
@@ -176,18 +206,45 @@ export class DisplayManagementComponent implements OnInit{
       rejectLabel: 'ביטול',
       acceptButtonStyleClass: 'dm-confirm__accept',
       rejectButtonStyleClass: 'dm-confirm__reject',
-      // RTL מוגדר ב-SCSS של הדיאלוג — הוא ממוקם ב-body ולכן לא יורש את כיווניות הרכיב.
-      // את מחלקות העיצוב של הדיאלוג עצמו מסמנים דרך <p-confirmdialog styleClass>.
       dismissableMask: true,
       accept: () => this.resetLayout(),
     });
   }
 
-  /** איפוס הדמו: סדר, מצב הצגה ומספר כרטיסים בשורה — לברירת המחדל */
+  /**
+   * איפוס: מספר כרטיסים לברירת המחדל, וטעינה מחדש מהשרת.
+   * השרת מחזיר את הסדר המקורי כי עוד לא נשמר סדר אישי —
+   * שולחים displayOrder = null לכל הפריטים כדי לאפס אותם.
+   */
   resetLayout(): void {
-    this.cards = this.defaultCards.map(c => ({ ...c }));
     this.cardsPerRow = this.defaultCardsPerRow;
-    this.scheduleSave();
+    this.cardsPerRowTrigger$.next(this.defaultCardsPerRow);
+
+    // איפוס הסדר: שולחים null לכל displayOrder
+    const items: MetricSettingItem[] = this.cards.map(c => {
+      const original = this.serverItems.get(c.id);
+      return {
+        metricId: c.id,
+        metricName: original?.metricName ?? c.label,
+        iconCode: original?.iconCode ?? null,
+        displayOrder: null,
+        isVisible: true,
+      };
+    });
+
+    this.saveState = 'saving';
+    this.layoutService
+      .saveMetricSettings(items)
+      .pipe(take(1))
+      .subscribe({
+        next: () => {
+          this.saveState = 'idle';
+          this.loadCards();
+        },
+        error: () => {
+          this.saveState = 'idle';
+        },
+      });
   }
 
   trackByCardId(_index: number, card: DisplayCard): number {
@@ -202,68 +259,57 @@ export class DisplayManagementComponent implements OnInit{
     return index === this.cards.length - 1;
   }
 
-  /** איסוף המצב הנוכחי ותזמון שמירה */
-  private scheduleSave(): void {
-    const layout = this.currentLayout();
-    this.pendingLayout = layout;
-    this.saveTrigger$.next(layout);
+  /** סימון שצריך לשמור סדר/נראות — הבקשה תישלח אחרי רגיעה */
+  private queueOrderSave(): void {
+    this.orderTrigger$.next();
   }
 
-  private currentLayout(): DisplayLayout {
-    return {
-      cardsPerRow: this.cardsPerRow,
-      order: this.cards.map(c => c.id),
-      visibleIds: this.cards.filter(c => c.visible).map(c => c.id),
-    };
-  }
-
-  /** ביצוע השמירה בפועל + עדכון מחוון המצב */
-  private persist(layout: DisplayLayout): void {
-    this.pendingLayout = null;
-    this.saveState = 'saving';
-    this.layoutService.save(layout).subscribe({
-      next: () => {
-        // אין הודעת "נשמר" — המחוון חוזר למצב רגיל מיד עם סיום השמירה.
-        this.saveState = 'idle';
-      },
-      error: () => {
-        this.saveState = 'idle';
-      },
-    });
-  }
-
-  /** שחזור פריסה שמורה: סדר, מספר כרטיסים בשורה ומצב הצגה */
-  private restoreSavedLayout(): void {
-    const saved = this.layoutService.load();
-    if (!saved) {
+  /** שמירת הסדר והנראות בשרת */
+  private persistOrder(): void {
+    if (!this.cards.length) {
       return;
     }
 
-    // שומרים את הערך השמור גם בלי ממשק לעריכתו — כדי לא לאבד הגדרה קיימת
-    if (typeof saved.cardsPerRow === 'number') {
-      this.cardsPerRow = saved.cardsPerRow;
-    }
+    // displayOrder מתחיל מ-1 לפי מיקום ברשימה
+    const items: MetricSettingItem[] = this.cards.map((c, index) => {
+      const original = this.serverItems.get(c.id);
+      return {
+        metricId: c.id,
+        metricName: original?.metricName ?? c.label,
+        iconCode: original?.iconCode ?? null,
+        displayOrder: index + 1,
+        isVisible: c.visible,
+      };
+    });
 
-    // עובדים תמיד מול עותק של ברירת המחדל — כדי שכרטיסים שנמחקו מהפריסה
-    // לא ייעלמו, וכרטיסים חדשים (שלא היו בשמירה) יתווספו בסוף.
-    const byId = new Map(this.defaultCards.map(c => [c.id, { ...c }]));
-    const ordered: DisplayCard[] = [];
+    this.saveState = 'saving';
+    this.layoutService
+      .saveMetricSettings(items)
+      .pipe(take(1))
+      .subscribe({
+        next: () => {
+          this.saveState = 'idle';
+        },
+        error: () => {
+          this.saveState = 'idle';
+          this.loadError.set('שמירת הסדר נכשלה. נסו שוב.');
+        },
+      });
+  }
 
-    for (const id of saved.order ?? []) {
-      const card = byId.get(id);
-      if (card) {
-        ordered.push(card);
-        byId.delete(id);
-      }
-    }
-    ordered.push(...byId.values());
-
-    for (const card of ordered) {
-      if (saved.visibleIds) {
-        card.visible = saved.visibleIds.includes(card.id);
-      }
-    }
-
-    this.cards = ordered;
+  /** שמירת מספר הכרטיסים בשורה בשרת */
+  private persistCardsPerRow(value: number): void {
+    this.saveState = 'saving';
+    this.layoutService
+      .saveCardsPerRow(value)
+      .pipe(take(1))
+      .subscribe({
+        next: () => {
+          this.saveState = 'idle';
+        },
+        error: () => {
+          this.saveState = 'idle';
+        },
+      });
   }
 }

@@ -10,6 +10,8 @@
     <SpaRoot>ClientApp\</SpaRoot>
     <SpaProxyServerUrl>https://localhost:44447</SpaProxyServerUrl>
     <SpaProxyLaunchCommand>npm start</SpaProxyLaunchCommand>
+    <!-- Lets the build stop a still-running instance of this app before copying DLLs. -->
+    <EnsureStopped Condition="'$(EnsureStopped)' == ''">true</EnsureStopped>
   </PropertyGroup>
 
   <ItemGroup>
@@ -49,6 +51,20 @@
     <None Remove="$(SpaRoot)**" />
     <None Include="$(SpaRoot)**" Exclude="$(SpaRoot)node_modules\**" />
   </ItemGroup>
+
+  <!--
+    Stop a previous dotnet run of this app before copying assemblies.
+    Required here (not only in the IDE profile) because running the Web project
+    from the command line lets the already-running instance keep the DLLs locked.
+    It also stops the dev server started alongside it, so the next run is clean.
+  -->
+  <Target Name="EnsureStoppedPreviouslyLaunchedProcesses"
+          BeforeTargets="Build;_CopyFilesMarkedCopyLocal;CopyFilesToOutputDirectory"
+          Condition="'$(EnsureStopped)' == 'true' And $([MSBuild]::IsOSPlatform('Windows'))">
+    <Exec Command="powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\..\scripts\stop-local-instance.ps1&quot; -Name &quot;$(AssemblyName)&quot;"
+          ContinueOnError="true"
+          StandardOutputImportance="low" />
+  </Target>
 
   <!-- Ensure Node environment on Build -->
   <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('$(SpaRoot)node_modules') ">
