@@ -21,12 +21,6 @@ export interface MetricSettingsResponse {
   items: MetricSettingItem[];
 }
 
-/**
- * שמירה וטעינה של פריסת לוח הבקרה.
- *
- * - מספר הכרטיסים בשורה נשמר בשרת (טבלת CTRL_UserDisplaySettings) לפי מזהה המשתמש.
- * - סדר הכרטיסים ומצב ההצגה נשמרים בשרת (טבלת CTRL_UserMetricSettings) לפי מזהה המשתמש.
- */
 @Injectable({ providedIn: 'root' })
 export class DisplayLayoutService {
   private readonly http = inject(HttpClient);
@@ -36,10 +30,7 @@ export class DisplayLayoutService {
   /** הערך שנשמר לאחרונה מהשרת — משמש כגיבוי אם הקריאה נכשלה */
   private serverCardsPerRow: number | null = null;
 
-  /**
-   * טעינת מספר הכרטיסים בשורה מהשרת.
-   * מחזיר null אם הקריאה נכשלה — הקורא יחיל את ברירת המחדל (4).
-   */
+
   loadCardsPerRow(): Observable<number | null> {
     return this.http.get<DisplaySettingsDto>(this.apiUrl).pipe(
       map(dto => dto?.cardsPerRow ?? null),
@@ -53,23 +44,18 @@ export class DisplayLayoutService {
   }
 
   /** שמירת מספר הכרטיסים בשורה בשרת */
-  saveCardsPerRow(cardsPerRow: number): Observable<void> {
-    this.serverCardsPerRow = cardsPerRow;
-    return this.http.put<void>(this.apiUrl, { cardsPerRow });
-  }
+saveCardsPerRow(cardsPerRow: number): Observable<void> {
+  return this.http.put<void>(this.apiUrl, { cardsPerRow }).pipe(
+    tap(() => {
+      this.serverCardsPerRow = cardsPerRow;
+    })
+  );
+}
 
-  /**
-   * שליפת כל הנתונים מהשרת, מסודרים לפי הסדר האישי של המשתמש.
-   * נתונים שהמשתמש טרם סידר מופיעים בסוף, לפי CreatedDate יורד.
-   */
   loadMetricSettings(): Observable<MetricSettingsResponse> {
     return this.http.get<MetricSettingsResponse>(`${this.apiUrl}/metrics`);
   }
 
-  /**
-   * שמירת סדר ונראות כל הנתונים בשרת (upsert).
-   * שולחים את הרשימה המלאה — השרת מעדכן/יוצר שורה לכל פריט.
-   */
   saveMetricSettings(items: MetricSettingItem[]): Observable<void> {
     return this.http.put<void>(`${this.apiUrl}/metrics`, { items });
   }

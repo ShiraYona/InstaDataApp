@@ -1,3 +1,29 @@
-<div class="menue-container">
-  <p-menu [model]="items" [style]="{ width: '100%' }"></p-menu>
-</div>
+<aside class="side">
+
+  <div class="brand">
+    <div class="brand-title">◈ מערכת ניהול ובקרה</div>
+    <small class="brand-sub">עיריית ירושלים</small>
+  </div>
+
+  <button
+    type="button"
+    *ngFor="let item of mainItems"
+    class="nav"
+    [routerLink]="item.routerLink"
+    routerLinkActive="active">
+    <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+    <span class="nav-label">{{ item.label }}</span>
+  </button>
+
+  <button
+    type="button"
+    *ngFor="let item of secondaryItems; first as isFirst"
+    class="nav"
+    [class.divider-nav]="isFirst"
+    [routerLink]="item.routerLink"
+    routerLinkActive="active">
+    <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+    <span class="nav-label">{{ item.label }}</span>
+  </button>
+
+</aside>

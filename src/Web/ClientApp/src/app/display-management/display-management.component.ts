@@ -18,8 +18,9 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
-import { Subject, debounceTime, take } from 'rxjs';
+import { Subject, debounceTime, forkJoin, take } from 'rxjs';
 import { DisplayLayoutService, MetricSettingItem } from './display-layout.service';
+import { NotificationService } from '../shared/services/notification.service';
 
 export interface DisplayCard {
   id: number;
@@ -42,8 +43,7 @@ export interface DisplayCard {
     TagModule,
     TooltipModule,
   ],
-  // ConfirmationService מקבל את הסטייל דרך styleClass של הדיאלוג,
-  // ולכן הוא ניתן ברמת הרכיב ולא ב-providers גלובליים.
+
   providers: [ConfirmationService],
   templateUrl: './display-management.component.html',
   styleUrl: './display-management.component.scss'
@@ -52,6 +52,7 @@ export class DisplayManagementComponent implements OnInit {
   private readonly layoutService = inject(DisplayLayoutService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly confirmationService = inject(ConfirmationService);
+  private readonly notify = inject(NotificationService);
 
   /** מצב השמירה האוטומטית — לתצוגה למשתמש */
   saveState: 'idle' | 'saving' = 'idle';
@@ -87,10 +88,6 @@ export class DisplayManagementComponent implements OnInit {
   /** הנתון המלא מהשרת — נדרש כדי לשמור בחזרה (metricName, iconCode) */
   private serverItems = new Map<number, MetricSettingItem>();
 
-  /**
-   * כרטיסי התצוגה המקדימה — 12 משבצות (3 שורות × 4), כמו בתמונה.
-   * אלה לא אותם כרטיסים שברשימה; רק הדגמה של הלוח עצמו.
-   */
   readonly previewSlots: number[] = Array.from({ length: 12 }, (_, i) => i + 1);
 
   ngOnInit(): void {
@@ -147,6 +144,7 @@ export class DisplayManagementComponent implements OnInit {
         },
         error: () => {
           this.loadError.set('לא ניתן לטעון את הכרטיסים. נסו לרענן את העמוד.');
+          this.notify.error('לא ניתן לטעון את הכרטיסים. נסו לרענן את העמוד.');
           this.loading.set(false);
         },
       });
@@ -200,7 +198,7 @@ export class DisplayManagementComponent implements OnInit {
       header: 'איפוס המסך לברירת מחדל',
       message:
         'הפעולה תאפס את סדר הכרטיסים, מצב ההצגה ומספר הכרטיסים בשורה. ' +
-        'האם לאפס את המסך לברירת המחדל?',
+        'האם לאפס את המסך לברירת מחדל?',
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'כן, אפס',
       rejectLabel: 'ביטול',
@@ -211,15 +209,7 @@ export class DisplayManagementComponent implements OnInit {
     });
   }
 
-  /**
-   * איפוס: מספר כרטיסים לברירת המחדל, וטעינה מחדש מהשרת.
-   * השרת מחזיר את הסדר המקורי כי עוד לא נשמר סדר אישי —
-   * שולחים displayOrder = null לכל הפריטים כדי לאפס אותם.
-   */
   resetLayout(): void {
-    this.cardsPerRow = this.defaultCardsPerRow;
-    this.cardsPerRowTrigger$.next(this.defaultCardsPerRow);
-
     // איפוס הסדר: שולחים null לכל displayOrder
     const items: MetricSettingItem[] = this.cards.map(c => {
       const original = this.serverItems.get(c.id);
@@ -233,16 +223,34 @@ export class DisplayManagementComponent implements OnInit {
     });
 
     this.saveState = 'saving';
-    this.layoutService
-      .saveMetricSettings(items)
+    this.loadError.set(null);
+
+    forkJoin([
+      this.layoutService.saveCardsPerRow(this.defaultCardsPerRow),
+      this.layoutService.saveMetricSettings(items),
+    ])
       .pipe(take(1))
-      .subscribe({
+        .subscribe({
         next: () => {
           this.saveState = 'idle';
+          // רק אחרי שהשרת אישר — מציגים את ברירת המחדל
+          this.cardsPerRow = this.defaultCardsPerRow;
           this.loadCards();
+          this.notify.success('איפוס המסך לברירת המחדל הצליח.');
         },
+
         error: () => {
           this.saveState = 'idle';
+          this.loadError.set('איפוס המסך נכשל. נסו שוב.');
+          this.notify.error('איפוס המסך נכשל. נסו שוב.');
+
+          // מציגים את מה שבאמת שמור בשרת — לא את מה שניסינו לשמור
+          this.layoutService
+            .loadCardsPerRow()
+            .pipe(take(1))
+            .subscribe(saved => {
+              this.cardsPerRow = saved ?? this.defaultCardsPerRow;
+            });
         },
       });
   }
@@ -286,13 +294,15 @@ export class DisplayManagementComponent implements OnInit {
     this.layoutService
       .saveMetricSettings(items)
       .pipe(take(1))
-      .subscribe({
+            .subscribe({
         next: () => {
           this.saveState = 'idle';
+          this.notify.success('שמירת הסדר הצליחה.');
         },
         error: () => {
           this.saveState = 'idle';
           this.loadError.set('שמירת הסדר נכשלה. נסו שוב.');
+          this.notify.error('שמירת הסדר נכשלה. נסו שוב.');
         },
       });
   }
@@ -306,9 +316,21 @@ export class DisplayManagementComponent implements OnInit {
       .subscribe({
         next: () => {
           this.saveState = 'idle';
+          this.loadError.set(null);
+          this.notify.success('שמירת מספר הכרטיסים בשורה הצליחה.');
         },
         error: () => {
           this.saveState = 'idle';
+          this.loadError.set('שמירת מספר הכרטיסים בשורה נכשלה. נסו שוב.');
+          this.notify.error('שמירת מספר הכרטיסים בשורה נכשלה. נסו שוב.');
+
+          // מחזירים את הערך שבאמת שמור בשרת — כדי שהמסך לא יציג ערך שלא נשמר
+          this.layoutService
+            .loadCardsPerRow()
+            .pipe(take(1))
+            .subscribe(saved => {
+              this.cardsPerRow = saved ?? this.defaultCardsPerRow;
+            });
         },
       });
   }
