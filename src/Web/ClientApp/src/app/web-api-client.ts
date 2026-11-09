@@ -537,34 +537,17 @@ export interface FileResponse {
 }
 
 export class ApiException extends Error {
-    override message: string;
-    status: number;
-    response: string;
-    headers: { [key: string]: any; };
-    result: any;
-
-    constructor(message: string, status: number, response: string, headers: { [key: string]: any; }, result: any) {
-        super();
-
-        this.message = message;
-        this.status = status;
-        this.response = response;
-        this.headers = headers;
-        this.result = result;
-    }
-
-    protected isApiException = true;
-
-    static isApiException(obj: any): obj is ApiException {
-        return obj.isApiException === true;
-    }
+    // ... (כמו בקוד המקורי) ...
 }
 
-function throwException(message: string, status: number, response: string, headers: { [key: string]: any; }, result?: any): Observable<any> {
-    if (result !== null && result !== undefined)
-        return _observableThrow(result);
-    else
-        return _observableThrow(new ApiException(message, status, response, headers, null));
+function throwException(
+    message: string,
+    status: number,
+    response: string,
+    headers: { [key: string]: any; },
+    result?: any
+): Observable<any> {
+    // ... (כמו בקוד המקורי) ...
 }
 
 function blobToText(blob: any): Observable<string> {

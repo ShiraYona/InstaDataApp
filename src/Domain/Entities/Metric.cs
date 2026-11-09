@@ -12,7 +12,18 @@ public class Metric
 
     public string MetricName { get; set; } = string.Empty;
 
-    public int SourceId { get; set; }
+    public int SourceID { get; set; }
+
+    public DataSource Source { get; set; } = null!;
+
+    /// <summary>מפתח ל-CTRL_CalculationTypes (COUNT / SUM / DIRECT)</summary>
+    public int CalculationTypeID { get; set; }
+
+    /// <summary>השדה שעליו תבוצע סכימה — רלוונטי ל-SUM</summary>
+    public int? SumFieldID { get; set; }
+
+    /// <summary>השדה שלפיו יתבצע קיבוץ — null משמעו ללא קיבוץ</summary>
+    public int? GroupFieldID { get; set; }
 
     /// <summary>מזהה סוג החישוב — מפתח זר ל-<c>CTRL_CalculationTypes</c></summary>
     public int CalculationTypeId { get; set; }
@@ -42,6 +53,20 @@ public class Metric
 
     public DateTime? UpdatedDate { get; set; }
 
+    public List<MetricDetailField> DetailFields { get; set; } = new();
+
     /// <summary>timestamp rowversion — EF משתמש בו לזיהוי התנגשות עדכון</summary>
     public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+}
+
+/// <summary>
+/// שדה פירוט של נתון מוגדר — טבלת CTRL_MetricDetailFields.
+/// </summary>
+public class MetricDetailField
+{
+    public Metric Metric { get; set; } = null!;
+
+    public int FieldID { get; set; }
+
+    public int DisplayOrder { get; set; }
 }

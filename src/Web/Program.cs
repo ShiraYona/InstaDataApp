@@ -33,7 +33,7 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
-builder.Services.AddWebServices(builder.Configuration);
+builder.Services.AddWebServices(builder.Configuration, builder.Environment);
 
 builder.Services.AddCors(options =>
 {
@@ -49,6 +49,9 @@ builder.Services
     .AddAuthentication(NegotiateDefaults.AuthenticationScheme)
     .AddNegotiate();
 
+var launchProfile = Environment.GetEnvironmentVariable("DOTNET_LAUNCH_PROFILE");
+var allowAnonymousInDevelopment = builder.Environment.IsDevelopment()
+    && !string.Equals(launchProfile, "IIS Express", StringComparison.OrdinalIgnoreCase);
 if (builder.Environment.IsDevelopment())
 {
     // בסביבת פיתוח מוסיפים שכבת אימות שמזהה את המשתמש המקומי כ-dev-user-1,
@@ -68,22 +71,19 @@ if (builder.Environment.IsDevelopment())
 
 builder.Services.AddAuthorization(options =>
 {
-    options.FallbackPolicy = options.DefaultPolicy;
+    options.FallbackPolicy = allowAnonymousInDevelopment
+        ? new AuthorizationPolicyBuilder().RequireAssertion(_ => true).Build()
+        : options.DefaultPolicy;
 });
 
 builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = null);
 
 var app = builder.Build();
 
-// Handle errors first, so the re-executed /Error request never falls into the
-// Negotiate handler with an incomplete authentication context.
-if (app.Environment.IsDevelopment())
+app.UseExceptionHandler();
+
+if (!app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage();
-}
-else
-{
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
     app.UseHsts();
 }
 
@@ -91,10 +91,7 @@ app.UseSerilogRequestLogging();
 
 app.UseHttpsRedirection();
 
-// Static files (favicon.ico, SPA assets...) are served before authentication.
-// Browsers request favicon.ico anonymously and in parallel with the page request;
-// letting it reach Negotiate throws "An anonymous request was received in between
-// authentication handshake requests."
+
 app.UseStaticFiles();
 
 app.UseCors("AllowAngular");
@@ -104,8 +101,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Status-code re-execution runs AFTER authentication, so the fallback policy has
-// already been applied once and does not re-enter the challenge loop.
+
 app.UseStatusCodePagesWithReExecute("/Error", "?code={0}");
 
 app.MapHealthChecks("/health").AllowAnonymous();
