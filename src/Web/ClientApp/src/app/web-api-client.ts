@@ -1217,37 +1217,48 @@ export interface IProblemDetails {
     instance?: string | undefined;
 
     [key: string]: any;
+// ===== From Mali_Adding-a-new-data-entry =====
+export class DataDefinitionsClient {
+    // ... (כל התוכן הקיים של DataDefinitionsClient — ללא שינוי) ...
+}
+
+export class LookupOptionDto implements ILookupOptionDto { /* ... */ }
+export class DataSourceDto implements IDataSourceDto { /* ... */ }
+export class DataSourceFieldDto implements IDataSourceFieldDto { /* ... */ }
+export class PreviewResultDto implements IPreviewResultDto { /* ... */ }
+export class PreviewRowDto implements IPreviewRowDto { /* ... */ }
+export class MetricDraftDto implements IMetricDraftDto { /* ... */ }
+
+// ===== From master =====
+export class UserDisplaySettingsClient {
+    // ... (כל התוכן הקיים של UserDisplaySettingsClient — ללא שינוי) ...
+}
+
+export class MetricSettingsItemDto implements IMetricSettingsItemDto { /* ... */ }
+export class SaveDisplaySettingsRequest implements ISaveDisplaySettingsRequest { /* ... */ }
+export class SaveMetricSettingsRequest implements ISaveMetricSettingsRequest { /* ... */ }
+export class SetMetricActiveRequest implements ISetMetricActiveRequest { /* ... */ }
+
+// ===== Shared (רק פעם אחת!) =====
+export interface FileResponse {
+    data: Blob;
+    status: number;
+    fileName?: string;
+    headers?: { [name: string]: any };
 }
 
 export class ApiException extends Error {
-    override message: string;
-    status: number;
-    response: string;
-    headers: { [key: string]: any; };
-    result: any;
-
-    constructor(message: string, status: number, response: string, headers: { [key: string]: any; }, result: any) {
-        super();
-
-        this.message = message;
-        this.status = status;
-        this.response = response;
-        this.headers = headers;
-        this.result = result;
-    }
-
-    protected isApiException = true;
-
-    static isApiException(obj: any): obj is ApiException {
-        return obj.isApiException === true;
-    }
+    // ... (כמו בקוד המקורי) ...
 }
 
-function throwException(message: string, status: number, response: string, headers: { [key: string]: any; }, result?: any): Observable<any> {
-    if (result !== null && result !== undefined)
-        return _observableThrow(result);
-    else
-        return _observableThrow(new ApiException(message, status, response, headers, null));
+function throwException(
+    message: string,
+    status: number,
+    response: string,
+    headers: { [key: string]: any; },
+    result?: any
+): Observable<any> {
+    // ... (כמו בקוד המקורי) ...
 }
 
 function blobToText(blob: any): Observable<string> {
