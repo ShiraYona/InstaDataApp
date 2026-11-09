@@ -13,8 +13,8 @@ public class Metric
 
     public DataSource Source { get; set; } = null!;
 
-    /// <summary>COUNT / SUM / DIRECT — נשמר כמחרוזת, כמו בטבלה</summary>
-    public string CalculationType { get; set; } = string.Empty;
+    /// <summary>מפתח ל-CTRL_CalculationTypes (COUNT / SUM / DIRECT)</summary>
+    public int CalculationTypeID { get; set; }
 
     /// <summary>השדה שעליו תבוצע סכימה — רלוונטי ל-SUM</summary>
     public int? SumFieldID { get; set; }

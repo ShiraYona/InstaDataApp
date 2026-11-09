@@ -2,7 +2,8 @@ namespace InstaDataApp.Domain.Entities;
 
 /// <summary>
 /// סוג חישוב — טבלת CTRL_CalculationTypes (ID / Name / Value).
-/// ה-Name נשמר ב-CTRL_Metrics.CalculationType, וה-Value מוצג למשתמש.
+/// ה-ID נשמר ב-CTRL_Metrics.CalculationTypeID;
+/// ה-Name הוא הקוד (COUNT / SUM / DIRECT), וה-Value מוצג למשתמש.
 /// </summary>
 public class CalculationTypeDefinition
 {

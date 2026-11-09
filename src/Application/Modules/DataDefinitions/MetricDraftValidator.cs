@@ -10,9 +10,17 @@ public class MetricDraftValidator : AbstractValidator<MetricDraftDto>
 {
     private readonly IApplicationDbContext _context;
 
+    private readonly HashSet<int> _sumTypeIds;
+
     public MetricDraftValidator(IApplicationDbContext context)
     {
         _context = context;
+
+        // סוג החישוב "סכימה" — מזוהה לפי שורת הקטלוג שכולה SUM
+        _sumTypeIds = context.CalculationTypes
+            .Where(type => type.Name == MetricConstants.CalculationSum || type.Value.Contains("סכימ"))
+            .Select(type => type.ID)
+            .ToHashSet();
 
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("יש להזין שם לנתון.")
@@ -23,8 +31,9 @@ public class MetricDraftValidator : AbstractValidator<MetricDraftDto>
             .MustAsync((id, ct) => _context.DataSources.AnyAsync(s => s.SourceID == id && s.IsActive, ct))
             .WithMessage("מקור הנתונים שנבחר אינו קיים.");
 
-        RuleFor(x => x.CalculationType)
-            .Must(MetricConstants.CalculationTypes.Contains)
+        RuleFor(x => x.CalculationTypeId)
+            .GreaterThan(0)
+            .MustAsync((id, ct) => _context.CalculationTypes.AnyAsync(t => t.ID == id, ct))
             .WithMessage("סוג חישוב לא חוקי.");
 
         RuleFor(x => x.DateRangeType)
@@ -35,12 +44,12 @@ public class MetricDraftValidator : AbstractValidator<MetricDraftDto>
 
         RuleFor(x => x.SumFieldId)
             .NotNull()
-            .When(x => x.CalculationType == MetricConstants.CalculationSum)
+            .When(x => IsSumType(x.CalculationTypeId))
             .WithMessage("בחישוב סכום יש לבחור שדה לסיכום.");
 
         RuleFor(x => x.SumFieldId)
             .Null()
-            .When(x => x.CalculationType != MetricConstants.CalculationSum)
+            .When(x => !IsSumType(x.CalculationTypeId))
             .WithMessage("שדה הסיכום רלוונטי לחישוב סכום בלבד.");
 
         RuleFor(x => x.SumFieldId!.Value)
@@ -61,6 +70,12 @@ public class MetricDraftValidator : AbstractValidator<MetricDraftDto>
             .MustAsync((dto, ids, ct) => AreFieldsOfSourceAsync(dto.SourceId, ids, ct))
             .WithMessage("אחד משדות הפירוט אינו שייך למקור שנבחר.");
     }
+
+    /// <summary>
+    /// האם סוג החישוב שנבחר הוא סכימה. אימות מלא של השדות נעשה ב-<c>MetricDraftCheck</c>;
+    /// כאן נדרש רק סימון לענף-התנאי של שדה הסיכום.
+    /// </summary>
+    private bool IsSumType(int calculationTypeId) => _sumTypeIds.Contains(calculationTypeId);
 
     private Task<bool> IsFieldOfSourceAsync(int sourceId, int fieldId, CancellationToken ct) =>
         _context.DataSourceFields.AnyAsync(

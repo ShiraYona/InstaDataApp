@@ -12,14 +12,12 @@
     [style]="{ width: 'min(100%, 1000px)' }"
     (visibleChange)="visibleChange.emit($event)">
 
-    <!-- כמו בדמו: הכותרת מימין, כפתור הסגירה משמאל — בקצוות מנוגדים -->
     <div class="modal-head">
         <strong>יצירת נתון חדש</strong>
         <button type="button" class="close" aria-label="סגירה" (click)="cancel()">×</button>
     </div>
 
     <div class="modal-body">
-        <!-- כמו בדמו: "שם הנתון" לרוחב מלא, ומתחתיו "מקור נתונים" ו"סמל כרטיס" זו לצד זו -->
         <form [formGroup]="form">
 
             <div class="formgrid">
@@ -145,11 +143,11 @@
                         }
                     </div>
 
-                    <div class="field" [class.empty]="!isFieldFilled('calculationType')">
+                    <div class="field" [class.empty]="!isFieldFilled('calculationTypeId')">
                         <label for="eCalc">סוג חישוב *</label>
                         <p-select
                             inputId="eCalc"
-                            formControlName="calculationType"
+                            formControlName="calculationTypeId"
                             size="small"
                             [options]="calculationTypeOptions"
                             optionLabel="label"
@@ -205,19 +203,15 @@
                         <div class="checks">
 
                             @for (option of detailFieldOptions; track option.fieldId) {
-                                <!-- הטקסט הוא span ולא label קושר: לחיצה עליו אינה מסמנת את השדה.
-                                     הסימון מתבצע רק בלחיצה על הריבוע עצמו. -->
-                                <div class="check-item">
+                                <label class="check-item" [for]="detailInputId(option.fieldId)">
                                     <span class="check-item__label">{{ option.label }}</span>
-                                    <!-- מצב "כמה ערכים" של PrimeNG: ה-checkbox מסמן/מבטל את
-                                         הערך שלו עצמו בתוך מערך ה-FormControl — בלי ngModel
-                                         ובלי אירועים ידניים. ה-checkbox שומר את ה-model שלו
-                                         בעצמו ולכן הסימון לא נמחק אחרי הלחיצה. -->
-                                    <p-checkbox
-                                        [inputId]="detailInputId(option.fieldId)"
-                                        [value]="option.fieldId"
-                                        formControlName="detailFieldIds" />
-                                </div>
+                                    <input
+                                        type="checkbox"
+                                        class="check-item__input"
+                                        [id]="detailInputId(option.fieldId)"
+                                        [checked]="isDetailFieldSelected(option.fieldId)"
+                                        (change)="toggleDetailField(option.fieldId)" />
+                                </label>
                             } @empty {
                                 <span class="hint">בחירת מקור נתונים תציג את השדות הזמינים</span>
                             }
@@ -230,17 +224,17 @@
             </div>
 
             <div class="fieldset">
-                <div class="toggle">
-                    <!-- הטקסט אינו label קושר: לחיצה עליו אינה מסמנת את השדה -->
+                <label class="toggle" for="eDisplayInDashboard">
                     <span class="toggle__label">הצגת הנתון במערכת הניהול והבקרה</span>
-                    <p-checkbox
-                        inputId="eDisplayInDashboard"
-                        [binary]="true"
-                        formControlName="displayInDashboard" />
-                </div>
+                    <input
+                        type="checkbox"
+                        class="check-item__input"
+                        id="eDisplayInDashboard"
+                        [checked]="form.controls.displayInDashboard.value"
+                        (change)="toggleDisplayInDashboard()" />
+                </label>
             </div>
 
-            <!-- שורת התחתית: הכפתורים מימין -->
             <div class="actionrow">
                 <div class="actionrow__buttons">
                     <p-button label="שמירת נתון" [loading]="saving" [disabled]="previewing" (onClick)="save()" />

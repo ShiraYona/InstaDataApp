@@ -3,8 +3,11 @@
  * תואמים ל-DTOs שבשרת (Application/Modules/DataDefinitions/DataDefinitionContracts.cs).
  */
 
-/** סוג החישוב — נשמר כמחרוזת בעמודת CTRL_Metrics.CalculationType */
-export type CalculationType = 'COUNT' | 'SUM' | 'DIRECT';
+/**
+ * מזהה סוג החישוב — ה-ID מ-CTRL_CalculationTypes,
+ * ונשמר בעמודת CTRL_Metrics.CalculationTypeID. מגיע כ-Value ברשימה הנפתחת.
+ */
+export type CalculationTypeId = number;
 
 /** ערך מתוך רשימה נפתחת (מקור נתונים, סמל כרטיס, תקופה וכו') */
 export interface LookupOption {
@@ -40,7 +43,8 @@ export interface DataSource {
 export interface MetricDraft {
   name: string;
   sourceId: number | null;
-  calculationType: CalculationType;
+  /** מזהה סוג החישוב מ-CTRL_CalculationTypes */
+  calculationTypeId: CalculationTypeId | null;
   /** רלוונטי רק ל-SUM */
   sumFieldId: number | null;
   groupFieldId: number | null;

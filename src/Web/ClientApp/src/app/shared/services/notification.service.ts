@@ -2,7 +2,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { MessageService } from 'primeng/api';
 
-/** משך התצוגה של כל סוג הודעה (במילישניות) */
 const LIFETIME = {
   success: 3000,
   info: 3000,
@@ -45,9 +44,7 @@ export class NotificationService {
   }
 
   /**
-   * שגיאה שהגיעה מהשרת. הודעת השגיאה שהשרת מחזיר תועדף;
-   * אם אין כזו (למשל תקלת רשת או תשובת 500 בלי גוף) — מוצג הנוסח החלופי.
-   *
+   
    * @param error השגיאה שנתפסה ב-catchError
    * @param fallback נוסח ברירת מחדל כשאין הודעת שגיאה מהשרת
    */
@@ -74,6 +71,12 @@ export class NotificationService {
 
     if (body !== null && typeof body === 'object') {
       const candidate = body as Record<string, unknown>;
+
+      const validation = this.extractValidationMessages(candidate['errors']);
+      if (validation !== null) {
+        return validation;
+      }
+
       // ProblemDetails של ASP.NET Core, וסגנון { message } / { detail } נפוץ
       for (const key of ['detail', 'message', 'title']) {
         const value = candidate[key];
@@ -84,6 +87,29 @@ export class NotificationService {
     }
 
     return null;
+  }
+
+  private extractValidationMessages(errors: unknown): string | null {
+    if (errors === null || typeof errors !== 'object') {
+      return null;
+    }
+
+    const messages: string[] = [];
+
+    for (const value of Object.values(errors as Record<string, unknown>)) {
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          if (typeof item === 'string' && item.trim() !== '') {
+            messages.push(item.trim());
+          }
+        }
+      } else if (typeof value === 'string' && value.trim() !== '') {
+        messages.push(value.trim());
+      }
+    }
+
+    const distinct = [...new Set(messages)];
+    return distinct.length > 0 ? distinct.join(' · ') : null;
   }
 
   private show(severity: Severity, summary: string, detail: string): void {

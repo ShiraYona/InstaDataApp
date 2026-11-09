@@ -9,7 +9,6 @@ using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Optional Azure Key Vault support (set AZURE_KEY_VAULT_ENDPOINT to enable).
 builder.Configuration.AddKeyVaultIfConfigured(builder.Configuration);
 
 builder.Host.UseSerilog((context, services, configuration) => configuration
@@ -50,15 +49,10 @@ builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 
 
 var app = builder.Build();
 
-// Handle errors first, so the re-executed /Error request never falls into the
-// Negotiate handler with an incomplete authentication context.
-if (app.Environment.IsDevelopment())
+app.UseExceptionHandler();
+
+if (!app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage();
-}
-else
-{
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
     app.UseHsts();
 }
 

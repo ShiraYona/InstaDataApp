@@ -1,14 +1,13 @@
 import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, inject } from '@angular/core';
 import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
-import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { Subscription } from 'rxjs';
 
 import {
-  CalculationType,
+  CalculationTypeId,
   DataSource,
   LookupOption,
   MetricDraft,
@@ -17,7 +16,6 @@ import {
 import { DataDefinitionService } from '../../../shared/services/data-definition.service';
 import { NotificationService } from '../../../shared/services/notification.service';
 
-const DEFAULT_CALCULATION_TYPE: CalculationType = 'COUNT';
 
 const DEFAULT_DETAIL_FIELD_COUNT = 3;
 
@@ -38,7 +36,21 @@ const NO_GROUPING = 0;
 
 const BOARD_FILTER = 'BOARD_FILTER';
 
-const SUM_CALCULATION_TYPE: CalculationType = 'SUM';
+/** תווית הסכימה נגזרת משורת הקטלוג (ראה GetCalculationTypesQueryHandler) */
+const SUM_LABEL_MARKER = '(SUM)';
+
+/**
+ * האם הבחירה היא סוג החישוב "סכימה".
+ * הערך שנבחר הוא ה-ID מ-CTRL_CalculationTypes; נקרא לו "SUM" לפי התווית,
+ * שמוחזרת כ"<Name> (<Value>)" — למשל "סכימת ערכי שדה (SUM)".
+ */
+function isSumCalculationType(calculationTypeId: CalculationTypeId | null, options: LookupOption[]): boolean {
+  if (calculationTypeId === null) {
+    return false;
+  }
+  const label = options.find(option => Number(option.value) === calculationTypeId)?.label ?? '';
+  return label.includes(SUM_LABEL_MARKER);
+}
 
 
 const LEGACY_LOOKUP_LABELS: Record<string, string> = {
@@ -53,7 +65,7 @@ type FormFieldName =
   | 'sourceId'
   | 'cardSourceId'
   | 'dateRangeType'
-  | 'calculationType'
+  | 'calculationTypeId'
   | 'sumFieldId'
   | 'groupFieldId';
 
@@ -66,7 +78,6 @@ type FormFieldName =
     FormsModule,
     DialogModule,
     ButtonModule,
-    CheckboxModule,
     InputTextModule,
     SelectModule
   ],
@@ -121,7 +132,8 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
 
     iconCode: this.fb.control<string | null>(null),
     dateRangeType: this.fb.control<string | null>(null, { validators: [Validators.required] }),
-    calculationType: this.fb.control<CalculationType>(DEFAULT_CALCULATION_TYPE, { nonNullable: true }),
+    // ה-ID של סוג החישוב מ-CTRL_CalculationTypes — נשמר כמספר כדי להתאים ל-optionValue
+    calculationTypeId: this.fb.control<CalculationTypeId | null>(null, { validators: [Validators.required] }),
     sumFieldId: this.fb.control<number | null>(null, { validators: [Validators.required] }),
     groupFieldId: this.fb.control<number | null>(null),
     // לפחות שדה פירוט אחד — השרת דוחה רשימה ריקה, ולכן הטופס חוסם זאת מראש
@@ -137,7 +149,7 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
 
   get isSummaryVisible(): boolean {
 
-    return this.form.controls.calculationType.value === SUM_CALCULATION_TYPE;
+    return isSumCalculationType(this.form.controls.calculationTypeId.value, this.calculationTypeOptions);
   }
 
   /** שדות הפירוט — מתוך השדות שהוגדרו במקור הנבחר */
@@ -192,7 +204,7 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
 
   /** התווית של סוג החישוב שנבחר — לתצוגה בתוך השדה */
   get calculationTypeLabel(): string {
-    return this.labelOf(this.calculationTypeOptions, this.form.controls.calculationType.value);
+    return this.labelOf(this.calculationTypeOptions, String(this.form.controls.calculationTypeId.value ?? ''));
   }
 
   /** כל שדות הפירוט מסומנים — לשימוש עתידי */
@@ -211,12 +223,35 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
     return `detail-field-${fieldId}`;
   }
 
+  /** האם השדה מסומן — קובע את [checked] של ה-input המקורי */
+  isDetailFieldSelected(fieldId: number): boolean {
+    return this.form.controls.detailFieldIds.value.includes(fieldId);
+  }
+
   /**
-   * הבחירה של שדות הפירוט מתבצעת על ידי ה-p-checkbox עצמו:
-   * `[value]="option.fieldId"` + `formControlName="detailFieldIds"` —
-   * PrimeNG מוסיף/מסיר את הערך מהמערך שהוא שומר ב-model שלו.
-   * לא צריך כאן שום לוגיקת סימון ידנית.
+   * הקליק על <input type="checkbox"> מקורי (בתוך <label> שמקיף את הכרטיס).
+   * ה-input אינו כותב למערך בעצמו — מוסיפים/מסירים את המזהה ידנית.
    */
+  toggleDetailField(fieldId: number): void {
+    const control = this.form.controls.detailFieldIds;
+    const current = control.value;
+    const next = current.includes(fieldId)
+      ? current.filter(id => id !== fieldId)
+      : [...current, fieldId];
+
+    control.setValue(next);
+    // הערך החדש נקבע על ידי המסגרת, ולא על ידי הקלט עצמו — מסמנים כנוגע
+    // כדי ששגיאת "יש לבחור לפחות שדה אחד" תופיע ברגע ביטול הסימון האחרון.
+    control.markAsDirty();
+    control.markAsTouched();
+  }
+
+  /** הקליק על הטקסט של "הצגת הנתון" מהפך את הסימון — כמו לחיצה על הריבוע */
+  toggleDisplayInDashboard(): void {
+    const control = this.form.controls.displayInDashboard;
+    control.setValue(!control.value);
+    control.markAsDirty();
+  }
 
   /** "בחר הכל": מסמן את כולם, או מבטל את כולם אם כבר הכל מסומן */
   toggleAllDetailFields(): void {
@@ -279,8 +314,9 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
       this.service.getCalculationTypes().subscribe({
         next: types => {
           this.calculationTypeOptions = types;
-          // רשימת הסוגים משמשת לתצוגה בלבד; הוולידציה של שדה הסיכום נגזרת מהערך עצמו
-          this.applyCalculationType(this.form.controls.calculationType.value);
+          // אין ברירת מחדל קשיחה: נבחרת שורת הסכימה אם קיימת, אחרת הראשונה ברשימה
+          const sum = types.find(option => option.label.includes(SUM_LABEL_MARKER));
+          this.applyCalculationType((sum ?? types[0])?.value ?? null);
         },
         error: (error: unknown) => this.notifications.errorFromServer(error, 'טעינת סוגי החישוב נכשלה')
       })
@@ -376,7 +412,7 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
   /** SUM מחייב בחירת שדה סיכום; COUNT מסתיר אותו */
   private watchCalculationTypeChanges(): void {
     this.subscriptions.add(
-      this.form.controls.calculationType.valueChanges.subscribe(type => {
+      this.form.controls.calculationTypeId.valueChanges.subscribe(type => {
         this.applyCalculationType(type);
       })
     );
@@ -386,20 +422,27 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
   
   private applyDefaultsAfterSourceSelected(source: DataSource): void {
     this.form.patchValue({
-      calculationType: DEFAULT_CALCULATION_TYPE,
       dateRangeType: this.findBoardFilterPeriod(),
       groupFieldId: NO_GROUPING,
       sumFieldId: source.fields.find(f => f.isSummable)?.fieldId ?? null,
       detailFieldIds: source.fields.slice(0, DEFAULT_DETAIL_FIELD_COUNT).map(f => f.fieldId)
     });
 
-    this.applyCalculationType(this.form.controls.calculationType.value);
+    this.applyCalculationType(this.form.controls.calculationTypeId.value);
   }
 
-  private applyCalculationType(type: CalculationType): void {
+  /** מפעיל את הכללים שנגזרים מסוג החישוב (null = ללא בחירה) */
+  private applyCalculationType(calculationTypeId: CalculationTypeId | string | null): void {
+    const typeId = calculationTypeId === null || calculationTypeId === '' ? null : Number(calculationTypeId);
+
+    // ה-select מחזיר את הערך כפי שהוא ברשימה — מנרמלים למספר
+    if (this.form.controls.calculationTypeId.value !== typeId) {
+      this.form.controls.calculationTypeId.setValue(typeId, { emitEvent: false });
+    }
+
     const sumControl = this.form.controls.sumFieldId;
     // הדרישה לסיכום נקבעת לפי סוג החישוב: רק SUM דורש שדה סיכום
-    if (type === SUM_CALCULATION_TYPE) {
+    if (isSumCalculationType(typeId, this.calculationTypeOptions)) {
       sumControl.setValidators([Validators.required]);
     } else {
       // הסתרת הסיכום — מנקים גם את הערך כדי שלא יישמר שדה מוסתר
@@ -432,7 +475,7 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
       cardSourceId: null,
       iconCode: null,
       dateRangeType: this.findBoardFilterPeriod(),
-      calculationType: DEFAULT_CALCULATION_TYPE,
+      calculationTypeId: null,
       sumFieldId: null,
       // "ללא קיבוץ" ברשימה = 0, ואילו בטופס נשמר null — כך ה-select מציג את השורה
       groupFieldId: NO_GROUPING,
@@ -440,7 +483,7 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
       displayInDashboard: true
     });
     // reset מעדכן ערכים בלי emitEvent, לכן מסדירים את הוולידטורים ידנית
-    this.applyCalculationType(DEFAULT_CALCULATION_TYPE);
+    this.applyCalculationType(this.form.controls.calculationTypeId.value);
   }
 
   /** תווית השדה לפי מזההו — לתצוגת "שדה תאריך" (הערך עצמו אינו נבחר בטופס) */
@@ -572,9 +615,11 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
       name: value.name.trim(),
       // המזהה מחרוזת בטופס; השרת מצפה ל-int
       sourceId: value.sourceId === null ? null : Number(value.sourceId),
-      calculationType: value.calculationType,
+      calculationTypeId: value.calculationTypeId === null ? null : Number(value.calculationTypeId),
       // סיכום נשלח רק ב-SUM; ב-COUNT \u200FapplyCalculationType כבר מנקה את הערך
-      sumFieldId: value.calculationType === SUM_CALCULATION_TYPE ? value.sumFieldId : null,
+      sumFieldId: isSumCalculationType(value.calculationTypeId, this.calculationTypeOptions)
+        ? value.sumFieldId
+        : null,
       // 0 ברשימה = "ללא קיבוץ"; השרת שומר null
       groupFieldId: value.groupFieldId === NO_GROUPING ? null : value.groupFieldId,
       // ברירת מחדל סבירה אם הקטלוג עדיין לא נטען

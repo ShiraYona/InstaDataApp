@@ -2,10 +2,7 @@ using InstaDataApp.Application.Common.Interfaces;
 
 namespace InstaDataApp.Application.Modules.DataDefinitions;
 
-/// <summary>
-/// תצוגה מקדימה — מחזירה את השדות שיוצגו בכרטיס לפי ההגדרה,
-/// בלי לשמור דבר. הערכים עצמם יגיעו מהרצת המקור (ראה TODO למטה).
-/// </summary>
+
 public record GetMetricPreviewQuery(MetricDraftDto Draft) : IRequest<PreviewResultDto>;
 
 public class GetMetricPreviewQueryHandler : IRequestHandler<GetMetricPreviewQuery, PreviewResultDto>
@@ -18,6 +15,8 @@ public class GetMetricPreviewQueryHandler : IRequestHandler<GetMetricPreviewQuer
     {
         var draft = request.Draft;
 
+        await MetricDraftCheck.ValidateAsync(_context, draft, cancellationToken);
+
         var fieldIds = draft.DetailFieldIds
             .Concat(new[] { draft.SumFieldId, draft.GroupFieldId }.OfType<int>())
             .Distinct()
@@ -27,8 +26,6 @@ public class GetMetricPreviewQueryHandler : IRequestHandler<GetMetricPreviewQuer
             .Where(f => f.SourceID == draft.SourceId && fieldIds.Contains(f.FieldID))
             .ToDictionaryAsync(f => f.FieldID, f => f.DisplayName, cancellationToken);
 
-        // TODO: להריץ את מקור הנתונים (SchemaName.ObjectName) עם סוג החישוב והקיבוץ
-        // ולחשב את הערכים בפועל. בינתיים מחזירים את מבנה השורות בלבד.
         var rows = draft.DetailFieldIds
             .Select((id, index) => new PreviewRowDto
             {

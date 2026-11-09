@@ -21,7 +21,11 @@ public class CreateMetricCommandHandler : IRequestHandler<CreateMetricCommand, i
 
     public async Task<int> Handle(CreateMetricCommand request, CancellationToken cancellationToken)
     {
-        var metric = BuildMetric(request.Draft);
+        // האימות והערכים הקנוניים — לפני שנוגעים במסד
+        await MetricDraftCheck.ValidateAsync(_context, request.Draft, cancellationToken);
+        var canonical = await MetricDraftCheck.CanonicalizeAsync(_context, request.Draft, cancellationToken);
+
+        var metric = BuildMetric(request.Draft, canonical);
 
         _context.Metrics.Add(metric);
         await _context.SaveChangesAsync(cancellationToken);
@@ -30,30 +34,35 @@ public class CreateMetricCommandHandler : IRequestHandler<CreateMetricCommand, i
     }
 
     /// <summary>בונה את שורת CTRL_Metrics יחד עם שדות הפירוט שלה</summary>
-    private Metric BuildMetric(MetricDraftDto draft)
+    private Metric BuildMetric(MetricDraftDto draft, MetricCanonicalValues canonical)
     {
         return new Metric
         {
             MetricName = draft.Name.Trim(),
             SourceID = draft.SourceId,
-            CalculationType = draft.CalculationType,
-            SumFieldID = draft.CalculationType == MetricConstants.CalculationSum ? draft.SumFieldId : null,
+            CalculationTypeID = canonical.CalculationTypeId,
+            SumFieldID = draft.SumFieldId,
             GroupFieldID = draft.GroupFieldId,
-            DateRangeType = draft.DateRangeType,
-            IconCode = string.IsNullOrWhiteSpace(draft.IconCode) ? null : draft.IconCode,
+            // נשמר טקסט התקופה כפי שהוא מוצג למשתמש (CTRL_CalculationDays.Name)
+            DateRangeType = canonical.DateRangeType,
+            IconCode = canonical.IconCode,
             // "הצגת הנתון במערכת הניהול והבקרה" — כיבוי משמעו שמירה מוסתרת
             IsActive = draft.DisplayInDashboard,
             // עד שיהיה מנגנון התחברות — נכתב "USER" קבוע; כאן יוחלף במזהה המשתמש המחובר
             CreatedBy = _user.Id ?? MetricConstants.FallbackUserName,
             CreatedDate = _timeProvider.GetLocalNow().DateTime,
-            DetailFields = draft.DetailFieldIds
-                .Distinct()
-                .Select((fieldId, index) => new MetricDetailField
-                {
-                    FieldID = fieldId,
-                    DisplayOrder = index + 1
-                })
-                .ToList()
+            DetailFields = BuildDetailFields(draft.DetailFieldIds)
         };
     }
+
+    /// <summary>שדות הפירוט לפי סדר התצוגה — בלי כפילויות</summary>
+    private static List<MetricDetailField> BuildDetailFields(IEnumerable<int> fieldIds) =>
+        fieldIds
+            .Distinct()
+            .Select((fieldId, index) => new MetricDetailField
+            {
+                FieldID = fieldId,
+                DisplayOrder = index + 1
+            })
+            .ToList();
 }

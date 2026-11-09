@@ -13,8 +13,8 @@ public class MetricDraftDto
 
     public int SourceId { get; set; }
 
-    /// <summary>COUNT / SUM / DIRECT</summary>
-    public string CalculationType { get; set; } = MetricConstants.CalculationCount;
+    /// <summary>מזהה סוג החישוב מ-CTRL_CalculationTypes — נשמר ב-CTRL_Metrics.CalculationTypeID</summary>
+    public int CalculationTypeId { get; set; }
 
     /// <summary>חובה ל-SUM — אחרת null</summary>
     public int? SumFieldId { get; set; }

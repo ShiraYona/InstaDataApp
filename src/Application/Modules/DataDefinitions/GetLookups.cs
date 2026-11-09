@@ -67,7 +67,10 @@ public class GetDateRangeTypesQueryHandler : IRequestHandler<GetDateRangeTypesQu
     }
 }
 
-/// <summary>סוגי החישוב — נקראים מ-CTRL_CalculationTypes.</summary>
+/// <summary>
+/// סוגי החישוב — נקראים מ-CTRL_CalculationTypes.
+/// הערך בטופס הוא ה-ID (מפתח לטבלה), כי הוא זה שנשמר ב-CTRL_Metrics.CalculationTypeID.
+/// </summary>
 public record GetCalculationTypesQuery : IRequest<List<LookupOptionDto>>;
 
 public class GetCalculationTypesQueryHandler : IRequestHandler<GetCalculationTypesQuery, List<LookupOptionDto>>
@@ -80,15 +83,49 @@ public class GetCalculationTypesQueryHandler : IRequestHandler<GetCalculationTyp
         GetCalculationTypesQuery request,
         CancellationToken cancellationToken)
     {
-        // התווית מוצגת כ"ספירת רשומות (COUNT)": Name ואחריו Value בסוגריים.
-        // הערך (Value) נשאר ה-Name בלבד — הוא זה שנשמר ב-CTRL_Metrics.
-        return await _context.CalculationTypes
+        var types = await _context.CalculationTypes
             .OrderBy(type => type.ID)
             .Select(type => new LookupOptionDto
             {
-                Value = type.Name,
+                Value = type.ID.ToString(),
                 Label = type.Name + " (" + type.Value + ")"
             })
             .ToListAsync(cancellationToken);
+
+        return types;
+    }
+}
+
+/// <summary>
+/// המרה בין הקטלוג (Name בעברית או באנגלית) לבין הקוד הקנוני (COUNT / SUM / DIRECT).
+/// הקוד אינו נשמר במדד — נשמר ה-ID — אך הוא משמש לזיהוי סוג החישוב בכל מקום שבו
+/// צריך לדעת אם מדובר בסכימה.
+/// </summary>
+public static class CalculationTypeMap
+{
+    /// <summary>הופך את ה-Name מהקטלוג לקוד קנוני, לפי שם או לפי תווית</summary>
+    public static string ToCode(string? name)
+    {
+        var normalized = (name ?? string.Empty).Trim();
+
+        if (normalized.StartsWith("ספיר", StringComparison.Ordinal))
+        {
+            return MetricConstants.CalculationCount;
+        }
+
+        if (normalized.StartsWith("סכימ", StringComparison.Ordinal))
+        {
+            return MetricConstants.CalculationSum;
+        }
+
+        if (normalized.StartsWith("ערך ישיר", StringComparison.Ordinal))
+        {
+            return MetricConstants.CalculationDirect;
+        }
+
+        // ברירת מחדל: אם ה-Name הוא כבר קוד — הוא נשאר; אחרת DIRECT (בטוח)
+        return MetricConstants.CalculationTypes.Contains(normalized)
+            ? normalized
+            : MetricConstants.CalculationDirect;
     }
 }

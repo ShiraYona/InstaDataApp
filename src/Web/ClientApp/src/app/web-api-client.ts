@@ -348,6 +348,58 @@ export class DataDefinitionsClient {
         return _observableOf(null as any);
     }
 
+    preview(draft: MetricDraftDto): Observable<PreviewResultDto> {
+        let url_ = this.baseUrl + "/api/data-definitions/preview";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(draft);
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processPreview(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processPreview(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<PreviewResultDto>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<PreviewResultDto>;
+        }));
+    }
+
+    protected processPreview(response: HttpResponseBase): Observable<PreviewResultDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = PreviewResultDto.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
     create(draft: MetricDraftDto): Observable<number> {
         let url_ = this.baseUrl + "/api/data-definitions";
         url_ = url_.replace(/[?&]$/, "");
@@ -554,10 +606,102 @@ export interface IDataSourceFieldDto {
     isGroupable?: boolean;
 }
 
+export class PreviewResultDto implements IPreviewResultDto {
+    rows?: PreviewRowDto[];
+    total?: number;
+
+    constructor(data?: IPreviewResultDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["rows"])) {
+                this.rows = [] as any;
+                for (let item of _data["rows"])
+                    this.rows!.push(PreviewRowDto.fromJS(item));
+            }
+            this.total = _data["total"];
+        }
+    }
+
+    static fromJS(data: any): PreviewResultDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new PreviewResultDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.rows)) {
+            data["rows"] = [];
+            for (let item of this.rows)
+                data["rows"].push(item.toJSON());
+        }
+        data["total"] = this.total;
+        return data;
+    }
+}
+
+export interface IPreviewResultDto {
+    rows?: PreviewRowDto[];
+    total?: number;
+}
+
+export class PreviewRowDto implements IPreviewRowDto {
+    key?: string;
+    label?: string;
+    value?: number;
+
+    constructor(data?: IPreviewRowDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.key = _data["key"];
+            this.label = _data["label"];
+            this.value = _data["value"];
+        }
+    }
+
+    static fromJS(data: any): PreviewRowDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new PreviewRowDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["key"] = this.key;
+        data["label"] = this.label;
+        data["value"] = this.value;
+        return data;
+    }
+}
+
+export interface IPreviewRowDto {
+    key?: string;
+    label?: string;
+    value?: number;
+}
+
 export class MetricDraftDto implements IMetricDraftDto {
     name?: string;
     sourceId?: number;
-    calculationType?: string;
+    calculationTypeId?: number;
     sumFieldId?: number | undefined;
     groupFieldId?: number | undefined;
     dateRangeType?: string;
@@ -578,7 +722,7 @@ export class MetricDraftDto implements IMetricDraftDto {
         if (_data) {
             this.name = _data["name"];
             this.sourceId = _data["sourceId"];
-            this.calculationType = _data["calculationType"];
+            this.calculationTypeId = _data["calculationTypeId"];
             this.sumFieldId = _data["sumFieldId"];
             this.groupFieldId = _data["groupFieldId"];
             this.dateRangeType = _data["dateRangeType"];
@@ -603,7 +747,7 @@ export class MetricDraftDto implements IMetricDraftDto {
         data = typeof data === 'object' ? data : {};
         data["name"] = this.name;
         data["sourceId"] = this.sourceId;
-        data["calculationType"] = this.calculationType;
+        data["calculationTypeId"] = this.calculationTypeId;
         data["sumFieldId"] = this.sumFieldId;
         data["groupFieldId"] = this.groupFieldId;
         data["dateRangeType"] = this.dateRangeType;
@@ -621,7 +765,7 @@ export class MetricDraftDto implements IMetricDraftDto {
 export interface IMetricDraftDto {
     name?: string;
     sourceId?: number;
-    calculationType?: string;
+    calculationTypeId?: number;
     sumFieldId?: number | undefined;
     groupFieldId?: number | undefined;
     dateRangeType?: string;

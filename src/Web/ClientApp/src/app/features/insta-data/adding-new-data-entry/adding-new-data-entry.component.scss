@@ -276,15 +276,14 @@
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  // בשורת RTL: הפריטים מתחילים מימין וזורמים שמאלה
+
   justify-content: flex-start;
   direction: rtl;
 
   .check-item {
     display: flex;
     align-items: center;
-    // ההורה הוא flex ב-RTL, שגם הוא הופך את סדר הפריטים. כדי שהריבוע יישאר
-    // מימין לתווית בלי תלות בהיפוכים — קובעים את הכיוון במפורש, בפריט עצמו.
+
     flex-direction: row-reverse;
     direction: rtl;
     gap: 12px;
@@ -294,76 +293,89 @@
     border-radius: 8px;
     font-size: 13px;
     color: #33415c;
+    // הכרטיס הוא <label> — כל הקליק עליו מסמן את ה-input
+    cursor: pointer;
 
-    // הטקסט בפריט אינו לחיץ: הסימון מתבצע רק בלחיצה על הריבוע
+    &:has(.check-item__input:checked) {
+      background: #eaf1fb;
+      border-color: #b8cde8;
+    }
+
     .check-item__label {
-      cursor: default;
       user-select: none;
     }
   }
 }
 
-// --- .toggle ---
-// יושב במקטע נפרד עם קו עליון — ולכן אינו צריך מרווח עליון משלו.
-// ב-DOM: label ואחריו p-checkbox. ב-RTL `row` מציב את הראשון מימין,
-// ולכן התווית מימין והריבוע משמאלה — row-reverse היה הופך זאת.
-.toggle {
-  display: flex;
-  align-items: center;
-  flex-direction: row;
-  direction: rtl;
-  // תוכן מיושר לימין — "הצמדה" לתחילת השורה ב-RTL
-  justify-content: flex-start;
-  text-align: right;
-  gap: 8px;
+.check-item__input {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: 1px solid #c4cfdd;
+  border-radius: 5px;
+  background: #fff;
+  cursor: pointer;
+  display: grid;
+  place-content: center;
+  transition: background 120ms, border-color 120ms;
 
-  // הטקסט אינו לחיץ; הסימון מתבצע רק בלחיצה על הריבוע
-  .toggle__label {
-    cursor: default;
-    user-select: none;
+  // סימן ה-V — pseudo-element, מוצג רק במצב checked
+  &::before {
+    content: '';
+    width: 10px;
+    height: 6px;
+    border: 2px solid #fff;
+    border-top: 0;
+    border-right: 0;
+    transform: rotate(-45deg) translate(1px, -1px) scale(0);
+    transition: transform 120ms;
+  }
+
+  &:checked {
+    background: #1765ce;
+    border-color: #1765ce;
+
+    &::before {
+      transform: rotate(-45deg) translate(1px, -1px) scale(1);
+    }
+  }
+
+  &:hover:not(:checked) {
+    border-color: #8ea3bd;
+  }
+
+  // מיקוד מקלדת — outline ברור
+  &:focus-visible {
+    outline: 2px solid #3b6fb6;
+    outline-offset: 2px;
   }
 }
 
-// ה-checkbox מגיע אחרי הטקסט בהיררכיה, ולכן `order: -1` מעביר אותו לתחילת
-// השורה — ב-RTL זה הצד הימני, והטקסט אחריו (משמאלו).
-.toggle > p-checkbox {
-  order: -1;
-}
+// --- .toggle ---
+// יושב במקטע נפרד עם קו עליון — ולכן אינו צריך מרווח עליון משלו.
+// הכרטיס הוא <label>: הטקסט מימין והריבוע משמאלו (row-reverse ב-RTL).
+.toggle {
+  display: flex;
+  align-items: center;
+  flex-direction: row-reverse;
+  direction: rtl;
+  justify-content: flex-end;
+  text-align: right;
+  gap: 8px;
+  cursor: pointer;
 
-// --- ריבוע הסימון ---
-// חייבים ::ng-deep — התיבה עצמה נוצרת בתוך הרכיב של PrimeNG.
-// ב-PrimeNG 18 ה-input עצמו הוא `position:absolute; opacity:0; z-index:1`
-// ומכסה את התיבה — הוא מה שקליקים נוחתים עליו בפועל.
-//
-// הגודל (width/height) של .p-checkbox, .p-checkbox-box וה-input מגיע מ-Aura.
-// אסור לדרוס אותו כאן — בלעדיו הריבוע מוצג בגודל 0, ולכן "לא מופיע".
-:host ::ng-deep .p-checkbox {
-  display: inline-flex;
-  flex-shrink: 0;
-  // ה-input המוחלט ממוקם ביחס לתיבה הזו — בלעדי זה הוא "בורח" למיקום אחר
-  position: relative;
-}
+  .toggle__label {
+    user-select: none;
+  }
 
-// ברירת המחדל ב-Aura: ריבוע אפור-כחלחל כהה. בתמונה הריבוע לבן עם מסגרת בהירה
-// ואייקון V אפור — ולכן מחליפים רק את המסגרת הלא-מסומנת (הנבחר נשאר מה-preset).
-// לא נוגעים ב-width/height — הם מגיעים מ-Aura; דריסתם הייתה מפילה את הריבוע.
-:host ::ng-deep .p-checkbox .p-checkbox-box {
-  border: 1px solid #d5dce6;
-  background: #fff;
-  border-radius: 6px;
-  // הקליק שייך ל-input השקוף שמעל; הריבוע עצמו לא חוטף את הלחיצה
-  pointer-events: none;
-}
-
-:host ::ng-deep .p-checkbox .p-checkbox-icon {
-  width: 0.7rem;
-  height: 0.7rem;
-  font-size: 0.7rem;
-  color: #7b8799;
-}
-
-:host ::ng-deep .p-checkbox-checked .p-checkbox-icon {
-  color: #fff;
+  // אותו .check-item__input, אך עם מרווח מתאים לשורה
+  .check-item__input {
+    width: 18px;
+    height: 18px;
+  }
 }
 
 // --- .actionrow ---
@@ -421,21 +433,7 @@
   }
 }
 
-// אותה שורה כמו .toggle שלמעלה — עם ::ng-deep כדי שה-preset של Aura
-// (שמגדיר flex על .toggle) לא ידרוס את הכיוון.
-:host ::ng-deep .toggle {
-  display: flex;
-  align-items: center;
-  flex-direction: row;
-  direction: rtl;
-  justify-content: flex-start;
-  gap: 8px;
-  font-size: 13px;
-  color: #33415c;
-  cursor: pointer;
-  user-select: none;
-}
-
+// --- פאנל ---
 // --- .panel ---
 .panel {
   background: #fff;
@@ -456,7 +454,6 @@
     line-height: 1.55;
   }
 
-  // שורות הפירוט — שורה לכל שדה, עם קו הפרדה דק
   &__rows {
     list-style: none;
     margin: 10px 0 0;
@@ -489,10 +486,7 @@
   }
 }
 
-// --- פאנל הרשימה הנפתחת ---
-// הפאנל נוסף ל-DOM בתוך הרכיב (appendTo="self"), ולכן `:host ::ng-deep`
-// מגיע אליו — אבל הוא *לא* בתוך `.field`, ולכן אינו יורש את סגנון השדה.
-// כאן מגדירים אותו במפורש, בנפרד מהמסגרת של השדה עצמו.
+
 :host ::ng-deep .demo-select-panel.p-select-overlay {
   min-width: 0;
   padding: 5px;
@@ -505,8 +499,6 @@
   height: auto;
   max-height: none;
 
-  // הרשימה עצמה — בלי גלילה כלל: הפאנל נפתח בגובה שמספיק לכל הרשימה.
-  // (!important כי PrimeNG כותב max-height ישירות על האלמנט דרך [style.max-height])
   .p-select-list-container {
     padding: 0;
     max-height: none !important;
@@ -529,8 +521,7 @@
     padding: 8px 12px;
     border-radius: 7px;
     font-size: 13px;
-    // ערכת Aura מחזירה margin-inline-start על ה-check icon — מבטלים כדי
-    // שהאייקון והטקסט ייצמדו לימין ולא ייווצר רווח "תלוש"
+
     gap: 10px;
     color: #223b5a;
     white-space: nowrap;

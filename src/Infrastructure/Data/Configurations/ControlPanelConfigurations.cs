@@ -54,9 +54,9 @@ public class MetricConfiguration : IEntityTypeConfiguration<Metric>
         builder.HasKey(x => x.MetricID);
 
         builder.Property(x => x.MetricName).HasMaxLength(80).IsRequired();
-        // הטבלה מגדירה VARCHAR(20); ברירת המחדל של EF \u200F(NVARCHAR) הייתה מתפוצצת
-        // על עמודת אחסון צרה יותר
-        builder.Property(x => x.CalculationType).HasMaxLength(20).IsUnicode(false).IsRequired();
+        // העמודה האמיתית ב-CTRL_Metrics היא INT — מפתח ל-CTRL_CalculationTypes,
+        // ולא מחרוזת COUNT / SUM / DIRECT
+        builder.Property(x => x.CalculationTypeID).HasColumnName("CalculationTypeID").IsRequired();
         builder.Property(x => x.DateRangeType).HasMaxLength(50).IsRequired();
         builder.Property(x => x.IconCode).HasMaxLength(50);
         builder.Property(x => x.CreatedBy).HasMaxLength(128).IsRequired();

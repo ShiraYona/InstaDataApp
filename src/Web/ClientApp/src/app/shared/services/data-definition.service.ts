@@ -109,7 +109,7 @@ export class DataDefinitionService {
     return {
       name: draft.name,
       sourceId: draft.sourceId,
-      calculationType: draft.calculationType,
+      calculationTypeId: draft.calculationTypeId,
       sumFieldId: draft.sumFieldId,
       groupFieldId: draft.groupFieldId,
       dateRangeType: draft.dateRangeType,
