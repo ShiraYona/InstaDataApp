@@ -17,5 +17,10 @@ public interface IApplicationDbContext
     DbSet<CtrlFine> CtrlFines { get; }
     DbSet<CtrlClaim> CtrlClaims { get; }
     DbSet<CtrlIcon> CtrlIcons { get; }
-    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    DbSet<UserDisplaySettings> UserDisplaySettings { get; }
+    DbSet<UserMetricSetting> UserMetricSettings { get; }
+    // DbSet<Metric> Metrics { get; } 
+   Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
 }

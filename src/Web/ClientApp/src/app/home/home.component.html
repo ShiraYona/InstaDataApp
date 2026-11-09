@@ -9,13 +9,20 @@
         label="הוספת נתון חדש"
         icon="pi pi-plus"
         (onClick)="openNewDataDialog()" />
+     <p-button
+        label="ניהול נתונים"
+        routerLink="/data-management"
+        />
+    </div>
               <p-button
         label="קוביות לוח הבקרה"
         routerLink="/control-panel" />
+     <p-button
+        label="ניהול נתונים"
+        routerLink="/data-management"
+        />
     </div>
-
-    <app-menue></app-menue>
-  </div>
+  <button class="btn" routerLink="/display-management">ניהול תצוגה</button>
 </div>
 
 <app-adding-new-data-entry

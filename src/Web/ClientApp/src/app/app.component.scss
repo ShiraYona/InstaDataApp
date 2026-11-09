@@ -1,1 +1,12 @@
-/* Styles for the root component */
+.app-shell {
+  display: flex;
+  direction: rtl;
+  min-height: 100vh;
+}
+
+.app-content {
+  flex: 1 1 auto;
+  min-width: 0;  
+  padding: 0;
+  overflow-x: hidden;
+}

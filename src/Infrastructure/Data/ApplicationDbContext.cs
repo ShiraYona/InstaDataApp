@@ -19,9 +19,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<CtrlCalculationType> CtrlCalculationTypes => Set<CtrlCalculationType>();
     public DbSet<CtrlIcon> CtrlIcons => Set<CtrlIcon>();
 
+    public DbSet<UserDisplaySettings> UserDisplaySettings => Set<UserDisplaySettings>();
+    public DbSet<UserMetricSetting> UserMetricSettings => Set<UserMetricSetting>();
+    public DbSet<Metric> Metrics => Set<Metric>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-        builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+        builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
     }
 }
