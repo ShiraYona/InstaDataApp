@@ -1,61 +1,62 @@
-import { Injectable, Optional } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, catchError, map, of, tap } from 'rxjs';
 
-export interface DisplayLayout {
+/** מבנה התשובה מה-API עבור מספר הכרטיסים בשורה */
+interface DisplaySettingsDto {
   cardsPerRow: number;
-  /** מזהי הכרטיסים לפי הסדר הרצוי, כולל מוסתרים */
-  order: number[];
-  /** מזהי הכרטיסים המוצגים */
-  visibleIds: number[];
 }
 
-/**
- * שמירה וטעינה של פריסת לוח הבקרה.
- * כרגע עובד מול localStorage; את החיבור לשרת מחליפים ב-saveToServer/loadFromServer.
- */
+/** פריט בודד של נתון בהגדרות המשתמש */
+export interface MetricSettingItem {
+  metricId: number;
+  metricName: string;
+  iconCode: string | null;
+  displayOrder: number | null;
+  isVisible: boolean;
+}
+
+/** תשובת ה-API לשליפת הנתונים */
+export interface MetricSettingsResponse {
+  items: MetricSettingItem[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class DisplayLayoutService {
-  private readonly storageKey = 'display-layout';
+  private readonly http = inject(HttpClient);
 
-  constructor(@Optional() private readonly http: HttpClient | null) {}
+  private readonly apiUrl = '/api/user-display-settings';
 
-  /** שמירה — כרגע מקומית. כאן יחובר ה-HTTP POST בעתיד. */
-  save(layout: DisplayLayout): Observable<DisplayLayout> {
-    try {
-      localStorage.setItem(this.storageKey, JSON.stringify(layout));
-    } catch {
-      // אחסון לא זמין (מצב פרטי / מכסה) — לא מפילים את המסך
-    }
-    return of(layout);
+  /** הערך שנשמר לאחרונה מהשרת — משמש כגיבוי אם הקריאה נכשלה */
+  private serverCardsPerRow: number | null = null;
+
+
+  loadCardsPerRow(): Observable<number | null> {
+    return this.http.get<DisplaySettingsDto>(this.apiUrl).pipe(
+      map(dto => dto?.cardsPerRow ?? null),
+      tap(value => {
+        if (value !== null) {
+          this.serverCardsPerRow = value;
+        }
+      }),
+      catchError(() => of(this.serverCardsPerRow))
+    );
   }
 
-  /** טעינה — מחזיר null אם אין פריסה שמורה */
-  load(): DisplayLayout | null {
-    try {
-      const raw = localStorage.getItem(this.storageKey);
-      return raw ? (JSON.parse(raw) as DisplayLayout) : null;
-    } catch {
-      return null;
-    }
+  /** שמירת מספר הכרטיסים בשורה בשרת */
+saveCardsPerRow(cardsPerRow: number): Observable<void> {
+  return this.http.put<void>(this.apiUrl, { cardsPerRow }).pipe(
+    tap(() => {
+      this.serverCardsPerRow = cardsPerRow;
+    })
+  );
+}
+
+  loadMetricSettings(): Observable<MetricSettingsResponse> {
+    return this.http.get<MetricSettingsResponse>(`${this.apiUrl}/metrics`);
   }
 
-  clear(): void {
-    try {
-      localStorage.removeItem(this.storageKey);
-    } catch {
-      // מתעלמים
-    }
-  }
-
-  /**
-   * דוגמה לחיבור עתידי לשרת:
-   * return this.http.post<DisplayLayout>('https://example.com/api/display-layout', layout);
-   */
-  protected saveToServer(layout: DisplayLayout): Observable<DisplayLayout> {
-    if (!this.http) {
-      return throwError(() => new Error('HttpClient לא זמין'));
-    }
-    return this.http.post<DisplayLayout>('https://example.com/api/display-layout', layout);
+  saveMetricSettings(items: MetricSettingItem[]): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/metrics`, { items });
   }
 }
