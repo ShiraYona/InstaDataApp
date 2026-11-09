@@ -10,6 +10,8 @@
     <SpaRoot>ClientApp\</SpaRoot>
     <SpaProxyServerUrl>https://localhost:44447</SpaProxyServerUrl>
     <SpaProxyLaunchCommand>npm start</SpaProxyLaunchCommand>
+    <!-- Lets the build stop a still-running instance of this app before copying DLLs. -->
+    <EnsureStopped Condition="'$(EnsureStopped)' == ''">true</EnsureStopped>
   </PropertyGroup>
 
   <ItemGroup>

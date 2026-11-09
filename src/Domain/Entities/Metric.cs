@@ -1,13 +1,16 @@
 namespace InstaDataApp.Domain.Entities;
 
 /// <summary>
-/// נתון (מדד) בקטלוג הבקרה — ממופה לטבלה הקיימת <c>dbo.CTRL_Metrics</c>.
-/// הטבלה נוצרה מחוץ ל-EF, לכן המחלקה אינה יורשת מ-BaseEntity —
-/// המזהה והשמות ממופים במפורש בשכבת Infrastructure.
+/// נתון שהוגדר ע"י בעל הרשאת ניהול נתונים.
+/// ממופה לטבלה הקיימת CTRL_Metrics — לקריאה בלבד.
 /// </summary>
 public class Metric
 {
     public int MetricId { get; set; }
+    public string MetricName { get; set; } = string.Empty;
+    public string? IconCode { get; set; }
+    public bool IsActive { get; set; }
+    public DateTime CreatedDate { get; set; }
 
     public string MetricName { get; set; } = string.Empty;
 
