@@ -14,7 +14,7 @@
       iconPos="right"
       size="small"
       styleClass="back-button"
-      [routerLink]="'/home'"
+      [routerLink]="'/control-panel'"
     ></p-button>
   </div>
 
@@ -51,7 +51,6 @@
           ></p-togglebutton>
 
           <span class="card-row__arrows">
-            <!-- החצים מצוירים ב-SVG: ריבוע לבן עם מסגרת כחלחלה וחץ V כהה עבה -->
             <button
               type="button"
               class="arrow-btn"
@@ -95,7 +94,6 @@
       </ul>
     </section>
 
-    <!-- פאנל הגדרות פריסה -->
     <section class="panel panel--settings">
       <h2 class="panel__title panel__title--page">הגדרות פריסה</h2>
 
@@ -106,10 +104,12 @@
           [ngModel]="cardsPerRow"
           (ngModelChange)="setCardsPerRow($event)"
           [options]="cardsPerRowOptions"
-          styleClass="cards-per-row-select"
           panelStyleClass="cards-per-row-select-panel"
         ></p-select>
       </label>
+
+                <!-- styleClass="cards-per-row-select" -->
+
 
       <div class="preview-block">
         <h3 class="preview-block__title">תצוגה מקדימה</h3>
@@ -139,7 +139,6 @@
   </div>
 </div>
 
-<!-- חלון אישור לאיפוס המסך — מוצג רק לאחר לחיצה על כפתור האיפוס -->
 <p-confirmdialog
   styleClass="dm-confirm-dialog"
   [closeOnEscape]="true"
