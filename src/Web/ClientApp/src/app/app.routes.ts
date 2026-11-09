@@ -1,7 +1,5 @@
 import { Routes } from '@angular/router';
 import { DataManagementScreen } from './DataManagementScreen/DataManagementScreen';
-import { DisplayManagementComponent } from './display-management/display-management.component';
-
 export const routes: Routes = [
   {
     path: 'control-panel',
@@ -19,7 +17,6 @@ export const routes: Routes = [
     loadComponent: () => import('./home/home.component').then(m => m.HomeComponent)
   },
   {
-    // מסך יצירת נתון חדש — נטען ישירות לכתובת, והדיאלוג נפתח עם הכניסה
     path: 'new-data-entry',
     loadComponent: () =>
       import('./features/insta-data/adding-new-data-entry/adding-new-data-entry.component').then(
@@ -30,6 +27,12 @@ export const routes: Routes = [
     path: 'data-management',
     loadComponent: () => import('./DataManagementScreen/DataManagementScreen').then(m => m.DataManagementScreen)
   },
-  { path: '**', redirectTo: '' },
-   
+  {
+    path: 'display-management',
+    loadComponent: () =>
+      import('./display-management/display-management.component').then(
+        m => m.DisplayManagementComponent
+      )
+  },
+  { path: '**', redirectTo: '' } 
 ];

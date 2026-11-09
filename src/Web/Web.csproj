@@ -46,29 +46,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Don't publish the SPA source files, but do show them in the project files list -->
     <Content Remove="$(SpaRoot)**" />
     <None Remove="$(SpaRoot)**" />
     <None Include="$(SpaRoot)**" Exclude="$(SpaRoot)node_modules\**" />
   </ItemGroup>
 
-  <!--
-    Stop a previous dotnet run of this app before copying assemblies.
-    Required here (not only in the IDE profile) because running the Web project
-    from the command line lets the already-running instance keep the DLLs locked.
-    It also stops the dev server started alongside it, so the next run is clean.
-  -->
-  <Target Name="EnsureStoppedPreviouslyLaunchedProcesses"
-          BeforeTargets="Build;_CopyFilesMarkedCopyLocal;CopyFilesToOutputDirectory"
-          Condition="'$(EnsureStopped)' == 'true' And $([MSBuild]::IsOSPlatform('Windows'))">
-    <Exec Command="powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\..\scripts\stop-local-instance.ps1&quot; -Name &quot;$(AssemblyName)&quot;"
-          ContinueOnError="true"
-          StandardOutputImportance="low" />
-  </Target>
-
-  <!-- Ensure Node environment on Build -->
   <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('$(SpaRoot)node_modules') ">
-    <!-- Ensure Node.js is installed -->
     <Exec Command="node --version" ContinueOnError="true">
       <Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
     </Exec>
@@ -77,12 +60,10 @@
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
   </Target>
 
-  <!-- Regenerate the TypeScript API client on Build -->
   <Target Name="NSwag" AfterTargets="PostBuildEvent" Condition=" '$(Configuration)' == 'Debug' ">
     <Exec ConsoleToMSBuild="true" WorkingDirectory="$(ProjectDir)" Command="$(NSwagExe_Net80) run config.nswag /variables:Configuration=$(Configuration)" />
   </Target>
 
-  <!-- Publish the SPA on Publish -->
   <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build -- --configuration production" />
