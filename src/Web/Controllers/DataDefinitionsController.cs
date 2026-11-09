@@ -3,7 +3,7 @@ using InstaDataApp.Application.Modules.DataDefinitions;
 namespace InstaDataApp.Web.Controllers;
 
 /// <summary>
-/// נתוני הבסיס והשמירה עבור דיאלוג "הוספת נתון חדש".
+/// נתוני הבסיס עבור דיאלוג "הוספת נתון חדש", ושמירת הנתון עצמו.
 /// </summary>
 [Route("api/data-definitions")]
 public class DataDefinitionsController : ControllerBase
@@ -32,20 +32,19 @@ public class DataDefinitionsController : ControllerBase
     public async Task<ActionResult<List<LookupOptionDto>>> GetCalculationTypes(CancellationToken cancellationToken)
         => Ok(await _sender.Send(new GetCalculationTypesQuery(), cancellationToken));
 
+    /// <summary>התאריך לתצוגת "תאריך יצירה" — נקרא ברקע בפתיחת הדיאלוג</summary>
+    [HttpGet("current-date")]
+    public async Task<ActionResult<DateTime>> GetCurrentDate(CancellationToken cancellationToken)
+        => Ok(await _sender.Send(new GetCurrentDateQuery(), cancellationToken));
+
+    /// <summary>תצוגה מקדימה של הנתון — מחזיר את מבנה השורות, בלי לשמור דבר</summary>
     [HttpPost("preview")]
-    public async Task<ActionResult<PreviewResultDto>> Preview(
-        [FromBody] MetricDraftDto draft,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<PreviewResultDto>> Preview([FromBody] MetricDraftDto draft, CancellationToken cancellationToken)
         => Ok(await _sender.Send(new GetMetricPreviewQuery(draft), cancellationToken));
 
+    /// <summary>שמירת נתון חדש — מחזיר את ה-MetricID שנקבע</summary>
     [HttpPost]
     public async Task<ActionResult<int>> Create([FromBody] MetricDraftDto draft, CancellationToken cancellationToken)
-    {
-        var id = await _sender.Send(new CreateMetricCommand(draft), cancellationToken);
+        => Ok(await _sender.Send(new CreateMetricCommand(draft), cancellationToken));
 
-        // CreatedAtAction היה נכשל כאן: ActionNameSelector לא מוצא את GetSource
-        // (הוא [HttpGet("sources/{sourceId}")] ולא נקודת קצה של המדד החדש).
-        // מחזירים 201 עם מזהה המדד — מה שה-SPA צורך בפועל.
-        return StatusCode(StatusCodes.Status201Created, id);
-    }
 }

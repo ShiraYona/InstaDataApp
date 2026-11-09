@@ -25,8 +25,7 @@ export const MyPreset = definePreset(Aura, {
       900: '#1a2b48',
       950: '#101b2e'
     },
-    // Aura ברירת מחדל: sm=4px, md=6px, lg=8px, xl=12px — שדות וכפתורים kv=6px.
-    // העמודים המצולמים עגולים יותר, לכן מרימים את הסקלה בעקביות (הכל נגזר מכאן).
+
     border: {
       radius: {
         sm: '6px',
@@ -34,6 +33,18 @@ export const MyPreset = definePreset(Aura, {
         lg: '10px',
         xl: '14px'
       }
+    }
+  },
+  components: {
+    // צבע ריבוע הסימון הנבחר — מגיע מה-preset ולא מ-CSS של הרכיב
+    checkbox: {
+      checkedBackground: '#2f5d9e',
+      checkedHoverBackground: '#274f88',
+      checkedBorderColor: '#2f5d9e',
+      checkedHoverBorderColor: '#2f5d9e',
+      // הסימון (V) לבן על הרקע הכחול
+      checkedIconColor: '#ffffff',
+      checkedHoverIconColor: '#ffffff'
     }
   }
 });

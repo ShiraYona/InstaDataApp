@@ -13,7 +13,7 @@ public interface IApplicationDbContext
 
     DbSet<MetricDetailField> MetricDetailFields { get; }
 
-    /// <summary>טבלאות עזר — CTRL_CardIcons / CTRL_CalculationPeriods / CTRL_CalculationTypes</summary>
+    /// <summary>טבלאות עזר — CTRL_ICON / CTRL_CalculationDays / CTRL_CalculationTypes</summary>
     DbSet<CardIcon> CardIcons { get; }
 
     DbSet<CalculationPeriod> CalculationPeriods { get; }

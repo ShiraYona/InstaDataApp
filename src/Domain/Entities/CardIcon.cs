@@ -1,7 +1,7 @@
 namespace InstaDataApp.Domain.Entities;
 
 /// <summary>
-/// סמל כרטיס — טבלת CTRL_Symbols (ID / Name / Value / IconClass).
+/// סמל כרטיס — טבלת CTRL_ICON (ID / Name / Value / IconClass).
 /// ה-Name נשמר ב-CTRL_Metrics.IconCode, וה-Value הוא המילה שמוצגת למשתמש
 /// לצד האייקון (IconClass — מחלקת PrimeIcons, כמו "pi pi-dollar").
 /// </summary>

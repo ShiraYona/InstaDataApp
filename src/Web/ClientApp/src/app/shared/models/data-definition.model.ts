@@ -54,7 +54,6 @@ export interface MetricDraft {
   displayInDashboard: boolean;
 }
 
-/** תוצאת תצוגה מקדימה — ללא שמירה */
 export interface PreviewResult {
   rows: Array<{ key: string; label: string; value: number }>;
   total: number;

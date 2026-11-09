@@ -9,46 +9,41 @@
     [dismissableMask]="true"
     [styleClass]="'new-data-dialog'"
     [maskStyleClass]="'new-data-dialog-mask'"
-    [style]="{ width: 'min(100%, 1050px)' }"
+    [style]="{ width: 'min(100%, 1000px)' }"
     (visibleChange)="visibleChange.emit($event)">
 
+    <!-- כמו בדמו: הכותרת מימין, כפתור הסגירה משמאל — בקצוות מנוגדים -->
     <div class="modal-head">
         <strong>יצירת נתון חדש</strong>
         <button type="button" class="close" aria-label="סגירה" (click)="cancel()">×</button>
     </div>
 
     <div class="modal-body">
-        <div class="banner">
-            מנגנון ההגדרות כאן פועל על נתוני דוגמה. חיבור למאגר הגבייה יצריך קטלוג מקורות מורשים ומיפוי שדות.
-        </div>
-
+        <!-- כמו בדמו: "שם הנתון" לרוחב מלא, ומתחתיו "מקור נתונים" ו"סמל כרטיס" זו לצד זו -->
         <form [formGroup]="form">
 
             <div class="formgrid">
-                <div class="field full">
+                <div class="field full" [class.empty]="!isFieldFilled('name')">
                     <label for="eName">שם הנתון *</label>
                     <input
                         id="eName"
                         pInputText
                         maxlength="80"
-                        formControlName="name"
-                        placeholder="למשל: סכום עיקולים לפי מערכת" />
+                        placeholder="למשל: סכום עיקולים לפי מערכת"
+                        formControlName="name" />
                     @if (isFieldInvalid('name')) {
                         <span class="error">יש להזין שם נתון</span>
                     }
                 </div>
 
-                <!-- כמו בדמו: "מקור נתונים" עם שתי רשימות זו לצד זו —
-                     הראשונה למקור, השנייה לסמל הכרטיס.
-                     בשתי הרשימות הערך שנבחר (המקור / הסמל) מוצג בתוך השדה;
-                     שם השדה נשאר בתווית שמעליו. -->
-                <div class="field full">
+                <div class="field" [class.empty]="!isFieldFilled('sourceId')">
                     <label for="eSource">מקור נתונים *</label>
                     <div class="source-row">
                         <!-- optionValue="value" — הערך בטופס הוא המחרוזת שמוחזרת בשרת -->
                         <p-select
                             inputId="eSource"
                             formControlName="sourceId"
+                            size="small"
                             aria-label="מקור נתונים"
                             [options]="sources"
                             optionLabel="label"
@@ -74,60 +69,68 @@
                                 </span>
                             </ng-template>
                         </p-select>
-                        <!-- "סמל כרטיס" — מהרשימה שבטבלת העזר CTRL_CardIcons (תווית + אייקון מהמסד).
-                             הערך שנבחר כאן מעדכן את iconCode שנשלח לשרת -->
-                        <p-select
-                            inputId="eIcon"
-                            formControlName="cardSourceId"
-                            aria-label="סמל כרטיס"
-                            [options]="cardIcons"
-                            optionLabel="label"
-                            optionValue="value"
-                            placeholder="בחירת סמל"
-                            panelStyleClass="demo-select-panel"
-                            [panelStyle]="{ width: '100%' }"
-                            appendTo="self">
-                            <ng-template let-option pTemplate="item">
-                                <span class="select-item">
-                                    @if (option.icon) {
-                                        <i [class]="option.icon"></i>
-                                    }
-                                    {{ option.label }}
-                                </span>
-                            </ng-template>
-                            <ng-template let-option pTemplate="selectedItem">
-                                <span class="select-item">
-                                    @if (option.icon) {
-                                        <i [class]="option.icon"></i>
-                                    }
-                                    {{ option.label }}
-                                </span>
-                            </ng-template>
-                        </p-select>
                     </div>
                     @if (isFieldInvalid('sourceId')) {
                         <span class="error">יש לבחור מקור נתונים</span>
                     }
                 </div>
+
+                <!-- "סמל כרטיס" — מהרשימה שבטבלת העזר CTRL_ICON (תווית + אייקון מהמסד).
+                     הערך שנבחר כאן מעדכן את iconCode שנשלח לשרת -->
+                <div class="field" [class.empty]="!isFieldFilled('cardSourceId')">
+                    <label for="eIcon">סמל כרטיס</label>
+                    <p-select
+                        inputId="eIcon"
+                        formControlName="cardSourceId"
+                        size="small"
+                        [options]="cardIcons"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="בחירת סמל"
+                        panelStyleClass="demo-select-panel"
+                        [panelStyle]="{ width: '100%' }"
+                        appendTo="self">
+                        <ng-template let-option pTemplate="item">
+                            <span class="select-item">
+                                @if (option.icon) {
+                                    <i [class]="option.icon"></i>
+                                }
+                                {{ option.label }}
+                            </span>
+                        </ng-template>
+                        <ng-template let-option pTemplate="selectedItem">
+                            <span class="select-item">
+                                @if (option.icon) {
+                                    <i [class]="option.icon"></i>
+                                }
+                                {{ option.label }}
+                            </span>
+                        </ng-template>
+                    </p-select>
+                </div>
             </div>
 
+            <!-- כמו בדמו: מקטע נפרד (fieldset) עם קו עליון — שורת השדות התלויים במקור -->
             <div class="fieldset">
                 <div class="formgrid">
+                    <!-- "שדה תאריך" קבוע לתאריך היצירה (מגיע מהשרת) — בלי רשימת בחירה -->
                     <div class="field">
                         <label for="eDate">שדה תאריך</label>
                         <input
                             id="eDate"
                             pInputText
+                            size="small"
                             [value]="dateFieldLabel"
                             disabled />
                         <span class="hint">מוגדר בקטלוג מקור הנתונים</span>
                     </div>
 
-                    <div class="field">
+                    <div class="field" [class.empty]="!isFieldFilled('dateRangeType')">
                         <label for="eRange">תקופת חישוב</label>
                         <p-select
                             inputId="eRange"
                             formControlName="dateRangeType"
+                            size="small"
                             [options]="rangeOptions"
                             optionLabel="label"
                             optionValue="value"
@@ -142,11 +145,12 @@
                         }
                     </div>
 
-                    <div class="field">
+                    <div class="field" [class.empty]="!isFieldFilled('calculationType')">
                         <label for="eCalc">סוג חישוב *</label>
                         <p-select
                             inputId="eCalc"
                             formControlName="calculationType"
+                            size="small"
                             [options]="calculationTypeOptions"
                             optionLabel="label"
                             optionValue="value"
@@ -156,11 +160,15 @@
                     </div>
 
                     <!-- כמו בדמו: השדה קיים תמיד ומוסתר באמצעות display -->
-                    <div class="field" [style.display]="isSummaryVisible ? '' : 'none'">
+                    <div
+                        class="field"
+                        [class.empty]="!isFieldFilled('sumFieldId')"
+                        [style.display]="isSummaryVisible ? '' : 'none'">
                         <label for="eSum">שדה לסיכום *</label>
                         <p-select
                             inputId="eSum"
                             formControlName="sumFieldId"
+                            size="small"
                             [options]="summaryFields"
                             optionLabel="label"
                             optionValue="fieldId"
@@ -174,11 +182,13 @@
                         }
                     </div>
 
-                    <div class="field">
+                    <!-- כמו בדמו: "קיבוץ לפי" ו"שדות להצגה בפירוט" לרוחב מלא -->
+                    <div class="field full" [class.empty]="isFieldEmptyForDisplay('groupFieldId')">
                         <label for="eGroup">קיבוץ לפי</label>
                         <p-select
                             inputId="eGroup"
                             formControlName="groupFieldId"
+                            size="small"
                             [options]="groupByOptions"
                             optionLabel="label"
                             optionValue="fieldId"
@@ -191,27 +201,46 @@
                     </div>
 
                     <div class="field full">
-                        <label>שדות להצגה בפירוט</label>
+                        <label>שדות להצגה בפירוט *</label>
                         <div class="checks">
+
                             @for (option of detailFieldOptions; track option.fieldId) {
-                                <!-- div ולא label: ל-p-checkbox יש label פנימי משלו,
-                                     ו-label בתוך label מבטל את ה-click של ה-input -->
+                                <!-- הטקסט הוא span ולא label קושר: לחיצה עליו אינה מסמנת את השדה.
+                                     הסימון מתבצע רק בלחיצה על הריבוע עצמו. -->
                                 <div class="check-item">
+                                    <span class="check-item__label">{{ option.label }}</span>
+                                    <!-- מצב "כמה ערכים" של PrimeNG: ה-checkbox מסמן/מבטל את
+                                         הערך שלו עצמו בתוך מערך ה-FormControl — בלי ngModel
+                                         ובלי אירועים ידניים. ה-checkbox שומר את ה-model שלו
+                                         בעצמו ולכן הסימון לא נמחק אחרי הלחיצה. -->
                                     <p-checkbox
-                                        [inputId]="'detail-' + option.fieldId"
+                                        [inputId]="detailInputId(option.fieldId)"
                                         [value]="option.fieldId"
                                         formControlName="detailFieldIds" />
-                                    <label [for]="'detail-' + option.fieldId">{{ option.label }}</label>
                                 </div>
                             } @empty {
                                 <span class="hint">בחירת מקור נתונים תציג את השדות הזמינים</span>
                             }
                         </div>
+                        @if (isDetailFieldsInvalid) {
+                            <span class="error">יש לבחור לפחות שדה אחד להצגה בפירוט</span>
+                        }
                     </div>
                 </div>
             </div>
 
-            <!-- שורת התחתית: הכפתורים מימין, הצ'קבוקס בקצה שמאל — כמו בדמו -->
+            <div class="fieldset">
+                <div class="toggle">
+                    <!-- הטקסט אינו label קושר: לחיצה עליו אינה מסמנת את השדה -->
+                    <span class="toggle__label">הצגת הנתון במערכת הניהול והבקרה</span>
+                    <p-checkbox
+                        inputId="eDisplayInDashboard"
+                        [binary]="true"
+                        formControlName="displayInDashboard" />
+                </div>
+            </div>
+
+            <!-- שורת התחתית: הכפתורים מימין -->
             <div class="actionrow">
                 <div class="actionrow__buttons">
                     <p-button label="שמירת נתון" [loading]="saving" [disabled]="previewing" (onClick)="save()" />
@@ -228,15 +257,6 @@
                         [outlined]="true"
                         [disabled]="saving || previewing"
                         (onClick)="cancel()" />
-                </div>
-
-                <!-- div במקום label — מאותה סיבה כמו בשדות הפירוט -->
-                <div class="toggle">
-                    <p-checkbox
-                        inputId="eDisplayInDashboard"
-                        [binary]="true"
-                        formControlName="displayInDashboard" />
-                    <label for="eDisplayInDashboard">הצגת הנתון במערכת הניהול והבקרה</label>
                 </div>
             </div>
 

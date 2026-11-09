@@ -299,37 +299,33 @@ export class DataDefinitionsClient {
         return _observableOf(null as any);
     }
 
-    preview(draft: MetricDraftDto): Observable<PreviewResultDto> {
-        let url_ = this.baseUrl + "/api/data-definitions/preview";
+    getCurrentDate(): Observable<Date> {
+        let url_ = this.baseUrl + "/api/data-definitions/current-date";
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(draft);
-
         let options_ : any = {
-            body: content_,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
-                "Content-Type": "application/json",
                 "Accept": "application/json"
             })
         };
 
-        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processPreview(response_);
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetCurrentDate(response_);
         })).pipe(_observableCatch((response_: any) => {
             if (response_ instanceof HttpResponseBase) {
                 try {
-                    return this.processPreview(response_ as any);
+                    return this.processGetCurrentDate(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<PreviewResultDto>;
+                    return _observableThrow(e) as any as Observable<Date>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<PreviewResultDto>;
+                return _observableThrow(response_) as any as Observable<Date>;
         }));
     }
 
-    protected processPreview(response: HttpResponseBase): Observable<PreviewResultDto> {
+    protected processGetCurrentDate(response: HttpResponseBase): Observable<Date> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -340,7 +336,8 @@ export class DataDefinitionsClient {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = PreviewResultDto.fromJS(resultData200);
+                result200 = resultData200 ? new Date(resultData200.toString()) : <any>null;
+    
             return _observableOf(result200);
             }));
         } else if (status !== 200 && status !== 204) {
@@ -555,98 +552,6 @@ export interface IDataSourceFieldDto {
     dataType?: string;
     isSummable?: boolean;
     isGroupable?: boolean;
-}
-
-export class PreviewResultDto implements IPreviewResultDto {
-    rows?: PreviewRowDto[];
-    total?: number;
-
-    constructor(data?: IPreviewResultDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            if (Array.isArray(_data["rows"])) {
-                this.rows = [] as any;
-                for (let item of _data["rows"])
-                    this.rows!.push(PreviewRowDto.fromJS(item));
-            }
-            this.total = _data["total"];
-        }
-    }
-
-    static fromJS(data: any): PreviewResultDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new PreviewResultDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        if (Array.isArray(this.rows)) {
-            data["rows"] = [];
-            for (let item of this.rows)
-                data["rows"].push(item.toJSON());
-        }
-        data["total"] = this.total;
-        return data;
-    }
-}
-
-export interface IPreviewResultDto {
-    rows?: PreviewRowDto[];
-    total?: number;
-}
-
-export class PreviewRowDto implements IPreviewRowDto {
-    key?: string;
-    label?: string;
-    value?: number;
-
-    constructor(data?: IPreviewRowDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.key = _data["key"];
-            this.label = _data["label"];
-            this.value = _data["value"];
-        }
-    }
-
-    static fromJS(data: any): PreviewRowDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new PreviewRowDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["key"] = this.key;
-        data["label"] = this.label;
-        data["value"] = this.value;
-        return data;
-    }
-}
-
-export interface IPreviewRowDto {
-    key?: string;
-    label?: string;
-    value?: number;
 }
 
 export class MetricDraftDto implements IMetricDraftDto {

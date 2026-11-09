@@ -3,7 +3,7 @@ using InstaDataApp.Application.Common.Interfaces;
 namespace InstaDataApp.Application.Modules.DataDefinitions;
 
 /// <summary>
-/// סמלי הכרטיס — נקראים מ-CTRL_Symbols (ID / Name / Value / IconClass).
+/// סמלי הכרטיס — נקראים מ-CTRL_ICON (ID / Name / Value / IconClass).
 /// ה-Name הוא מה שנשמר ב-CTRL_Metrics.IconCode;
 /// ה-Value הוא המילה המוצגת, וה-IconClass הוא האייקון שלצידה.
 /// </summary>

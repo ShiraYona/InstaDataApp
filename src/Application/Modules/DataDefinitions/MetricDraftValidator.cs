@@ -54,6 +54,10 @@ public class MetricDraftValidator : AbstractValidator<MetricDraftDto>
             .WithMessage("שדה הקיבוץ אינו שייך למקור שנבחר.");
 
         RuleFor(x => x.DetailFieldIds)
+            .NotEmpty()
+            .WithMessage("יש לבחור לפחות שדה אחד להצגה בפירוט.");
+
+        RuleFor(x => x.DetailFieldIds)
             .MustAsync((dto, ids, ct) => AreFieldsOfSourceAsync(dto.SourceId, ids, ct))
             .WithMessage("אחד משדות הפירוט אינו שייך למקור שנבחר.");
     }
@@ -62,13 +66,19 @@ public class MetricDraftValidator : AbstractValidator<MetricDraftDto>
         _context.DataSourceFields.AnyAsync(
             f => f.FieldID == fieldId && f.SourceID == sourceId && f.IsActive, ct);
 
+    /// <summary>
+    /// כל שדות הפירוט שייכים למקור שנבחר. רשימה ריקה נפסלת ב-<see cref="NotEmptyAttribute"/>,
+    /// ולכן כאן לא נדרש מקרה מיוחד עבורה.
+    /// </summary>
     private async Task<bool> AreFieldsOfSourceAsync(int sourceId, List<int> ids, CancellationToken ct)
     {
-        var distinct = ids.Distinct().ToList();
-        if (distinct.Count == 0)
+        if (ids.Count == 0)
         {
+            // אין שדות — את השגיאה מדווח הכלל של NotEmpty
             return true;
         }
+
+        var distinct = ids.Distinct().ToList();
 
         var matches = await _context.DataSourceFields.CountAsync(
             f => f.SourceID == sourceId && f.IsActive && distinct.Contains(f.FieldID), ct);
