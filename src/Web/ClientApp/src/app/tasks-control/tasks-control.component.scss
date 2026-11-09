@@ -1,0 +1,269 @@
+// מסך משימות ובקרה — העיצוב מועתק מהדמו, מסך "משימות ובקרה".
+:host {
+  display: block;
+  width: 100%;
+  min-height: 100vh;
+  direction: rtl;
+  font-family: Arial, 'Segoe UI', sans-serif;
+  color: #19304d;
+  background: #f3f6fb;
+  box-shadow: 0 0 0 100vmax #f3f6fb;
+  clip-path: inset(0 -100vmax);
+}
+
+.tasksControl {
+  width: 100%;
+  margin: 0;
+  padding: 30px 36px 80px;
+  box-sizing: border-box;
+}
+
+/* ---------- כותרת — .headline ---------- */
+.screenHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+
+.screenHeader__titles { min-width: 0; }
+
+.screenHeader__title {
+  margin: 0 0 8px;
+  font-size: 30px;
+  font-weight: 700;
+  color: #19304d;
+}
+
+.screenHeader__subtitle {
+  margin: 6px 0;
+  color: #6e8198;
+  line-height: 1.55;
+}
+
+/* ---------- כפתורים — .btn / .btn.light / .btn.sm ---------- */
+::ng-deep .createButton.p-button {
+  padding: 11px 18px;
+  font: inherit;
+  font-weight: 700;
+  color: #ffffff;
+  background: #1765ce;
+  border: 1px solid #1765ce;
+  border-radius: 9px;
+  box-shadow: none;
+}
+::ng-deep .createButton.p-button:not(:disabled):hover {
+  background: #0d54b6;
+  border-color: #0d54b6;
+}
+::ng-deep .createButton.p-button .p-button-label { font-weight: 700; }
+
+::ng-deep .cancelButton.p-button {
+  padding: 11px 18px;
+  font: inherit;
+  font-weight: 700;
+  color: #2b4d77;
+  background: #ffffff;
+  border: 1px solid #d7e1ee;
+  border-radius: 9px;
+  box-shadow: none;
+}
+::ng-deep .cancelButton.p-button:not(:disabled):hover {
+  background: #f6f9fc;
+  border-color: #d7e1ee;
+  color: #2b4d77;
+}
+::ng-deep .cancelButton.p-button .p-button-label { font-weight: 700; }
+
+/* ---------- באנר — .banner ---------- */
+.infoBanner {
+  margin-bottom: 18px;
+  padding: 12px 15px;
+  border-radius: 10px;
+  background: #eaf3ff;
+  color: #315c93;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* ---------- פאנל — .panel ---------- */
+.panel {
+  margin-top: 23px;
+  padding: 22px;
+  background: #ffffff;
+  border: 1px solid #e2eaf4;
+  border-radius: 15px;
+  box-shadow: 0 4px 16px #16334c07;
+  box-sizing: border-box;
+}
+
+/* ---------- טבלה ---------- */
+.panel__table {
+  width: 100%;
+  overflow: auto;
+}
+
+.tasksTable {
+  width: 100%;
+  min-width: 700px;
+  background: #ffffff;
+  border-collapse: collapse;
+  text-align: right;
+}
+
+.tasksTable ::ng-deep .p-datatable-table-container,
+.tasksTable ::ng-deep .p-datatable-table {
+  border-collapse: collapse;
+}
+
+.colId       { width: 8%;  min-width: 70px; }
+.colPriority { width: 12%; min-width: 90px; white-space: nowrap; }
+.colStatus   { width: 12%; min-width: 90px; white-space: nowrap; }
+.colUpdate   { width: 18%; min-width: 170px; }
+
+.cellId { color: #5f7591; }
+.cellTitle strong { font-weight: 700; }
+
+/* ---------- גלולות — .pill / .pill.red / .pill.gray ---------- */
+.statusPill {
+  display: inline-block;
+  padding: 5px 9px;
+  border-radius: 50px;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  background: #e9f2ff;
+  color: #1a66bd;
+}
+
+.statusPill--red {
+  background: #ffeded;
+  color: #c14246;
+}
+
+/* ---------- סלקט סטטוס בשורה ---------- */
+::ng-deep .statusDropdown.p-dropdown {
+  width: 100%;
+  min-width: 140px;
+  background: #ffffff;
+  border: 1px solid #d4dfeb;
+  border-radius: 8px;
+  box-shadow: none;
+}
+::ng-deep .statusDropdown.p-dropdown .p-dropdown-label {
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  color: #223b5a;
+}
+::ng-deep .statusDropdown.p-dropdown:not(.p-disabled):hover {
+  border-color: #3684e7;
+}
+
+.emptyMessage {
+  padding: 52px;
+  text-align: center;
+  color: #7186a0;
+  font-size: 13px;
+}
+
+.formgrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.field label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #465e7a;
+}
+
+.full { grid-column: 1 / -1; }
+
+.field input[pInputText] {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #d4dfeb;
+  border-radius: 8px;
+  padding: 10px;
+  font-family: inherit;
+  font-size: 13px;
+  color: #223b5a;
+  box-shadow: none;
+}
+.field input[pInputText]:enabled:focus {
+  border-color: #3684e7;
+  outline: 0;
+  box-shadow: 0 0 0 2px #3684e733;
+}
+
+.actionrow {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: 22px;
+}
+
+/* ---------- toast — .toast ---------- */
+::ng-deep .demoToast.p-toast {
+  bottom: 23px;
+  left: 25px;
+  right: auto;
+  top: auto;
+  width: auto;
+  max-width: min(420px, calc(100vw - 50px));
+  white-space: pre-line;
+  direction: rtl;
+  text-align: right;
+}
+
+::ng-deep .demoToast .p-toast-message {
+  margin: 0;
+  background: #1c3d60;
+  color: #ffffff;
+  padding: 13px 19px;
+  border: 0;
+  border-radius: 10px;
+  box-shadow: 0 5px 22px #162b4388;
+}
+
+::ng-deep .demoToast .p-toast-message-content {
+  padding: 0;
+  gap: 0;
+  align-items: center;
+}
+
+::ng-deep .demoToast .p-toast-message-text { margin: 0; gap: 0; }
+
+::ng-deep .demoToast .p-toast-summary,
+::ng-deep .demoToast .p-toast-detail {
+  margin: 0;
+  padding: 0;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #ffffff;
+  text-align: right;
+}
+
+::ng-deep .demoToast .p-toast-icon-close,
+::ng-deep .demoToast .p-toast-message-icon,
+::ng-deep .demoToast .p-toast-close-button {
+  display: none;
+}
+
+/* ---------- מסכים צרים ---------- */
+@media (max-width: 760px) {
+  .tasksControl { padding: 20px 13px; }
+  .formgrid { grid-template-columns: 1fr; }
+}

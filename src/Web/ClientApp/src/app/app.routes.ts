@@ -34,5 +34,9 @@ export const routes: Routes = [
         m => m.DisplayManagementComponent
       )
   },
+    {
+    path: 'tasks',
+    loadComponent: () => import('./tasks-control/tasks-control.component').then(m => m.TasksControlComponent)
+  },
   { path: '**', redirectTo: '' } 
 ];
