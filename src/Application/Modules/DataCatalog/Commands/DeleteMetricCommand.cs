@@ -1,4 +1,6 @@
 using InstaDataApp.Application.Common.Interfaces;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace InstaDataApp.Application.Modules.DataCatalog.Commands;
 

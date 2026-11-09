@@ -28,16 +28,9 @@ public class Metric
     /// <summary>DAY / MONTH / YEAR</summary>
     public string DateRangeType { get; set; } = string.Empty;
 
-    public string? IconCode { get; set; }
-
-    public bool IsActive { get; set; }
-
     public string CreatedBy { get; set; } = string.Empty;
 
-    public DateTime CreatedDate { get; set; }
-
     public string? UpdatedBy { get; set; }
-
     public DateTime? UpdatedDate { get; set; }
 
     public List<MetricDetailField> DetailFields { get; set; } = new();

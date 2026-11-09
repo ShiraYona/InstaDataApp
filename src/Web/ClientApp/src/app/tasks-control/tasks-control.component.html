@@ -1,0 +1,125 @@
+<div class="tasksControl" dir="rtl">
+  <p-toast position="bottom-left" styleClass="demoToast"></p-toast>
+
+  <!-- כותרת המסך -->
+  <header class="screenHeader">
+    <div class="screenHeader__titles">
+      <h1 class="screenHeader__title">משימות ובקרה</h1>
+      <p class="screenHeader__subtitle">
+        המחשה להרחבה תפעולית עתידית: פתיחת משימה, שיוך טיפול ומעקב.
+      </p>
+    </div>
+
+    <p-button
+      label="+ משימה חדשה"
+      styleClass="createButton"
+      (onClick)="openTask()">
+    </p-button>
+  </header>
+
+  <!-- באנר הסבר -->
+  <div class="infoBanner">
+    ניהול משימות הוא רכיב הרחבה מוצע, שדורש הגדרת תהליכי עבודה והרשאות לפני מימוש ייצור.
+  </div>
+
+  <!-- טבלת המשימות -->
+  <section class="panel">
+    <div class="panel__table">
+      <p-table
+        [value]="tasks"
+        dataKey="id"
+        styleClass="tasksTable tasksControlTable"
+        showGridlines="false"
+        [scrollable]="true">
+
+        <ng-template pTemplate="header">
+          <tr>
+            <th class="colId">מזהה</th>
+            <th>משימה</th>
+            <th>גורם מטפל</th>
+            <th class="colPriority">עדיפות</th>
+            <th class="colStatus">סטטוס</th>
+            <th class="colUpdate">עדכון סטטוס</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-row>
+          <tr>
+            <td class="cellId">#{{ row.id }}</td>
+            <td class="cellTitle"><strong>{{ row.title }}</strong></td>
+            <td>{{ row.owner }}</td>
+            <td class="colPriority">
+              <span class="statusPill" [class.statusPill--red]="row.priority === 'גבוהה'">
+                {{ row.priority }}
+              </span>
+            </td>
+            <td class="colStatus">
+              <span class="statusPill">{{ row.status }}</span>
+            </td>
+            <td class="colUpdate">
+              <p-dropdown
+                [options]="statusOptions"
+                [ngModel]="row.status"
+                (ngModelChange)="setTaskStatus(row, $event)"
+                styleClass="statusDropdown"
+                appendTo="body">
+              </p-dropdown>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="6" class="emptyMessage">אין משימות להצגה</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </section>
+
+  <!-- חלון פתיחת משימה -->
+  <p-dialog
+    [(visible)]="dialogVisible"
+    header="פתיחת משימה"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: 'min(100%, 720px)' }"
+    styleClass="taskDialog">
+    <div class="formgrid">
+      <div class="field full">
+        <label>נושא המשימה</label>
+        <input
+          pInputText
+          [(ngModel)]="draft.title"
+          maxlength="80"
+          placeholder="תיאור קצר" />
+      </div>
+
+      <div class="field">
+        <label>גורם מטפל</label>
+        <p-dropdown
+          [options]="ownerOptions"
+          [(ngModel)]="draft.owner"
+          appendTo="body"
+          styleClass="statusDropdown">
+        </p-dropdown>
+      </div>
+
+      <div class="field">
+        <label>עדיפות</label>
+        <p-dropdown
+          [options]="priorityOptions"
+          [(ngModel)]="draft.priority"
+          appendTo="body"
+          styleClass="statusDropdown">
+        </p-dropdown>
+      </div>
+    </div>
+
+    <div class="actionrow">
+      <p-button label="שמירת משימה" styleClass="createButton" (onClick)="saveTask()"></p-button>
+      <p-button label="ביטול" styleClass="cancelButton" (onClick)="dialogVisible = false"></p-button>
+    </div>
+  </p-dialog>
+</div>

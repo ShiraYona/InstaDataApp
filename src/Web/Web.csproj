@@ -61,7 +61,7 @@
   </Target>
 
   <Target Name="NSwag" AfterTargets="PostBuildEvent" Condition=" '$(Configuration)' == 'Debug' ">
-    <Exec ConsoleToMSBuild="true" WorkingDirectory="$(ProjectDir)" Command="$(NSwagExe_Net80) run config.nswag /variables:Configuration=$(Configuration)" />
+    <Exec Command="dotnet &quot;$(NSwagExe_Net80)&quot; run config.nswag /variables:Configuration=$(Configuration)" Condition="false" />
   </Target>
 
   <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">
