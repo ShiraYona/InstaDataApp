@@ -5,21 +5,17 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace InstaDataApp.Infrastructure.Data.Configurations;
 
 /// <summary>
-/// מיפוי לטבלה הקיימת CTRL_Metrics — לקריאה בלבד.
+/// מיפוי לטבלה הקיימת CTRL_Metrics.
 /// </summary>
 public class MetricConfiguration : IEntityTypeConfiguration<Metric>
 {
     public void Configure(EntityTypeBuilder<Metric> builder)
     {
         builder.ToTable("CTRL_Metrics");
-        builder.ToTable("CTRL_Metrics", table => table.HasCheckConstraint(
-            "CK__CTRL_Metr__Calcu__267ABA7A",
-            "[CalculationType]='DIRECT' OR [CalculationType]='SUM' OR [CalculationType]='COUNT'"));
 
         builder.HasKey(x => x.MetricId);
 
         builder.Property(x => x.MetricId)
-            .HasColumnName("MetricID");
             .HasColumnName("MetricID")
             .ValueGeneratedOnAdd();
 
@@ -28,18 +24,12 @@ public class MetricConfiguration : IEntityTypeConfiguration<Metric>
             .HasMaxLength(80)
             .IsRequired();
 
-        builder.Property(x => x.IconCode)
-            .HasColumnName("IconCode")
-            .HasMaxLength(50);
-
-        builder.Property(x => x.IsActive)
-            .HasColumnName("IsActive")
         builder.Property(x => x.SourceId)
-            .HasColumnName("SourceID");
+            .HasColumnName("SourceID")
+            .IsRequired();
 
-        builder.Property(x => x.CalculationType)
-            .HasColumnName("CalculationType")
-            .HasColumnType("varchar(20)")
+        builder.Property(x => x.CalculationTypeId)
+            .HasColumnName("CalculationTypeID")
             .IsRequired();
 
         builder.Property(x => x.SumFieldId)
@@ -54,10 +44,12 @@ public class MetricConfiguration : IEntityTypeConfiguration<Metric>
             .IsRequired();
 
         builder.Property(x => x.IconCode)
-            .HasColumnName("IconCode");
+            .HasColumnName("IconCode")
+            .HasMaxLength(50);
 
         builder.Property(x => x.IsActive)
-            .HasColumnName("IsActive");
+            .HasColumnName("IsActive")
+            .IsRequired();
 
         builder.Property(x => x.CreatedBy)
             .HasColumnName("CreatedBy")
@@ -67,8 +59,7 @@ public class MetricConfiguration : IEntityTypeConfiguration<Metric>
         builder.Property(x => x.CreatedDate)
             .HasColumnName("CreatedDate")
             .HasColumnType("datetime2")
-            .IsRequired()
-            .HasColumnType("datetime2");
+            .IsRequired();
 
         builder.Property(x => x.UpdatedBy)
             .HasColumnName("UpdatedBy")
@@ -81,5 +72,12 @@ public class MetricConfiguration : IEntityTypeConfiguration<Metric>
         builder.Property(x => x.RowVersion)
             .HasColumnName("RowVersion")
             .IsRowVersion();
+
+        // מפתח זר ל-CTRL_CalculationTypes. ב-DB קיים FK בשם
+        // FK_CTRL_Metrics_CalculationTypes — EF משתמש בו למיפוי בלבד.
+        builder.HasOne<CalculationType>()
+            .WithMany()
+            .HasForeignKey(x => x.CalculationTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

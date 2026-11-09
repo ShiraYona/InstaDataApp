@@ -11,5 +11,5 @@ public interface IApplicationDbContext
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 
     DbSet<CalculationDay> CalculationDays { get; }
-
+    DbSet<CalculationType> CalculationTypes { get; }
 }

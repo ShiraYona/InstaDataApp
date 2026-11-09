@@ -5,13 +5,14 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
 
+import { AddingNewDataEntryComponent } from '../adding-new-data-entry/adding-new-data-entry.component';
 import { DataDefinitionService } from '../shared/services/data-definition.service';
 import { Metric } from '../web-api-client';
 
 @Component({
   selector: 'app-data-management-screen',
   standalone: true,
-    imports: [ButtonModule, ConfirmDialogModule, TableModule, ToastModule],
+  imports: [AddingNewDataEntryComponent, ButtonModule, ConfirmDialogModule, TableModule, ToastModule],
 
   templateUrl: './DataManagementScreen.html',
   styleUrl: './DataManagementScreen.scss',
@@ -58,6 +59,11 @@ export class DataManagementScreen implements OnInit {
 
   createRow(): void {
     this.dialogVisible = true;
+  }
+
+  /** נקרא לאחר שמירה מוצלחת בדיאלוג — מרענן את הקטלוג */
+  onDataSaved(): void {
+    this.loadRows();
   }
 
   editRow(_row: Metric): void {

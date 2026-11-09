@@ -96,4 +96,9 @@
       </p-table>
     </div>
   </section>
+
+  <app-adding-new-data-entry
+    [(visible)]="dialogVisible"
+    (saved)="onDataSaved()">
+  </app-adding-new-data-entry>
 </div>

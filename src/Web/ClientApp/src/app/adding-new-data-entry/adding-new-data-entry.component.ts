@@ -7,36 +7,18 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { Subscription } from 'rxjs';
+import { CALCULATION_TYPE_OPTIONS, CalculationType, DataDefinitionDraft, DataSource, LookupOption, PreviewResult } from '../shared/models/data-definition.model';
+import { CALCULATION_PERIOD_OPTIONS, CARD_ICON_OPTIONS, DataDefinitionService } from '../shared/services/data-definition.service';
+import { NotificationService } from '../shared/services/notification.service';
 
-import {
-  CALCULATION_TYPE_OPTIONS,
-  CalculationType,
-  DataDefinitionDraft,
-  DataSource,
-  LookupOption,
-  PreviewResult
-} from '../../../shared/models/data-definition.model';
-import {
-  CALCULATION_PERIOD_OPTIONS,
-  CARD_ICON_OPTIONS,
-  DataDefinitionService
-} from '../../../shared/services/data-definition.service';
-import { NotificationService } from '../../../shared/services/notification.service';
 
-/** ערכי ברירת המחדל של טופס חדש — לפי האפיון: "ערכי ברירת מחדל" */
 const DEFAULT_CALCULATION_TYPE: CalculationType = 'COUNT';
 
-/** כמה שדות מסומנים כברירת מחדל ב"שדות להצגה בפירוט" — כמו בדמו */
 const DEFAULT_DETAIL_FIELD_COUNT = 3;
 
-/** ערך "קיבוץ לפי" שפירושו ללא קיבוץ — כמו בדמו */
 const NO_GROUPING = 'none';
 
-/**
- * טופס יצירת נתון חדש, המוצג כדיאלוג של PrimeNG.
- * כל הלוגיקה של האפיון יושבת כאן; הרכיב אינו שומר דבר בעצמו —
- * את השמירה מבצע השירות, והאב שולט בפתיחה/סגירה דרך [(visible)].
- */
+
 @Component({
   selector: 'app-adding-new-data-entry',
   standalone: true,
