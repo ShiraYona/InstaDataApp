@@ -133,7 +133,9 @@ body {
 .field.full, .full { grid-column: 1 / -1; }
 .hint { font-size: 12px; color: #8c9db1; }
 
-.formgrid input,
+// רק שדות טקסט אמיתיים — לא ה-input השקוף של p-checkbox, שאסור למתוח אותו
+.formgrid input.p-inputtext,
+.formgrid input:not([type='checkbox']):not([type='radio']),
 .formgrid select,
 .controls input,
 .controls select {
@@ -148,24 +150,6 @@ body {
   box-sizing: border-box;
 }
 
-/* ה-checkbox של PrimeNG מכיל input שקוף מעל התיבה המצוירת —
-   אסור שיקבל את עיצוב שדות הטקסט (width/padding/border) */
-.p-checkbox,
-.p-checkbox input,
-.p-radiobutton,
-.p-radiobutton input,
-.p-checkbox .p-checkbox-box {
-  width: auto;
-  padding: 0;
-  border-width: 0;
-  background: none;
-  box-sizing: border-box;
-}
-
-.p-checkbox .p-checkbox-box {
-  border-width: 1px;
-  background: #fff;
-}
 
 .checks {
   display: flex;

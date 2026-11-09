@@ -1,15 +1,24 @@
 using Azure.Identity;
 using InstaDataApp.Web.Services;
 using Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace InstaDataApp.Web;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddWebServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddWebServices(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IWebHostEnvironment environment)
     {
-        services.AddDatabaseDeveloperPageExceptionFilter();
+        // אזהרת SecurityWarning: הזרוע של תצוגת פרטי ה-DB נטענת במכוון רק בסביבת Development.
+        // בלי התנאי הזה, בסביבת Production ההרצה הייתה נכשלת בזריקת חריגה בזמן הבנייה.
+        if (environment.IsDevelopment())
+        {
+            services.AddDatabaseDeveloperPageExceptionFilter();
+        }
 
         services.AddScoped<IUser, CurrentUser>();
         services.AddHttpContextAccessor();
