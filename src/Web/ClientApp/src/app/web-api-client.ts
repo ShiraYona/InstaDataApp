@@ -15,4 +15,905 @@ import { HttpClient, HttpHeaders, HttpResponse, HttpResponseBase } from '@angula
 
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
 
+@Injectable({
+    providedIn: 'root'
+})
+export class MetricsClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
 
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(API_BASE_URL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? this.getBaseUrl("");
+    }
+
+    getActiveMetrics(): Observable<MetricCardDto[]> {
+        let url_ = this.baseUrl + "/api/Metrics";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetActiveMetrics(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGetActiveMetrics(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<MetricCardDto[]>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<MetricCardDto[]>;
+        }));
+    }
+
+    protected processGetActiveMetrics(response: HttpResponseBase): Observable<MetricCardDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(MetricCardDto.fromJS(item));
+            }
+            else {
+                result200 = <any>null;
+            }
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    getPayments(): Observable<PaymentDto[]> {
+        let url_ = this.baseUrl + "/api/Metrics/payments";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetPayments(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGetPayments(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<PaymentDto[]>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<PaymentDto[]>;
+        }));
+    }
+
+    protected processGetPayments(response: HttpResponseBase): Observable<PaymentDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(PaymentDto.fromJS(item));
+            }
+            else {
+                result200 = <any>null;
+            }
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    getFines(): Observable<FineDto[]> {
+        let url_ = this.baseUrl + "/api/Metrics/fines";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetFines(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGetFines(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<FineDto[]>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<FineDto[]>;
+        }));
+    }
+
+    protected processGetFines(response: HttpResponseBase): Observable<FineDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(FineDto.fromJS(item));
+            }
+            else {
+                result200 = <any>null;
+            }
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    getClaims(): Observable<ClaimDto[]> {
+        let url_ = this.baseUrl + "/api/Metrics/claims";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetClaims(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGetClaims(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<ClaimDto[]>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<ClaimDto[]>;
+        }));
+    }
+
+    protected processGetClaims(response: HttpResponseBase): Observable<ClaimDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(ClaimDto.fromJS(item));
+            }
+            else {
+                result200 = <any>null;
+            }
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    getDetails(key: string, groupValue: string | null | undefined, sourceId: number | null | undefined): Observable<MetricDetailDto> {
+        let url_ = this.baseUrl + "/api/Metrics/{key}/details?";
+        if (key === undefined || key === null)
+            throw new Error("The parameter 'key' must be defined.");
+        url_ = url_.replace("{key}", encodeURIComponent("" + key));
+        if (groupValue !== undefined && groupValue !== null)
+            url_ += "groupValue=" + encodeURIComponent("" + groupValue) + "&";
+        if (sourceId !== undefined && sourceId !== null)
+            url_ += "sourceId=" + encodeURIComponent("" + sourceId) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetDetails(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGetDetails(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<MetricDetailDto>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<MetricDetailDto>;
+        }));
+    }
+
+    protected processGetDetails(response: HttpResponseBase): Observable<MetricDetailDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = MetricDetailDto.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+}
+
+export class MetricCardDto implements IMetricCardDto {
+    key?: string;
+    title?: string;
+    icon?: string;
+    value?: string;
+    unit?: string | undefined;
+    source?: string;
+    sourceObject?: string;
+    valueField?: string | undefined;
+    groupField?: string | undefined;
+    groupFieldLabel?: string | undefined;
+    groupValue?: string | undefined;
+    groups?: MetricGroupDto[];
+    dateField?: string | undefined;
+    isStale?: boolean;
+    trend?: number;
+    hasComparison?: boolean | undefined;
+    trendPositive?: boolean;
+    status?: string;
+    updated?: boolean;
+    targetText?: string | undefined;
+
+    constructor(data?: IMetricCardDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.key = _data["key"];
+            this.title = _data["title"];
+            this.icon = _data["icon"];
+            this.value = _data["value"];
+            this.unit = _data["unit"];
+            this.source = _data["source"];
+            this.sourceObject = _data["sourceObject"];
+            this.valueField = _data["valueField"];
+            this.groupField = _data["groupField"];
+            this.groupFieldLabel = _data["groupFieldLabel"];
+            this.groupValue = _data["groupValue"];
+            if (Array.isArray(_data["groups"])) {
+                this.groups = [] as any;
+                for (let item of _data["groups"])
+                    this.groups!.push(MetricGroupDto.fromJS(item));
+            }
+            this.dateField = _data["dateField"];
+            this.isStale = _data["isStale"];
+            this.trend = _data["trend"];
+            this.hasComparison = _data["hasComparison"];
+            this.trendPositive = _data["trendPositive"];
+            this.status = _data["status"];
+            this.updated = _data["updated"];
+            this.targetText = _data["targetText"];
+        }
+    }
+
+    static fromJS(data: any): MetricCardDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new MetricCardDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["key"] = this.key;
+        data["title"] = this.title;
+        data["icon"] = this.icon;
+        data["value"] = this.value;
+        data["unit"] = this.unit;
+        data["source"] = this.source;
+        data["sourceObject"] = this.sourceObject;
+        data["valueField"] = this.valueField;
+        data["groupField"] = this.groupField;
+        data["groupFieldLabel"] = this.groupFieldLabel;
+        data["groupValue"] = this.groupValue;
+        if (Array.isArray(this.groups)) {
+            data["groups"] = [];
+            for (let item of this.groups)
+                data["groups"].push(item.toJSON());
+        }
+        data["dateField"] = this.dateField;
+        data["isStale"] = this.isStale;
+        data["trend"] = this.trend;
+        data["hasComparison"] = this.hasComparison;
+        data["trendPositive"] = this.trendPositive;
+        data["status"] = this.status;
+        data["updated"] = this.updated;
+        data["targetText"] = this.targetText;
+        return data;
+    }
+}
+
+export interface IMetricCardDto {
+    key?: string;
+    title?: string;
+    icon?: string;
+    value?: string;
+    unit?: string | undefined;
+    source?: string;
+    sourceObject?: string;
+    valueField?: string | undefined;
+    groupField?: string | undefined;
+    groupFieldLabel?: string | undefined;
+    groupValue?: string | undefined;
+    groups?: MetricGroupDto[];
+    dateField?: string | undefined;
+    isStale?: boolean;
+    trend?: number;
+    hasComparison?: boolean | undefined;
+    trendPositive?: boolean;
+    status?: string;
+    updated?: boolean;
+    targetText?: string | undefined;
+}
+
+export class MetricGroupDto implements IMetricGroupDto {
+    value?: string;
+    records?: number;
+    totalValue?: number | undefined;
+
+    constructor(data?: IMetricGroupDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.value = _data["value"];
+            this.records = _data["records"];
+            this.totalValue = _data["totalValue"];
+        }
+    }
+
+    static fromJS(data: any): MetricGroupDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new MetricGroupDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["value"] = this.value;
+        data["records"] = this.records;
+        data["totalValue"] = this.totalValue;
+        return data;
+    }
+}
+
+export interface IMetricGroupDto {
+    value?: string;
+    records?: number;
+    totalValue?: number | undefined;
+}
+
+export class PaymentDto implements IPaymentDto {
+    paymentId?: number;
+    paymentDate?: string;
+    payerName?: string;
+    paymentsCount?: number;
+    fullPayment?: number;
+    paymentDepartment?: string | undefined;
+
+    constructor(data?: IPaymentDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.paymentId = _data["paymentId"];
+            this.paymentDate = _data["paymentDate"];
+            this.payerName = _data["payerName"];
+            this.paymentsCount = _data["paymentsCount"];
+            this.fullPayment = _data["fullPayment"];
+            this.paymentDepartment = _data["paymentDepartment"];
+        }
+    }
+
+    static fromJS(data: any): PaymentDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new PaymentDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["paymentId"] = this.paymentId;
+        data["paymentDate"] = this.paymentDate;
+        data["payerName"] = this.payerName;
+        data["paymentsCount"] = this.paymentsCount;
+        data["fullPayment"] = this.fullPayment;
+        data["paymentDepartment"] = this.paymentDepartment;
+        return data;
+    }
+}
+
+export interface IPaymentDto {
+    paymentId?: number;
+    paymentDate?: string;
+    payerName?: string;
+    paymentsCount?: number;
+    fullPayment?: number;
+    paymentDepartment?: string | undefined;
+}
+
+export class FineDto implements IFineDto {
+    fineId?: number;
+    payerName?: string;
+    fineDate?: string;
+    fineReason?: string | undefined;
+    fineAmount?: number;
+    isPaid?: boolean;
+
+    constructor(data?: IFineDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.fineId = _data["fineId"];
+            this.payerName = _data["payerName"];
+            this.fineDate = _data["fineDate"];
+            this.fineReason = _data["fineReason"];
+            this.fineAmount = _data["fineAmount"];
+            this.isPaid = _data["isPaid"];
+        }
+    }
+
+    static fromJS(data: any): FineDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new FineDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["fineId"] = this.fineId;
+        data["payerName"] = this.payerName;
+        data["fineDate"] = this.fineDate;
+        data["fineReason"] = this.fineReason;
+        data["fineAmount"] = this.fineAmount;
+        data["isPaid"] = this.isPaid;
+        return data;
+    }
+}
+
+export interface IFineDto {
+    fineId?: number;
+    payerName?: string;
+    fineDate?: string;
+    fineReason?: string | undefined;
+    fineAmount?: number;
+    isPaid?: boolean;
+}
+
+export class ClaimDto implements IClaimDto {
+    claimId?: number;
+    claimDate?: string;
+    claimantName?: string;
+    claimDescription?: string | undefined;
+    claimAmount?: number;
+    claimantsCount?: number;
+    claimDepartment?: string | undefined;
+
+    constructor(data?: IClaimDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.claimId = _data["claimId"];
+            this.claimDate = _data["claimDate"];
+            this.claimantName = _data["claimantName"];
+            this.claimDescription = _data["claimDescription"];
+            this.claimAmount = _data["claimAmount"];
+            this.claimantsCount = _data["claimantsCount"];
+            this.claimDepartment = _data["claimDepartment"];
+        }
+    }
+
+    static fromJS(data: any): ClaimDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new ClaimDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["claimId"] = this.claimId;
+        data["claimDate"] = this.claimDate;
+        data["claimantName"] = this.claimantName;
+        data["claimDescription"] = this.claimDescription;
+        data["claimAmount"] = this.claimAmount;
+        data["claimantsCount"] = this.claimantsCount;
+        data["claimDepartment"] = this.claimDepartment;
+        return data;
+    }
+}
+
+export interface IClaimDto {
+    claimId?: number;
+    claimDate?: string;
+    claimantName?: string;
+    claimDescription?: string | undefined;
+    claimAmount?: number;
+    claimantsCount?: number;
+    claimDepartment?: string | undefined;
+}
+
+export class MetricDetailDto implements IMetricDetailDto {
+    key?: string;
+    title?: string;
+    dataValue?: string;
+    recordsInSample?: number;
+    sourceName?: string;
+    createdDate?: string;
+    valueFieldName?: string | undefined;
+    groupFieldName?: string | undefined;
+    groupFieldLabel?: string;
+    totalRecords?: number;
+    totalValue?: number | undefined;
+    systems?: SystemGroupDto[];
+    records?: { [key: string]: any; }[];
+    isStale?: boolean;
+
+    constructor(data?: IMetricDetailDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.key = _data["key"];
+            this.title = _data["title"];
+            this.dataValue = _data["dataValue"];
+            this.recordsInSample = _data["recordsInSample"];
+            this.sourceName = _data["sourceName"];
+            this.createdDate = _data["createdDate"];
+            this.valueFieldName = _data["valueFieldName"];
+            this.groupFieldName = _data["groupFieldName"];
+            this.groupFieldLabel = _data["groupFieldLabel"];
+            this.totalRecords = _data["totalRecords"];
+            this.totalValue = _data["totalValue"];
+            if (Array.isArray(_data["systems"])) {
+                this.systems = [] as any;
+                for (let item of _data["systems"])
+                    this.systems!.push(SystemGroupDto.fromJS(item));
+            }
+            if (Array.isArray(_data["records"])) {
+                this.records = [] as any;
+                for (let item of _data["records"])
+                    this.records!.push(item);
+            }
+            this.isStale = _data["isStale"];
+        }
+    }
+
+    static fromJS(data: any): MetricDetailDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new MetricDetailDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["key"] = this.key;
+        data["title"] = this.title;
+        data["dataValue"] = this.dataValue;
+        data["recordsInSample"] = this.recordsInSample;
+        data["sourceName"] = this.sourceName;
+        data["createdDate"] = this.createdDate;
+        data["valueFieldName"] = this.valueFieldName;
+        data["groupFieldName"] = this.groupFieldName;
+        data["groupFieldLabel"] = this.groupFieldLabel;
+        data["totalRecords"] = this.totalRecords;
+        data["totalValue"] = this.totalValue;
+        if (Array.isArray(this.systems)) {
+            data["systems"] = [];
+            for (let item of this.systems)
+                data["systems"].push(item.toJSON());
+        }
+        if (Array.isArray(this.records)) {
+            data["records"] = [];
+            for (let item of this.records)
+                data["records"].push(item);
+        }
+        data["isStale"] = this.isStale;
+        return data;
+    }
+}
+
+export interface IMetricDetailDto {
+    key?: string;
+    title?: string;
+    dataValue?: string;
+    recordsInSample?: number;
+    sourceName?: string;
+    createdDate?: string;
+    valueFieldName?: string | undefined;
+    groupFieldName?: string | undefined;
+    groupFieldLabel?: string;
+    totalRecords?: number;
+    totalValue?: number | undefined;
+    systems?: SystemGroupDto[];
+    records?: { [key: string]: any; }[];
+    isStale?: boolean;
+}
+
+export class SystemGroupDto implements ISystemGroupDto {
+    sourceId?: number;
+    sourceName?: string;
+    groupValue?: string;
+    records?: number;
+    totalValue?: number | undefined;
+    isError?: boolean;
+
+    constructor(data?: ISystemGroupDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.sourceId = _data["sourceId"];
+            this.sourceName = _data["sourceName"];
+            this.groupValue = _data["groupValue"];
+            this.records = _data["records"];
+            this.totalValue = _data["totalValue"];
+            this.isError = _data["isError"];
+        }
+    }
+
+    static fromJS(data: any): SystemGroupDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new SystemGroupDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["sourceId"] = this.sourceId;
+        data["sourceName"] = this.sourceName;
+        data["groupValue"] = this.groupValue;
+        data["records"] = this.records;
+        data["totalValue"] = this.totalValue;
+        data["isError"] = this.isError;
+        return data;
+    }
+}
+
+export interface ISystemGroupDto {
+    sourceId?: number;
+    sourceName?: string;
+    groupValue?: string;
+    records?: number;
+    totalValue?: number | undefined;
+    isError?: boolean;
+}
+
+export class ProblemDetails implements IProblemDetails {
+    type?: string | undefined;
+    title?: string | undefined;
+    status?: number | undefined;
+    detail?: string | undefined;
+    instance?: string | undefined;
+
+    [key: string]: any;
+
+    constructor(data?: IProblemDetails) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            for (var property in _data) {
+                if (_data.hasOwnProperty(property))
+                    this[property] = _data[property];
+            }
+            this.type = _data["type"];
+            this.title = _data["title"];
+            this.status = _data["status"];
+            this.detail = _data["detail"];
+            this.instance = _data["instance"];
+        }
+    }
+
+    static fromJS(data: any): ProblemDetails {
+        data = typeof data === 'object' ? data : {};
+        let result = new ProblemDetails();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        for (var property in this) {
+            if (this.hasOwnProperty(property))
+                data[property] = this[property];
+        }
+        data["type"] = this.type;
+        data["title"] = this.title;
+        data["status"] = this.status;
+        data["detail"] = this.detail;
+        data["instance"] = this.instance;
+        return data;
+    }
+}
+
+export interface IProblemDetails {
+    type?: string | undefined;
+    title?: string | undefined;
+    status?: number | undefined;
+    detail?: string | undefined;
+    instance?: string | undefined;
+
+    [key: string]: any;
+}
+
+export class ApiException extends Error {
+    override message: string;
+    status: number;
+    response: string;
+    headers: { [key: string]: any; };
+    result: any;
+
+    constructor(message: string, status: number, response: string, headers: { [key: string]: any; }, result: any) {
+        super();
+
+        this.message = message;
+        this.status = status;
+        this.response = response;
+        this.headers = headers;
+        this.result = result;
+    }
+
+    protected isApiException = true;
+
+    static isApiException(obj: any): obj is ApiException {
+        return obj.isApiException === true;
+    }
+}
+
+function throwException(message: string, status: number, response: string, headers: { [key: string]: any; }, result?: any): Observable<any> {
+    if (result !== null && result !== undefined)
+        return _observableThrow(result);
+    else
+        return _observableThrow(new ApiException(message, status, response, headers, null));
+}
+
+function blobToText(blob: any): Observable<string> {
+    return new Observable<string>((observer: any) => {
+        if (!blob) {
+            observer.next("");
+            observer.complete();
+        } else {
+            let reader = new FileReader();
+            reader.onload = event => {
+                observer.next((event.target as any).result);
+                observer.complete();
+            };
+            reader.readAsText(blob);
+        }
+    });
+}

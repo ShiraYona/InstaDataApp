@@ -16,7 +16,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<CtrlPayment> CtrlPayments => Set<CtrlPayment>();
     public DbSet<CtrlFine> CtrlFines => Set<CtrlFine>();
     public DbSet<CtrlClaim> CtrlClaims => Set<CtrlClaim>();
-
+    public DbSet<CtrlCalculationType> CtrlCalculationTypes => Set<CtrlCalculationType>();
+    public DbSet<CtrlIcon> CtrlIcons => Set<CtrlIcon>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

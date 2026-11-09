@@ -7,6 +7,11 @@ export const routes: Routes = [
     data: { crumb: 'מערכת ניהול ובקרה', title: 'סקירה תפעולית' }
   },
   {
+    path: 'detailed-dialogue/:key',
+    loadComponent: () => import('./detailed-dialogue/detailed-dialogue.component').then(m => m.DetailedDialogueComponent),
+    data: { crumb: 'פירוט נתון', title: 'פירוט נתון' }
+  },
+  {
     path: '',
     pathMatch: 'full',
     loadComponent: () => import('./home/home.component').then(m => m.HomeComponent)
@@ -17,7 +22,6 @@ export const routes: Routes = [
     loadComponent: () => import('./home/home.component').then(m => m.HomeComponent)
   },
   {
-    // מסך יצירת נתון חדש — נטען ישירות לכתובת, והדיאלוג נפתח עם הכניסה
     path: 'new-data-entry',
     loadComponent: () =>
       import('./features/insta-data/adding-new-data-entry/adding-new-data-entry.component').then(

@@ -14,7 +14,11 @@ public class CtrlMetricConfiguration : IEntityTypeConfiguration<CtrlMetric>
         builder.Property(m => m.MetricID).HasColumnName("MetricID").ValueGeneratedOnAdd();
         builder.Property(m => m.MetricName).HasColumnName("MetricName").HasMaxLength(80).IsRequired();
         builder.Property(m => m.SourceID).HasColumnName("SourceID");
-        builder.Property(m => m.CalculationType).HasColumnName("CalculationType").HasMaxLength(20).IsRequired();
+builder.Property(m => m.CalculationTypeID).HasColumnName("CalculationTypeID");
+builder.HasOne(m => m.CalculationType)
+       .WithMany(c => c.Metrics)
+       .HasForeignKey(m => m.CalculationTypeID)
+       .OnDelete(DeleteBehavior.Restrict);
         builder.Property(m => m.SumFieldID).HasColumnName("SumFieldID");
         builder.Property(m => m.GroupFieldID).HasColumnName("GroupFieldID");
         builder.Property(m => m.DateRangeType).HasColumnName("DateRangeType").HasMaxLength(20).IsRequired();

@@ -5,7 +5,8 @@ public class CtrlMetric
     public int MetricID { get; set; }
     public string MetricName { get; set; } = string.Empty;
     public int SourceID { get; set; }
-    public string CalculationType { get; set; } = string.Empty;
+    public int CalculationTypeID { get; set; }
+    public CtrlCalculationType? CalculationType { get; set; }
     public int? SumFieldID { get; set; }
     public int? GroupFieldID { get; set; }
     public string DateRangeType { get; set; } = string.Empty;
