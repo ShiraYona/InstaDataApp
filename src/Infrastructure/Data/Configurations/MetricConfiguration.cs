@@ -5,14 +5,13 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace InstaDataApp.Infrastructure.Data.Configurations;
 
 /// <summary>
-/// מיפוי <see cref="Metric"/> לטבלה הקיימת <c>dbo.CTRL_Metrics</c>.
-/// הטבלה נוצרה מחוץ ל-EF, לכן כל עמודה ממופה בשמה המדויק
-/// ואין כאן שום פעולה שמייצרת/משנה את המבנה במסד.
+/// מיפוי לטבלה הקיימת CTRL_Metrics — לקריאה בלבד.
 /// </summary>
 public class MetricConfiguration : IEntityTypeConfiguration<Metric>
 {
     public void Configure(EntityTypeBuilder<Metric> builder)
     {
+        builder.ToTable("CTRL_Metrics");
         builder.ToTable("CTRL_Metrics", table => table.HasCheckConstraint(
             "CK__CTRL_Metr__Calcu__267ABA7A",
             "[CalculationType]='DIRECT' OR [CalculationType]='SUM' OR [CalculationType]='COUNT'"));
@@ -20,6 +19,7 @@ public class MetricConfiguration : IEntityTypeConfiguration<Metric>
         builder.HasKey(x => x.MetricId);
 
         builder.Property(x => x.MetricId)
+            .HasColumnName("MetricID");
             .HasColumnName("MetricID")
             .ValueGeneratedOnAdd();
 
@@ -28,6 +28,12 @@ public class MetricConfiguration : IEntityTypeConfiguration<Metric>
             .HasMaxLength(80)
             .IsRequired();
 
+        builder.Property(x => x.IconCode)
+            .HasColumnName("IconCode")
+            .HasMaxLength(50);
+
+        builder.Property(x => x.IsActive)
+            .HasColumnName("IsActive")
         builder.Property(x => x.SourceId)
             .HasColumnName("SourceID");
 
@@ -60,6 +66,8 @@ public class MetricConfiguration : IEntityTypeConfiguration<Metric>
 
         builder.Property(x => x.CreatedDate)
             .HasColumnName("CreatedDate")
+            .HasColumnType("datetime2")
+            .IsRequired()
             .HasColumnType("datetime2");
 
         builder.Property(x => x.UpdatedBy)

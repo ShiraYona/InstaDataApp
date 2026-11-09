@@ -18,7 +18,6 @@ export interface MetricSettingsResponse {
   items: MetricSettingItem[];
 }
 
-
 @Injectable({ providedIn: 'root' })
 export class DisplayLayoutService {
   private readonly http = inject(HttpClient);
@@ -27,7 +26,7 @@ export class DisplayLayoutService {
 
   private serverCardsPerRow: number | null = null;
 
- 
+
   loadCardsPerRow(): Observable<number | null> {
     return this.http.get<DisplaySettingsDto>(this.apiUrl).pipe(
       map(dto => dto?.cardsPerRow ?? null),
@@ -45,11 +44,9 @@ export class DisplayLayoutService {
     return this.http.put<void>(this.apiUrl, { cardsPerRow });
   }
 
- 
   loadMetricSettings(): Observable<MetricSettingsResponse> {
     return this.http.get<MetricSettingsResponse>(`${this.apiUrl}/metrics`);
   }
-
 
   saveMetricSettings(items: MetricSettingItem[]): Observable<void> {
     return this.http.put<void>(`${this.apiUrl}/metrics`, { items });

@@ -1,4 +1,135 @@
-.menue-container {
-  width: 100%;
+:host {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.side {
   direction: rtl;
+  box-sizing: border-box;
+  width: 236px;
+  flex-shrink: 0;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  background: #101f38;
+  color: #e8f1ff;
+  padding: 27px 17px;
+  font-family: Arial, 'Segoe UI', sans-serif;
+}
+
+.brand {
+  padding: 0 12px 28px;
+}
+
+.brand-title {
+  font-family: Arial, 'Segoe UI', sans-serif;
+  font-size: 21px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #e8f1ff;
+}
+
+.brand-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  color: #95abc5;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 3px 0;
+  padding: 13px 14px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: #b8c9df;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 400;
+  text-align: right;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nav:hover {
+  background: #25405f;
+  color: #b8c9df;
+}
+
+.nav.active,
+.nav.active:hover {
+  background: #29466b;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.nav-icon {
+  flex: 0 0 auto;
+  width: 18px;
+  font-size: 16px;
+  line-height: 1;
+  text-align: center;
+}
+
+.nav-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav.divider-nav {
+  margin-top: 15px;
+  border-top: 1px solid #304561;
+  padding-top: 17px;
+  border-radius: 0 0 11px 11px;
+}
+
+/* ---------- רספונסיביות — כמו הדמו (760px ומטה) ----------
+   .side{width:64px;padding:15px 6px}
+   .brand{font-size:0} .brand:before{content:'▦';font-size:25px}
+   .brand small,.nav span,.sidefoot{display:none}
+   .nav{text-align:center;font-size:19px}                                            */
+@media (max-width: 760px) {
+  .side {
+    width: 64px;
+    padding: 15px 6px;
+  }
+
+  .brand {
+    padding: 10px;
+    text-align: center;
+  }
+
+  .brand-title {
+    font-size: 0;
+  }
+
+  .brand-title::before {
+    content: '▦';
+    font-size: 25px;
+  }
+
+  .nav {
+    justify-content: center;
+    padding: 13px 6px;
+    font-size: 19px;
+  }
+
+  .nav-icon {
+    width: auto;
+    font-size: 19px;
+  }
+
+  .nav.divider-nav {
+    border-radius: 11px;
+  }
 }
