@@ -1,21 +1,23 @@
-const { env } = require('process');
+// Proxy configuration for the Angular dev server.
+// The backend port cannot be probed synchronously here, so it is resolved by
+// the launcher (port-utils.js) and consumed from .ports.json / env vars.
+const { readPortsFile } = require('./port-utils');
 
-const target = env.ASPNETCORE_HTTPS_PORT ? `https://localhost:${env.ASPNETCORE_HTTPS_PORT}` :
-  env.ASPNETCORE_URLS ? env.ASPNETCORE_URLS.split(';')[0] : 'https://localhost:5001';
+const resolved = readPortsFile();
+
+const backendHttpsPort = Number(process.env.ASPNETCORE_HTTPS_PORT)
+  || resolved.https
+  || 5001;
 
 const PROXY_CONFIG = [
   {
-    context: [
-      "/api",
-      "/Identity",
-      "/health"
-    ],
-    target: target,
+    context: ['/api', '/Identity', '/health'],
+    target: `https://localhost:${backendHttpsPort}`,
     secure: false,
     headers: {
       Connection: 'Keep-Alive'
     }
   }
-]
+];
 
 module.exports = PROXY_CONFIG;
