@@ -1,0 +1,340 @@
+// מסך ניהול הנתונים — העיצוב מועתק אחד-לאחד מהדמו
+// "מערכת_ניהול_ובקרה_עיריית_ירושלים_דמו_נתונים.html", מסך "ניהול נתונים".
+// שמות המחלקות כאן מקבילים למחלקות הדמו, וההערות מציינות את הכלל המקורי.
+// רקע המסך נמתח על כל רוחב החלון — גם מעבר לאזור התוכן הממורכז,
+// ובאותו צבע של התוכן עצמו, כך שלא נראים "שוליים" בצדדים.
+:host {
+  display: block;
+  width: 100%;
+  min-height: 100vh;
+  direction: rtl;
+  font-family: Arial, 'Segoe UI', sans-serif;
+  color: #19304d;
+  background: #f3f6fb;
+  box-shadow: 0 0 0 100vmax #f3f6fb;
+  clip-path: inset(0 -100vmax);
+}
+
+// הריפוד נשאר זהה לדמו; הרוחב נמתח על כל המקום הפנוי
+.dataManagement {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 30px 36px 80px;
+  background: transparent;
+  color: #19304d;
+  box-sizing: border-box;
+}
+
+/* ---------- כותרת המסך — .headline ---------- */
+.screenHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+
+.screenHeader__titles {
+  min-width: 0;
+}
+
+// h1 { font-size: 30px; margin: 0 0 8px }
+.screenHeader__title {
+  margin: 0 0 8px;
+  font-size: 30px;
+  font-weight: 700;
+  color: #19304d;
+}
+
+// p { margin: 6px 0; color: #6e8198; line-height: 1.55 }
+.screenHeader__subtitle {
+  margin: 6px 0;
+  color: #6e8198;
+  line-height: 1.55;
+}
+
+/* .btn — כפתור "יצירת נתון חדש" */
+::ng-deep .createButton.p-button {
+  padding: 11px 18px;
+  font: inherit;
+  font-weight: 700;
+  color: #ffffff;
+  background: #1765ce;
+  border: 1px solid #1765ce;
+  border-radius: 9px;
+  box-shadow: none;
+}
+
+::ng-deep .createButton.p-button:not(:disabled):hover {
+  color: #ffffff;
+  background: #0d54b6;
+  border-color: #0d54b6;
+}
+
+::ng-deep .createButton.p-button .p-button-label {
+  font-weight: 700;
+}
+
+/* ---------- באנר — .banner ---------- */
+.infoBanner {
+  margin-bottom: 18px;
+  padding: 12px 15px;
+  border-radius: 10px;
+  background: #eaf3ff;
+  color: #315c93;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* ---------- פאנל — .panel ---------- */
+.panel {
+  margin-top: 23px;
+  padding: 22px;
+  background: #ffffff;
+  border: 1px solid #e2eaf4;
+  border-radius: 15px;
+  box-shadow: 0 4px 16px #16334c07;
+  box-sizing: border-box;
+}
+
+// .sectionhead
+.panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+
+// h2 { font-size: 20px; margin: 0 0 16px } — הרווח מוטמע ב-.panel__head
+.panel__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #19304d;
+}
+
+// .pill
+.countPill {
+  display: inline-block;
+  padding: 5px 9px;
+  border-radius: 50px;
+  font-size: 12px;
+  background: #e9f2ff;
+  color: #1a66bd;
+  white-space: nowrap;
+}
+
+/* ---------- טבלה — .tablewrap / table / th / td ---------- */
+.panel__table {
+  width: 100%;
+  overflow: auto;
+}
+
+.catalogTable {
+  width: 100%;
+  min-width: 600px;
+  background: #ffffff;
+  border-collapse: collapse;
+  text-align: right;
+}
+
+.catalogTable ::ng-deep .p-datatable-table-container,
+.catalogTable ::ng-deep .p-datatable-table {
+  border-collapse: collapse;
+}
+
+// th { background:#f7f9fc; font-size:12px; color:#71839b; padding:13px 14px;
+//      border-bottom:1px solid #e9eef5; font-weight:700 (ברירת המחדל של הדפדפן) }
+// ה-theme של PrimeNG מוזרק בזמן ריצה אחרי סגנונות הרכיב, ולכן הכותרות
+// מוגדרות גם ב-src/styles.scss — שם הן גוברות בוודאות.
+.catalogTable ::ng-deep .p-datatable-thead > tr > th {
+  padding: 13px 14px;
+  background: #f7f9fc;
+  color: #71839b;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: right;
+  white-space: nowrap;
+  border-width: 0 0 1px;
+  border-style: solid;
+  border-color: #e9eef5;
+  vertical-align: middle;
+}
+
+// הריפוד נשאר על התא בלבד — תוכן הכותרת לא מוסיף ריפוד משלו
+.catalogTable ::ng-deep .p-datatable-thead > tr > th .p-datatable-column-header-content,
+.catalogTable ::ng-deep .p-datatable-thead > tr > th .p-datatable-sortable-column-icon {
+  padding: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  color: inherit;
+  text-align: inherit;
+}
+
+// td { font-size:13px; padding:13px 14px; border-bottom:1px solid #e9eef5 }
+// גובה שורה אחיד וקבוע לכל השורות (כותרת + נתונים) — גם כשבתוך התא יש כפתורים
+.catalogTable ::ng-deep .p-datatable-tbody > tr > td {
+  height: 52px;
+  padding: 13px 14px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #19304d;
+  text-align: right;
+  vertical-align: middle;
+  background: #ffffff;
+  border-width: 0 0 1px;
+  border-style: solid;
+  border-color: #e9eef5;
+}
+
+// הכפתור/הגלולה בתוך התא אינם מגדילים את גובה השורה
+.catalogTable ::ng-deep .p-datatable-tbody > tr > td .statusPill,
+.catalogTable ::ng-deep .p-datatable-tbody > tr > td .actionButton.p-button {
+  vertical-align: middle;
+}
+
+// .clickrow:hover
+.catalogTable ::ng-deep .p-datatable-tbody > tr:hover > td {
+  background: #edf6ff;
+}
+
+/* <strong> בתא שם הנתון */
+.cellName {
+  color: #19304d;
+}
+
+.cellName strong {
+  font-weight: 700;
+}
+
+/* ---------- עמודת מצב — .pill.green / .pill.gray ---------- */
+.colStatus {
+  width: 11%;
+  min-width: 120px;
+  white-space: nowrap;
+}
+
+.statusPill {
+  display: inline-block;
+  padding: 5px 9px;
+  border-radius: 50px;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  background: #e8f8ed;
+  color: #23864f;
+}
+
+.statusPill--off {
+  background: #f0f3f7;
+  color: #687c95;
+}
+
+/* ---------- עמודת פעולות — .tools + .btn.sm ---------- */
+.colActions {
+  width: 22%;
+  min-width: 270px;
+  white-space: nowrap;
+}
+
+/* שלושת הכפתורים בשורה אחת, צמודים לימין התא (בדיוק מתחת לכותרת "פעולות") */
+.actions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+/* מידות וצבעי שלושת הכפתורים מוגדרים ב-src/styles.scss:
+   ה-theme של PrimeNG מוזרק בזמן ריצה אחרי סגנונות הרכיב, ולכן רק גיליון
+   גלובלי גובר עליו בוודאות. כאן נשאר רק הסדר בין הכפתורים. */
+
+/* ---------- הודעה ריקה — .empty ---------- */
+.emptyMessage {
+  padding: 52px;
+  text-align: center;
+  color: #7186a0;
+  font-size: 13px;
+}
+
+/* ---------- הודעה קופצת — .toast ----------
+   העתק מדויק של הכלל בדמו:
+   .toast{position:fixed;bottom:23px;left:25px;background:#1c3d60;color:white;
+          padding:13px 19px;border-radius:10px;z-index:50;
+          box-shadow:0 5px 22px #162b4388}
+   ה-p-toast (עם styleClass="demoToast") יושב בדיוק במקום הזה, והתיבה עצמה
+   (.p-toast-message) מקבלת את הרקע, הריפוד והרדיוס של .toast.
+   כללי ה-theme של PrimeNG מוזרקים בזמן ריצה, ולכן הכיסוי כאן גלובלי
+   (src/styles.scss) ובנוסף ::ng-deep לשאר המאפיינים. */
+::ng-deep .demoToast.p-toast {
+  bottom: 23px;
+  left: 25px;
+  right: auto;
+  top: auto;
+  width: auto;
+  max-width: min(420px, calc(100vw - 50px));
+  white-space: pre-line;
+  word-break: normal;
+  direction: rtl;
+  text-align: right;
+}
+
+::ng-deep .demoToast .p-toast-message {
+  margin: 0;
+  background: #1c3d60;
+  color: #ffffff;
+  padding: 13px 19px;
+  border: 0;
+  border-radius: 10px;
+  box-shadow: 0 5px 22px #162b4388;
+  transform: none;
+  opacity: 1;
+}
+
+::ng-deep .demoToast .p-toast-message-content {
+  padding: 0;
+  gap: 0;
+  align-items: center;
+}
+
+::ng-deep .demoToast .p-toast-message-text {
+  margin: 0;
+  gap: 0;
+}
+
+::ng-deep .demoToast .p-toast-summary,
+::ng-deep .demoToast .p-toast-detail {
+  margin: 0;
+  padding: 0;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #ffffff;
+  text-align: right;
+}
+
+/* אין אייקונים ואין כפתור סגירה — .toast בדמו הוא טקסט בלבד */
+::ng-deep .demoToast .p-toast-icon-close,
+::ng-deep .demoToast .p-toast-message-icon,
+::ng-deep .demoToast .p-toast-close-button {
+  display: none;
+}
+
+/* ---------- מסכים צרים — .content { padding: 20px 13px } ---------- */
+@media (max-width: 760px) {
+  .dataManagement {
+    padding: 20px 13px;
+  }
+}
