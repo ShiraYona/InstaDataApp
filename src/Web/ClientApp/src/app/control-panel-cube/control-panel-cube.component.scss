@@ -9,6 +9,8 @@
   display: grid;
   grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
   gap: 17px;
+  padding: 24px 32px;
+  box-sizing: border-box;
 }
 
 /* ---- כרטיס ---- */
@@ -237,4 +239,9 @@
   font-weight: 500;
   color: #666;
   margin-inline-start: 4px;
+}
+.metric .micon .pi {
+  font-size: 19px;
+  line-height: 1;
+  display: block;
 }

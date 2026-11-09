@@ -37,7 +37,7 @@ export class ControlPanelCubeComponent {
           rows.map(row => ({
             key: row.key ?? '',
             title: row.title ?? '',
-            icon: row.icon ?? '',
+            icon: row.icon?.trim() || 'pi pi-question-circle',
             value: row.value ?? '',
             unit: row.unit ?? undefined,
             source: row.source ?? '',
