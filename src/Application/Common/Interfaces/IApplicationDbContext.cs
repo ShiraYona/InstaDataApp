@@ -7,4 +7,7 @@ public interface IApplicationDbContext
     DbSet<Metric> Metrics { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
+
+    DbSet<CalculationDay> CalculationDays { get; }
+
 }

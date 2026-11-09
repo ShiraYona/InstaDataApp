@@ -38,6 +38,11 @@ public class DataCatalogController : ControllerBase
         return deleted ? NoContent() : NotFound();
     }
 
+    [HttpGet("calculation-days")]
+    public async Task<ActionResult<List<CalculationDayDto>>> GetCalculationDays(CancellationToken cancellationToken) =>
+        Ok(await _sender.Send(new GetCalculationDaysQuery(), cancellationToken));
+
+
 }
 
 public record SetMetricActiveRequest(bool IsActive);

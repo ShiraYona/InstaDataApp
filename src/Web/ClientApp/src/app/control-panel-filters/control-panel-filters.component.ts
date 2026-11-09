@@ -1,19 +1,20 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, inject, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
+import { DataCatalogClient } from '../web-api-client';
 
-/** אפשרות לתפריטי הבחירה */
+/** אפשרות בתפריט בחירה (תקופה / כרטיסים בשורה). value = null מייצג "הכל" */
 export interface FilterOption {
   label: string;
-  value: string;
+  value: number | null;
 }
 
-/** ערכי הסינון הנוכחיים — נשלחים להורה בעת שינוי או רענון */
+/** ערכי הסינון — נשלחים להורה בכל שינוי ובכל רענון */
 export interface FilterState {
-  period: string;
-  cardsPerRow: string;
+  period: number | null;
+  cardsPerRow: number;
   searchText: string;
 }
 
@@ -25,44 +26,63 @@ export interface FilterState {
   styleUrl: './control-panel-filters.component.scss'
 })
 export class ControlPanelFiltersComponent {
-  /** נשלח בכל שינוי סינון ובכל לחיצה על "רענון" */
+  /** שינוי סינון — ההורה מסנן מחדש את התצוגה */
   @Output() filtersChanged = new EventEmitter<FilterState>();
+
   @Output() refreshRequested = new EventEmitter<FilterState>();
-
-  /** ברירת המחדל זהה לזו שבמערכת הניהול והבקרה: "כל התקופה" */
-  period: string = 'all';
-  cardsPerRow: string = '4';
-  searchText: string = '';
-
-  /** תקופות הנתונים — תואמות ל-state.period של מערכת הניהול והבקרה */
-  readonly periodOptions: FilterOption[] = [
-    { label: 'כל התקופה', value: 'all' },
-    { label: '7 ימים אחרונים', value: 'week' },
-    { label: '30 ימים אחרונים', value: 'month' },
-    { label: '90 ימים אחרונים', value: 'quarter' }
+  
+  private readonly dataCatalogClient = inject(DataCatalogClient);
+  
+  period: number | null = null;
+  cardsPerRow: number = 4;
+  searchText = '';
+ 
+  // readonly periodOptions: FilterOption[] = [
+  //   { label: 'כל התקופה', value: null },
+  //   { label: '7 ימים אחרונים', value: 7 },
+  //   { label: '30 ימים אחרונים', value: 30 },
+  //   { label: '90 ימים אחרונים', value: 90 }
+  // ];
+  /** תקופות החישוב — נטענות מהטבלה CTRL_CalculationDays */
+   periodOptions: FilterOption[] = [
+    { label: 'כל התקופה', value: null }
   ];
-
-  /** מספר הכרטיסים בשורה — תואם ל-state.cols (2 / 3 / 4) */
   readonly cardsPerRowOptions: FilterOption[] = [
-    { label: '2 כרטיסים', value: '2' },
-    { label: '3 כרטיסים', value: '3' },
-    { label: '4 כרטיסים', value: '4' }
+    { label: '2 כרטיסים', value: 2 },
+    { label: '3 כרטיסים', value: 3 },
+    { label: '4 כרטיסים', value: 4 }
   ];
+    ngOnInit(): void {
+    this.dataCatalogClient.getCalculationDays().subscribe({
+           next: days => {
+        this.periodOptions = [
+          { label: 'כל התקופה', value: null },
+          ...days
+            .filter(d => d.value != null && d.name != null)
+            .map(d => ({ label: d.name!, value: d.value! }))
+        ];
+      },
 
-  private get state(): FilterState {
+      error: () => { /* נשארת רק "כל התקופה" */ }
+    });
+  }
+
+
+  onFilterChange(): void {
+    this.filtersChanged.emit(this.currentState());
+  }
+
+  refresh(): void {
+    // this.refreshRequested.emit(this.currentState());
+    this.searchText = '';
+    this.period = null
+  }
+
+  private currentState(): FilterState {
     return {
       period: this.period,
       cardsPerRow: this.cardsPerRow,
       searchText: this.searchText.trim()
     };
-  }
-
-  onFilterChange(): void {
-    this.filtersChanged.emit(this.state);
-  }
-
-  refresh(): void {
-    this.refreshRequested.emit(this.state);
-    this.filtersChanged.emit(this.state);
   }
 }

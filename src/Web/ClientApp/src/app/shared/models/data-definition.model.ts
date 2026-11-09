@@ -60,6 +60,12 @@ export interface PreviewResult {
   total: number;
 }
 
+/**
+ * סמל כרטיס — מבנה זהה ל-LookupOption.
+ * מוגדר ככינוי נפרד כדי לשמור על משמעות (סמל לתצוגת הכרטיס ולא רשימה כללית).
+ */
+export type CardIconOption = LookupOption;
+
 /** ערכי בחירה קבועים (בשרת יגיעו כטבלאות עזר) */
 export const CALCULATION_TYPE_OPTIONS: Array<{ value: CalculationType; label: string }> = [
   { value: 'COUNT', label: 'כמות רשומות (COUNT)' },

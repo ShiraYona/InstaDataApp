@@ -8,6 +8,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     : IdentityDbContext<ApplicationUser>(options), IApplicationDbContext
 {
     public DbSet<Metric> Metrics => Set<Metric>();
+    public DbSet<CalculationDay> CalculationDays => Set<CalculationDay>();
+
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
