@@ -10,6 +10,8 @@
     <SpaRoot>ClientApp\</SpaRoot>
     <SpaProxyServerUrl>https://localhost:44447</SpaProxyServerUrl>
     <SpaProxyLaunchCommand>npm start</SpaProxyLaunchCommand>
+    <!-- Lets the build stop a still-running instance of this app before copying DLLs. -->
+    <EnsureStopped Condition="'$(EnsureStopped)' == ''">true</EnsureStopped>
   </PropertyGroup>
 
   <ItemGroup>
@@ -44,15 +46,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Don't publish the SPA source files, but do show them in the project files list -->
     <Content Remove="$(SpaRoot)**" />
     <None Remove="$(SpaRoot)**" />
     <None Include="$(SpaRoot)**" Exclude="$(SpaRoot)node_modules\**" />
   </ItemGroup>
 
-  <!-- Ensure Node environment on Build -->
   <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('$(SpaRoot)node_modules') ">
-    <!-- Ensure Node.js is installed -->
     <Exec Command="node --version" ContinueOnError="true">
       <Output TaskParameter="ExitCode" PropertyName="ErrorCode" />
     </Exec>
@@ -61,12 +60,10 @@
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
   </Target>
 
-  <!-- Regenerate the TypeScript API client on Build -->
   <Target Name="NSwag" AfterTargets="PostBuildEvent" Condition=" '$(Configuration)' == 'Debug' ">
     <Exec ConsoleToMSBuild="true" WorkingDirectory="$(ProjectDir)" Command="$(NSwagExe_Net80) run config.nswag /variables:Configuration=$(Configuration)" />
   </Target>
 
-  <!-- Publish the SPA on Publish -->
   <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build -- --configuration production" />

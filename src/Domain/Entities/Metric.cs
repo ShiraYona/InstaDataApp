@@ -22,10 +22,12 @@ public class Metric
     /// <summary>השדה שלפיו יתבצע קיבוץ — null משמעו ללא קיבוץ</summary>
     public int? GroupFieldID { get; set; }
 
-    /// <summary>תקופת החישוב — הערך הוא התווית שנשמרה מהרשימה</summary>
+    /// <summary>DIRECT / SUM / COUNT — נאכף ב-DB באמצעות CHECK constraint</summary>
+    public string CalculationType { get; set; } = string.Empty;
+
+    /// <summary>DAY / MONTH / YEAR</summary>
     public string DateRangeType { get; set; } = string.Empty;
 
-    /// <summary>סמל הכרטיס (IconCode)</summary>
     public string? IconCode { get; set; }
 
     public bool IsActive { get; set; }
@@ -38,10 +40,10 @@ public class Metric
 
     public DateTime? UpdatedDate { get; set; }
 
-    /// <summary>מנוהל על ידי המסד — לא נכתב מהאפליקציה</summary>
-    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
-
     public List<MetricDetailField> DetailFields { get; set; } = new();
+
+    /// <summary>timestamp rowversion — EF משתמש בו לזיהוי התנגשות עדכון</summary>
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 }
 
 /// <summary>
@@ -49,8 +51,6 @@ public class Metric
 /// </summary>
 public class MetricDetailField
 {
-    public int MetricID { get; set; }
-
     public Metric Metric { get; set; } = null!;
 
     public int FieldID { get; set; }

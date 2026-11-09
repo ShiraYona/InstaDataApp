@@ -20,5 +20,7 @@ public interface IApplicationDbContext
 
     DbSet<CalculationTypeDefinition> CalculationTypes { get; }
 
+    DbSet<UserDisplaySettings> UserDisplaySettings { get; }
+    DbSet<UserMetricSetting> UserMetricSettings { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

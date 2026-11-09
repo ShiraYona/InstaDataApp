@@ -43,3 +43,6 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Generated at dev-server start (chosen backend ports)
+.ports.json

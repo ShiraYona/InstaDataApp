@@ -9,13 +9,25 @@
         label="הוספת נתון חדש"
         icon="pi pi-plus"
         (onClick)="openNewDataDialog()" />
+     <p-button
+        label="ניהול נתונים"
+        routerLink="/data-management"
+        />
     </div>
-
-    <app-menue></app-menue>
-  </div>
+              <p-button
+        label="קוביות לוח הבקרה"
+        routerLink="/control-panel" />
+     <p-button
+        label="ניהול נתונים"
+        routerLink="/data-management"
+        />
+    </div>
+  <button class="btn" routerLink="/display-management">ניהול תצוגה</button>
 </div>
 
 <!-- הדיאלוג מוטמע במסך שממנו הוא נפתח — הרקע שמאחוריו נשאר גלוי ומטושטש -->
 <app-adding-new-data-entry
     [(visible)]="newDataVisible"
     (saved)="onNewDataSaved()" />
+  [(visible)]="dialogVisible"
+  (saved)="onDataSaved($event)" />

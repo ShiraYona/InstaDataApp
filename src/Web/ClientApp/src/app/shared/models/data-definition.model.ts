@@ -10,6 +10,9 @@
 export type CalculationTypeId = number;
 
 /** ערך מתוך רשימה נפתחת (מקור נתונים, סמל כרטיס, תקופה וכו') */
+
+export type CalculationType = 'COUNT' | 'SUM';
+
 export interface LookupOption {
   value: string;
   label: string;
@@ -19,8 +22,13 @@ export interface LookupOption {
    */
   icon?: string;
 }
+export interface CardIconOption {
+  id: number;
+  label: string;
+}
 
-/** שדה של מקור נתונים — הקוד (FieldID) מזהה אותו בשמירה */
+export type SourceFieldKind = 'date' | 'number' | 'text';
+
 export interface DataSourceField {
   fieldId: number;
   label: string;
@@ -30,7 +38,6 @@ export interface DataSourceField {
   isGroupable: boolean;
 }
 
-/** מקור נתונים יחד עם השדות שהוגדרו עבורו */
 export interface DataSource {
   sourceId: number;
   label: string;
@@ -56,9 +63,28 @@ export interface MetricDraft {
   detailFieldIds: number[];
   /** האם להציג את הנתון במערכת הניהול והבקרה (נשמר ב-IsActive) */
   displayInDashboard: boolean;
+  dateMode: { field: string | null; label: string; note: string };
+}
+
+export interface DataDefinitionDraft {
+  name: string;
+  sourceId: number | null;
+  iconId: number | null;
+  periodId: number | null;
+  calculationType: CalculationType;
+  summaryFieldKey: string | null;
+  groupByFieldKey: string | null;
+  dateFieldKey: string | null;
+  detailFields: string[];
+  showInDashboard: boolean;
 }
 
 export interface PreviewResult {
   rows: Array<{ key: string; label: string; value: number }>;
   total: number;
 }
+
+export const CALCULATION_TYPE_OPTIONS: Array<{ value: CalculationType; label: string }> = [
+  { value: 'COUNT', label: 'כמות רשומות (COUNT)' },
+  { value: 'SUM', label: 'סכום ערכי שדה (SUM)' }
+];

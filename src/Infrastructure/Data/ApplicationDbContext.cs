@@ -29,5 +29,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         // טבלאות הקטלוג (CTRL_*) קיימות מראש — המיפוי שלהן נמצא ב-Configurations,
         // ואין להריץ Migrations עליהן.
         builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+    public DbSet<UserDisplaySettings> UserDisplaySettings => Set<UserDisplaySettings>();
+    public DbSet<UserMetricSetting> UserMetricSettings => Set<UserMetricSetting>();
+    public DbSet<Metric> Metrics => Set<Metric>();
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+        builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
     }
 }

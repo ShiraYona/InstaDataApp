@@ -8,7 +8,9 @@ import { MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
 
 import { AuthorizeInterceptor } from '../api-authorization/authorize.interceptor';
+import { environment } from '../environments/environment';
 import { routes } from './app.routes';
+import { API_BASE_URL } from './web-api-client';
 
 export const MyPreset = definePreset(Aura, {
   semantic: {
@@ -54,6 +56,8 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withInterceptorsFromDi()),
+    // כתובת ה-API של הלקוח שנוצר ע"י NSwag (DataCatalogClient וכו')
+    { provide: API_BASE_URL, useValue: environment.baseUrl },
     { provide: HTTP_INTERCEPTORS, useClass: AuthorizeInterceptor, multi: true },
     provideAnimationsAsync(),
     MessageService,

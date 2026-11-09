@@ -1,0 +1,147 @@
+<div class="display-page" dir="rtl">
+  <!-- ===== שורת עליונה: כפתור חזרה משמאל, כותרת מימין ===== -->
+  <div class="top-row">
+    <header class="page-header">
+      <h1 class="page-title">ניהול תצוגה</h1>
+      <p class="page-subtitle">
+        קביעת מספר הכרטיסים בשורה וסדר הופעתם במערכת הניהול והבקרה.
+      </p>
+    </header>
+
+    <p-button
+      label="חזרה ללוח הבקרה"
+      icon="pi pi-arrow-right"
+      iconPos="right"
+      size="small"
+      styleClass="back-button"
+      [routerLink]="'/home'"
+    ></p-button>
+  </div>
+
+  <!-- ===== הפאנלים ===== -->
+  <div class="panels">
+    <!-- פאנל סדר הכרטיסים -->
+    <section class="panel panel--order">
+      <h2 class="panel__title">סדר הכרטיסים</h2>
+      <p class="panel__subtitle">
+        שנו את הסדר באמצעות החצים. כרטיסים מושבתים לא יוצגו בלוח הבקרה.
+      </p>
+
+      <ul
+        class="card-list"
+        cdkDropList
+        (cdkDropListDropped)="drop($event)"
+      >
+        <li
+          class="card-row"
+          *ngFor="let card of cards; let i = index; trackBy: trackByCardId"
+          cdkDrag
+        >
+          <!-- מימין לשמאל: מספר, שם; משמאל: גלולת "מוצג" ואז החצים -->
+          <span class="card-row__index">{{ i + 1 }}</span>
+
+          <span class="card-row__label">{{ card.label }}</span>
+
+          <p-togglebutton
+            [ngModel]="card.visible"
+            (ngModelChange)="setVisibility(card, $event)"
+            onLabel="מוצג"
+            offLabel="מוסתר"
+            styleClass="visibility-toggle"
+          ></p-togglebutton>
+
+          <span class="card-row__arrows">
+            <!-- החצים מצוירים ב-SVG: ריבוע לבן עם מסגרת כחלחלה וחץ V כהה עבה -->
+            <button
+              type="button"
+              class="arrow-btn"
+              [disabled]="isFirst(i)"
+              (click)="move(i, -1)"
+              aria-label="הזזה מעלה"
+            >
+              <svg class="arrow-btn__icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 20V4M12 4l-3.6 3.6M12 4l3.6 3.6"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="0.9"
+                  stroke-linecap="butt"
+                  stroke-linejoin="miter"
+                  vector-effect="non-scaling-stroke"
+                />
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="arrow-btn"
+              [disabled]="isLast(i)"
+              (click)="move(i, 1)"
+              aria-label="הזזה מטה"
+            >
+              <svg class="arrow-btn__icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M12 4v16M12 20l-3.6-3.6M12 20l3.6-3.6"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="0.9"
+                  stroke-linecap="butt"
+                  stroke-linejoin="miter"
+                  vector-effect="non-scaling-stroke"
+                />
+              </svg>
+            </button>
+          </span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- פאנל הגדרות פריסה -->
+    <section class="panel panel--settings">
+      <h2 class="panel__title panel__title--page">הגדרות פריסה</h2>
+
+      <label class="field">
+        <span class="field__label">מספר כרטיסים בשורה</span>
+        <p-select
+          #cardsPerRowSelect
+          [ngModel]="cardsPerRow"
+          (ngModelChange)="setCardsPerRow($event)"
+          [options]="cardsPerRowOptions"
+          styleClass="cards-per-row-select"
+          panelStyleClass="cards-per-row-select-panel"
+        ></p-select>
+      </label>
+
+      <div class="preview-block">
+        <h3 class="preview-block__title">תצוגה מקדימה</h3>
+
+        <div
+          class="preview-grid"
+          [style.grid-template-columns]="'repeat(' + cardsPerRow + ', minmax(0, 1fr))'"
+        >
+          <span class="preview-cell" *ngFor="let slot of previewSlots">{{ slot }}</span>
+        </div>
+
+        <p class="preview-block__note">הפריסה מותאמת אוטומטית לרוחב המסך.</p>
+      </div>
+
+      <p-button
+        label="איפוס הדמו לברירת מחדל"
+        icon="pi pi-refresh"
+        iconPos="right"
+        size="small"
+        severity="secondary"
+        [outlined]="true"
+        styleClass="reset-button"
+        (onClick)="confirmReset()"
+      ></p-button>
+    </section>
+
+  </div>
+</div>
+
+<!-- חלון אישור לאיפוס המסך — מוצג רק לאחר לחיצה על כפתור האיפוס -->
+<p-confirmdialog
+  styleClass="dm-confirm-dialog"
+  [closeOnEscape]="true"
+  [focusTrap]="true"
+></p-confirmdialog>
