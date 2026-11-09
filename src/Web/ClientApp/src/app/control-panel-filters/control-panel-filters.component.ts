@@ -1,9 +1,14 @@
-import { Component, EventEmitter, inject, Output, signal } from '@angular/core';
+import { Component, DestroyRef, EventEmitter, inject, OnInit, Output } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { DataCatalogClient } from '../web-api-client';
+import { DisplayLayoutService } from '../shared/services/display-layout.service';
+
+/** ברירת המחדל למספר הכרטיסים בשורה — זהה לברירת המחדל בצד השרת */
+const DEFAULT_CARDS_PER_ROW = 4;
 
 /** אפשרות בתפריט בחירה (תקופה / כרטיסים בשורה). value = null מייצג "הכל" */
 export interface FilterOption {
@@ -15,7 +20,7 @@ export interface FilterOption {
 export interface FilterState {
   period: number | null;
   cardsPerRow: number;
-  searchText: string;
+  searchMetricName: string;
 }
 
 @Component({
@@ -25,25 +30,21 @@ export interface FilterState {
   templateUrl: './control-panel-filters.component.html',
   styleUrl: './control-panel-filters.component.scss'
 })
-export class ControlPanelFiltersComponent {
+export class ControlPanelFiltersComponent implements OnInit {
   /** שינוי סינון — ההורה מסנן מחדש את התצוגה */
   @Output() filtersChanged = new EventEmitter<FilterState>();
 
   @Output() refreshRequested = new EventEmitter<FilterState>();
-  
+
   private readonly dataCatalogClient = inject(DataCatalogClient);
-  
+  private readonly layoutService = inject(DisplayLayoutService);
+  private readonly destroyRef = inject(DestroyRef);
+
   period: number | null = null;
-  cardsPerRow: number = 4;
-  searchText = '';
+  cardsPerRow: number = DEFAULT_CARDS_PER_ROW;
+  private savedCardsPerRow: number | null = null;
+  searchMetricName = '';
  
-  // readonly periodOptions: FilterOption[] = [
-  //   { label: 'כל התקופה', value: null },
-  //   { label: '7 ימים אחרונים', value: 7 },
-  //   { label: '30 ימים אחרונים', value: 30 },
-  //   { label: '90 ימים אחרונים', value: 90 }
-  // ];
-  /** תקופות החישוב — נטענות מהטבלה CTRL_CalculationDays */
    periodOptions: FilterOption[] = [
     { label: 'כל התקופה', value: null }
   ];
@@ -65,6 +66,15 @@ export class ControlPanelFiltersComponent {
 
       error: () => { /* נשארת רק "כל התקופה" */ }
     });
+
+    this.layoutService
+      .loadCardsPerRow()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(value => {
+        this.savedCardsPerRow = value ?? DEFAULT_CARDS_PER_ROW;
+        this.cardsPerRow = this.savedCardsPerRow;
+        this.onFilterChange();
+      });
   }
 
 
@@ -73,16 +83,22 @@ export class ControlPanelFiltersComponent {
   }
 
   refresh(): void {
-    // this.refreshRequested.emit(this.currentState());
-    this.searchText = '';
-    this.period = null
+    this.searchMetricName = '';
+    this.period = null;
+
+    if (this.savedCardsPerRow !== null) {
+      this.cardsPerRow = this.savedCardsPerRow;
+    }
+
+    this.onFilterChange();
+    this.refreshRequested.emit(this.currentState());
   }
 
   private currentState(): FilterState {
     return {
       period: this.period,
       cardsPerRow: this.cardsPerRow,
-      searchText: this.searchText.trim()
+      searchMetricName: this.searchMetricName.trim()
     };
   }
 }

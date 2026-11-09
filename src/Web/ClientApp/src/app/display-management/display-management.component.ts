@@ -19,7 +19,7 @@ import { ConfirmationService } from 'primeng/api';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { Subject, debounceTime, take } from 'rxjs';
-import { DisplayLayoutService, MetricSettingItem } from './display-layout.service';
+import { DisplayLayoutService, MetricSettingItem } from '../shared/services/display-layout.service';
 
 export interface DisplayCard {
   id: number;
@@ -42,8 +42,6 @@ export interface DisplayCard {
     TagModule,
     TooltipModule,
   ],
-  // ConfirmationService מקבל את הסטייל דרך styleClass של הדיאלוג,
-  // ולכן הוא ניתן ברמת הרכיב ולא ב-providers גלובליים.
   providers: [ConfirmationService],
   templateUrl: './display-management.component.html',
   styleUrl: './display-management.component.scss'
@@ -53,48 +51,33 @@ export class DisplayManagementComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly confirmationService = inject(ConfirmationService);
 
-  /** מצב השמירה האוטומטית — לתצוגה למשתמש */
   saveState: 'idle' | 'saving' = 'idle';
 
-  /** מצב טעינה — לתצוגה למשתמש */
   loading = signal(true);
 
-  /** הודעת שגיאה אם הטעינה נכשלה */
   loadError = signal<string | null>(null);
 
-  /** צינור שמירת מספר הכרטיסים בשורה בלבד */
   private readonly cardsPerRowTrigger$ = new Subject<number>();
 
-  /** צינור שמירת סדר ונראות הכרטיסים — debounce כדי לא להציף את השרת */
   private readonly orderTrigger$ = new Subject<void>();
 
-  /** מספר הכרטיסים בשורה (נשמר בשרת) */
   cardsPerRow = 4;
 
-  /** האפשרויות בתפריט "מספר כרטיסים בשורה" */
   readonly cardsPerRowOptions = [
     { value: 2, label: '2 כרטיסים' },
     { value: 3, label: '3 כרטיסים' },
     { value: 4, label: '4 כרטיסים' },
   ];
 
-  /** ברירת המחדל של מספר הכרטיסים — לאיפוס ולמקרה שהשרת לא עונה */
   private readonly defaultCardsPerRow = 4;
 
-  /** הכרטיסים לפי הסדר הנוכחי שלהם בלוח הבקרה */
   cards: DisplayCard[] = [];
 
-  /** הנתון המלא מהשרת — נדרש כדי לשמור בחזרה (metricName, iconCode) */
   private serverItems = new Map<number, MetricSettingItem>();
 
-  /**
-   * כרטיסי התצוגה המקדימה — 12 משבצות (3 שורות × 4), כמו בתמונה.
-   * אלה לא אותם כרטיסים שברשימה; רק הדגמה של הלוח עצמו.
-   */
   readonly previewSlots: number[] = Array.from({ length: 12 }, (_, i) => i + 1);
 
   ngOnInit(): void {
-    // 1. מספר הכרטיסים בשורה — מהשרת (שמירה על הקיים).
     this.layoutService
       .loadCardsPerRow()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -102,10 +85,8 @@ export class DisplayManagementComponent implements OnInit {
         this.cardsPerRow = value ?? this.defaultCardsPerRow;
       });
 
-    // 2. הכרטיסים — מהשרת, מסודרים לפי הסדר האישי של המשתמש.
     this.loadCards();
 
-    // 3. שמירת מספר הכרטיסים בשורה — בקשה אחת אחרי רגיעה.
     this.cardsPerRowTrigger$
       .pipe(
         debounceTime(300),
@@ -113,7 +94,6 @@ export class DisplayManagementComponent implements OnInit {
       )
       .subscribe(value => this.persistCardsPerRow(value));
 
-    // 4. שמירת סדר/נראות — בקשה אחת אחרי רגיעה.
     this.orderTrigger$
       .pipe(
         debounceTime(400),
@@ -122,7 +102,6 @@ export class DisplayManagementComponent implements OnInit {
       .subscribe(() => this.persistOrder());
   }
 
-  /** טעינת הכרטיסים מהשרת */
   private loadCards(): void {
     this.loading.set(true);
     this.loadError.set(null);
@@ -134,7 +113,6 @@ export class DisplayManagementComponent implements OnInit {
         next: response => {
           const items = response?.items ?? [];
 
-          // שמירת הנתון המלא לפי מזהה — נדרש לשמירה חוזרת
           this.serverItems = new Map(items.map(i => [i.metricId, i]));
 
           this.cards = items.map(i => ({
@@ -152,13 +130,11 @@ export class DisplayManagementComponent implements OnInit {
       });
   }
 
-  /** הזזת כרטיס מעלה/מטה ברשימה (כפתורי החצים) */
   move(index: number, direction: -1 | 1): void {
     const target = index + direction;
     if (target < 0 || target >= this.cards.length) {
       return;
     }
-    // בניית מערך חדש ולא החלפה במקום — כדי ש-*ngFor יזהה את השינוי
     const reordered = [...this.cards];
     const [moved] = reordered.splice(index, 1);
     reordered.splice(target, 0, moved);
@@ -166,7 +142,6 @@ export class DisplayManagementComponent implements OnInit {
     this.queueOrderSave();
   }
 
-  /** גרירה ידנית של כרטיס למקום אחר ברשימה */
   drop(event: CdkDragDrop<DisplayCard[]>): void {
     if (event.previousIndex === event.currentIndex) {
       return;
@@ -177,15 +152,12 @@ export class DisplayManagementComponent implements OnInit {
     this.queueOrderSave();
   }
 
-  /** עדכון מצב ההצגה של כרטיס — בלי להחליף את אובייקט הכרטיס */
   setVisibility(card: DisplayCard, visible: boolean): void {
     card.visible = visible;
-    // יצירת מערך חדש כדי שהתבנית תתרענן גם אם השינוי בתוך האובייקט לא מזוהה
     this.cards = [...this.cards];
     this.queueOrderSave();
   }
 
-  /** שינוי מספר הכרטיסים בשורה — נשלח לשמירה בשרת */
   setCardsPerRow(value: number): void {
     if (value === this.cardsPerRow) {
       return;
@@ -194,7 +166,6 @@ export class DisplayManagementComponent implements OnInit {
     this.cardsPerRowTrigger$.next(value);
   }
 
-  /** לחיצה על "איפוס הדמו" — מבקשת אישור לפני שמאפסים את המסך */
   confirmReset(): void {
     this.confirmationService.confirm({
       header: 'איפוס המסך לברירת מחדל',
@@ -211,11 +182,7 @@ export class DisplayManagementComponent implements OnInit {
     });
   }
 
-  /**
-   * איפוס: מספר כרטיסים לברירת המחדל, וטעינה מחדש מהשרת.
-   * השרת מחזיר את הסדר המקורי כי עוד לא נשמר סדר אישי —
-   * שולחים displayOrder = null לכל הפריטים כדי לאפס אותם.
-   */
+
   resetLayout(): void {
     this.cardsPerRow = this.defaultCardsPerRow;
     this.cardsPerRowTrigger$.next(this.defaultCardsPerRow);
@@ -259,18 +226,15 @@ export class DisplayManagementComponent implements OnInit {
     return index === this.cards.length - 1;
   }
 
-  /** סימון שצריך לשמור סדר/נראות — הבקשה תישלח אחרי רגיעה */
   private queueOrderSave(): void {
     this.orderTrigger$.next();
   }
 
-  /** שמירת הסדר והנראות בשרת */
   private persistOrder(): void {
     if (!this.cards.length) {
       return;
     }
 
-    // displayOrder מתחיל מ-1 לפי מיקום ברשימה
     const items: MetricSettingItem[] = this.cards.map((c, index) => {
       const original = this.serverItems.get(c.id);
       return {
@@ -297,7 +261,6 @@ export class DisplayManagementComponent implements OnInit {
       });
   }
 
-  /** שמירת מספר הכרטיסים בשורה בשרת */
   private persistCardsPerRow(value: number): void {
     this.saveState = 'saving';
     this.layoutService
