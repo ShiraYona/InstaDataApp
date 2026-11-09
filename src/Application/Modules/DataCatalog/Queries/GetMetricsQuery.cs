@@ -1,5 +1,7 @@
 using InstaDataApp.Application.Common.Interfaces;
 using InstaDataApp.Domain.Entities;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace InstaDataApp.Application.Modules.DataCatalog.Queries;
 

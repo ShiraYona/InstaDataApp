@@ -7,6 +7,18 @@ import { HttpClient, HttpHeaders, HttpResponse, HttpResponseBase } from '@angula
 
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
 
+/**
+ * תשובת קובץ מהשרת.
+ * הפעולות שמוחזרות כ-204 No Content נוצרות ע"י NSwag כטיפוס קובץ,
+ * ולכן הטיפוס הזה נדרש כדי שהקובץ יתקמפל.
+ */
+export interface FileResponse {
+    data: Blob;
+    status: number;
+    fileName?: string;
+    headers?: { [name: string]: any };
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -357,6 +369,59 @@ export class UserDisplaySettingsClient {
 
     getClaims(): Observable<ClaimDto[]> {
         let url_ = this.baseUrl + "/api/Metrics/claims";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetClaims(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGetClaims(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<ClaimDto[]>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<ClaimDto[]>;
+        }));
+    }
+
+    protected processGetClaims(response: HttpResponseBase): Observable<ClaimDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(ClaimDto.fromJS(item));
+            }
+            else {
+                result200 = <any>null;
+            }
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
     putMetrics(request: SaveMetricSettingsRequest): Observable<FileResponse> {
         let url_ = this.baseUrl + "/api/user-display-settings/metrics";
         url_ = url_.replace(/[?&]$/, "");
@@ -746,10 +811,6 @@ export class SaveMetricSettingsRequest implements ISaveMetricSettingsRequest {
     }
 }
 
-export interface IMetricSettingsDto {
-    items?: MetricSettingsItemDto[];
-}
-
 export class MetricCardDto implements IMetricCardDto {
     key?: string;
     title?: string;
@@ -771,6 +832,7 @@ export class MetricCardDto implements IMetricCardDto {
     status?: string;
     updated?: boolean;
     targetText?: string | undefined;
+    signType?: string | undefined;
 
     constructor(data?: IMetricCardDto) {
         if (data) {
@@ -807,6 +869,7 @@ export class MetricCardDto implements IMetricCardDto {
             this.status = _data["status"];
             this.updated = _data["updated"];
             this.targetText = _data["targetText"];
+            this.signType = _data["signType"];
         }
     }
 
@@ -843,6 +906,7 @@ export class MetricCardDto implements IMetricCardDto {
         data["status"] = this.status;
         data["updated"] = this.updated;
         data["targetText"] = this.targetText;
+        data["signType"] = this.signType;
         return data;
     }
 }
@@ -868,6 +932,7 @@ export interface IMetricCardDto {
     status?: string;
     updated?: boolean;
     targetText?: string | undefined;
+    signType?: string | undefined;
 }
 
 export class MetricGroupDto implements IMetricGroupDto {
@@ -1074,6 +1139,16 @@ export class ClaimDto implements IClaimDto {
         data["claimDepartment"] = this.claimDepartment;
         return data;
     }
+}
+
+export interface IClaimDto {
+    claimId?: number;
+    claimDate?: string;
+    claimantName?: string;
+    claimDescription?: string | undefined;
+    claimAmount?: number;
+    claimantsCount?: number;
+    claimDepartment?: string | undefined;
 }
 
 export interface ISaveMetricSettingsRequest {

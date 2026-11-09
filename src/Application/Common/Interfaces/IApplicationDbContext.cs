@@ -20,7 +20,7 @@ public interface IApplicationDbContext
 
     DbSet<UserDisplaySettings> UserDisplaySettings { get; }
     DbSet<UserMetricSetting> UserMetricSettings { get; }
-    // DbSet<Metric> Metrics { get; } 
+    DbSet<Metric> Metrics { get; }
    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
 }
