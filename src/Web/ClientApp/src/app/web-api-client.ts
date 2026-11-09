@@ -1,4 +1,5 @@
 
+
 import { mergeMap as _observableMergeMap, catchError as _observableCatch } from 'rxjs/operators';
 import { Observable, throwError as _observableThrow, of as _observableOf } from 'rxjs';
 import { Injectable, Inject, Optional, InjectionToken } from '@angular/core';
@@ -9,18 +10,18 @@ export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
 @Injectable({
     providedIn: 'root'
 })
-export class MetricsClient {
+export class DataCatalogClient {
     private http: HttpClient;
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
 
     constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(API_BASE_URL) baseUrl?: string) {
         this.http = http;
-        this.baseUrl = baseUrl ?? this.getBaseUrl("");
+        this.baseUrl = baseUrl ?? "";
     }
 
-    getActiveMetrics(): Observable<MetricCardDto[]> {
-        let url_ = this.baseUrl + "/api/Metrics";
+    get(): Observable<Metric[]> {
+        let url_ = this.baseUrl + "/api/DataCatalog";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_ : any = {
@@ -32,20 +33,20 @@ export class MetricsClient {
         };
 
         return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processGetActiveMetrics(response_);
+            return this.processGet(response_);
         })).pipe(_observableCatch((response_: any) => {
             if (response_ instanceof HttpResponseBase) {
                 try {
-                    return this.processGetActiveMetrics(response_ as any);
+                    return this.processGet(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<MetricCardDto[]>;
+                    return _observableThrow(e) as any as Observable<Metric[]>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<MetricCardDto[]>;
+                return _observableThrow(response_) as any as Observable<Metric[]>;
         }));
     }
 
-    protected processGetActiveMetrics(response: HttpResponseBase): Observable<MetricCardDto[]> {
+    protected processGet(response: HttpResponseBase): Observable<Metric[]> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -59,7 +60,7 @@ export class MetricsClient {
             if (Array.isArray(resultData200)) {
                 result200 = [] as any;
                 for (let item of resultData200)
-                    result200!.push(MetricCardDto.fromJS(item));
+                    result200!.push(Metric.fromJS(item));
             }
             else {
                 result200 = <any>null;
@@ -74,8 +75,136 @@ export class MetricsClient {
         return _observableOf(null as any);
     }
 
-    getPayments(): Observable<PaymentDto[]> {
-        let url_ = this.baseUrl + "/api/Metrics/payments";
+    setActive(id: number, body: SetMetricActiveRequest): Observable<FileResponse> {
+        let url_ = this.baseUrl + "/api/DataCatalog/{id}/active";
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/octet-stream"
+            })
+        };
+
+        return this.http.request("put", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processSetActive(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processSetActive(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<FileResponse>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<FileResponse>;
+        }));
+    }
+
+    protected processSetActive(response: HttpResponseBase): Observable<FileResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return _observableOf({ fileName: fileName, data: responseBlob as any, status: status, headers: _headers });
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    delete(id: number): Observable<FileResponse> {
+        let url_ = this.baseUrl + "/api/DataCatalog/{id}";
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/octet-stream"
+            })
+        };
+
+        return this.http.request("delete", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processDelete(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processDelete(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<FileResponse>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<FileResponse>;
+        }));
+    }
+
+    protected processDelete(response: HttpResponseBase): Observable<FileResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return _observableOf({ fileName: fileName, data: responseBlob as any, status: status, headers: _headers });
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+}
+
+@Injectable({
+    providedIn: 'root'
+})
+export class UserDisplaySettingsClient {
+    private http: HttpClient;
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(API_BASE_URL) baseUrl?: string) {
+        this.http = http;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    get(): Observable<DisplaySettingsDto> {
+        let url_ = this.baseUrl + "/api/user-display-settings";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_ : any = {
@@ -87,20 +216,20 @@ export class MetricsClient {
         };
 
         return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processGetPayments(response_);
+            return this.processGet(response_);
         })).pipe(_observableCatch((response_: any) => {
             if (response_ instanceof HttpResponseBase) {
                 try {
-                    return this.processGetPayments(response_ as any);
+                    return this.processGet(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<PaymentDto[]>;
+                    return _observableThrow(e) as any as Observable<DisplaySettingsDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<PaymentDto[]>;
+                return _observableThrow(response_) as any as Observable<DisplaySettingsDto>;
         }));
     }
 
-    protected processGetPayments(response: HttpResponseBase): Observable<PaymentDto[]> {
+    protected processGet(response: HttpResponseBase): Observable<DisplaySettingsDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -111,14 +240,7 @@ export class MetricsClient {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            if (Array.isArray(resultData200)) {
-                result200 = [] as any;
-                for (let item of resultData200)
-                    result200!.push(PaymentDto.fromJS(item));
-            }
-            else {
-                result200 = <any>null;
-            }
+            result200 = DisplaySettingsDto.fromJS(resultData200);
             return _observableOf(result200);
             }));
         } else if (status !== 200 && status !== 204) {
@@ -129,8 +251,64 @@ export class MetricsClient {
         return _observableOf(null as any);
     }
 
-    getFines(): Observable<FineDto[]> {
-        let url_ = this.baseUrl + "/api/Metrics/fines";
+    put(request: SaveDisplaySettingsRequest): Observable<FileResponse> {
+        let url_ = this.baseUrl + "/api/user-display-settings";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(request);
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/octet-stream"
+            })
+        };
+
+        return this.http.request("put", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processPut(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processPut(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<FileResponse>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<FileResponse>;
+        }));
+    }
+
+    protected processPut(response: HttpResponseBase): Observable<FileResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return _observableOf({ fileName: fileName, data: responseBlob as any, status: status, headers: _headers });
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    getMetrics(): Observable<MetricSettingsDto> {
+        let url_ = this.baseUrl + "/api/user-display-settings/metrics";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_ : any = {
@@ -142,20 +320,20 @@ export class MetricsClient {
         };
 
         return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processGetFines(response_);
+            return this.processGetMetrics(response_);
         })).pipe(_observableCatch((response_: any) => {
             if (response_ instanceof HttpResponseBase) {
                 try {
-                    return this.processGetFines(response_ as any);
+                    return this.processGetMetrics(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<FineDto[]>;
+                    return _observableThrow(e) as any as Observable<MetricSettingsDto>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<FineDto[]>;
+                return _observableThrow(response_) as any as Observable<MetricSettingsDto>;
         }));
     }
 
-    protected processGetFines(response: HttpResponseBase): Observable<FineDto[]> {
+    protected processGetMetrics(response: HttpResponseBase): Observable<MetricSettingsDto> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -166,14 +344,7 @@ export class MetricsClient {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            if (Array.isArray(resultData200)) {
-                result200 = [] as any;
-                for (let item of resultData200)
-                    result200!.push(FineDto.fromJS(item));
-            }
-            else {
-                result200 = <any>null;
-            }
+            result200 = MetricSettingsDto.fromJS(resultData200);
             return _observableOf(result200);
             }));
         } else if (status !== 200 && status !== 204) {
@@ -186,51 +357,54 @@ export class MetricsClient {
 
     getClaims(): Observable<ClaimDto[]> {
         let url_ = this.baseUrl + "/api/Metrics/claims";
+    putMetrics(request: SaveMetricSettingsRequest): Observable<FileResponse> {
+        let url_ = this.baseUrl + "/api/user-display-settings/metrics";
         url_ = url_.replace(/[?&]$/, "");
 
+        const content_ = JSON.stringify(request);
+
         let options_ : any = {
+            body: content_,
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
-                "Accept": "application/json"
+                "Content-Type": "application/json",
+                "Accept": "application/octet-stream"
             })
         };
 
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processGetClaims(response_);
+        return this.http.request("put", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processPutMetrics(response_);
         })).pipe(_observableCatch((response_: any) => {
             if (response_ instanceof HttpResponseBase) {
                 try {
-                    return this.processGetClaims(response_ as any);
+                    return this.processPutMetrics(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<ClaimDto[]>;
+                    return _observableThrow(e) as any as Observable<FileResponse>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<ClaimDto[]>;
+                return _observableThrow(response_) as any as Observable<FileResponse>;
         }));
     }
 
-    protected processGetClaims(response: HttpResponseBase): Observable<ClaimDto[]> {
+    protected processPutMetrics(response: HttpResponseBase): Observable<FileResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            if (Array.isArray(resultData200)) {
-                result200 = [] as any;
-                for (let item of resultData200)
-                    result200!.push(ClaimDto.fromJS(item));
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
             }
-            else {
-                result200 = <any>null;
-            }
-            return _observableOf(result200);
-            }));
+            return _observableOf({ fileName: fileName, data: responseBlob as any, status: status, headers: _headers });
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -238,68 +412,342 @@ export class MetricsClient {
         }
         return _observableOf(null as any);
     }
+}
 
-    getDetails(key: string, groupValue: string | null | undefined, sourceId: number | null | undefined): Observable<MetricDetailDto> {
-        let url_ = this.baseUrl + "/api/Metrics/{key}/details?";
-        if (key === undefined || key === null)
-            throw new Error("The parameter 'key' must be defined.");
-        url_ = url_.replace("{key}", encodeURIComponent("" + key));
-        if (groupValue !== undefined && groupValue !== null)
-            url_ += "groupValue=" + encodeURIComponent("" + groupValue) + "&";
-        if (sourceId !== undefined && sourceId !== null)
-            url_ += "sourceId=" + encodeURIComponent("" + sourceId) + "&";
-        url_ = url_.replace(/[?&]$/, "");
+export class Metric implements IMetric {
+    metricId?: number;
+    metricName?: string;
+    iconCode?: string | undefined;
+    isActive?: boolean;
+    createdDate?: Date;
+    sourceId?: number;
+    calculationType?: string;
+    sumFieldId?: number | undefined;
+    groupFieldId?: number | undefined;
+    dateRangeType?: string;
+    createdBy?: string;
+    updatedBy?: string | undefined;
+    updatedDate?: Date | undefined;
+    rowVersion?: string;
 
-        let options_ : any = {
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processGetDetails(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
-                try {
-                    return this.processGetDetails(response_ as any);
-                } catch (e) {
-                    return _observableThrow(e) as any as Observable<MetricDetailDto>;
-                }
-            } else
-                return _observableThrow(response_) as any as Observable<MetricDetailDto>;
-        }));
-    }
-
-    protected processGetDetails(response: HttpResponseBase): Observable<MetricDetailDto> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = MetricDetailDto.fromJS(resultData200);
-            return _observableOf(result200);
-            }));
-        } else if (status === 404) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            let result404: any = null;
-            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result404 = ProblemDetails.fromJS(resultData404);
-            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            }));
+    constructor(data?: IMetric) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
         }
-        return _observableOf(null as any);
     }
+
+    init(_data?: any) {
+        if (_data) {
+            this.metricId = _data["metricId"];
+            this.metricName = _data["metricName"];
+            this.iconCode = _data["iconCode"];
+            this.isActive = _data["isActive"];
+            this.createdDate = _data["createdDate"] ? new Date(_data["createdDate"].toString()) : <any>undefined;
+            this.sourceId = _data["sourceId"];
+            this.calculationType = _data["calculationType"];
+            this.sumFieldId = _data["sumFieldId"];
+            this.groupFieldId = _data["groupFieldId"];
+            this.dateRangeType = _data["dateRangeType"];
+            this.createdBy = _data["createdBy"];
+            this.updatedBy = _data["updatedBy"];
+            this.updatedDate = _data["updatedDate"] ? new Date(_data["updatedDate"].toString()) : <any>undefined;
+            this.rowVersion = _data["rowVersion"];
+        }
+    }
+
+    static fromJS(data: any): Metric {
+        data = typeof data === 'object' ? data : {};
+        let result = new Metric();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["metricId"] = this.metricId;
+        data["metricName"] = this.metricName;
+        data["iconCode"] = this.iconCode;
+        data["isActive"] = this.isActive;
+        data["createdDate"] = this.createdDate ? this.createdDate.toISOString() : <any>undefined;
+        data["sourceId"] = this.sourceId;
+        data["calculationType"] = this.calculationType;
+        data["sumFieldId"] = this.sumFieldId;
+        data["groupFieldId"] = this.groupFieldId;
+        data["dateRangeType"] = this.dateRangeType;
+        data["createdBy"] = this.createdBy;
+        data["updatedBy"] = this.updatedBy;
+        data["updatedDate"] = this.updatedDate ? this.updatedDate.toISOString() : <any>undefined;
+        data["rowVersion"] = this.rowVersion;
+        return data;
+    }
+}
+
+export interface IMetric {
+    metricId?: number;
+    metricName?: string;
+    iconCode?: string | undefined;
+    isActive?: boolean;
+    createdDate?: Date;
+    sourceId?: number;
+    calculationType?: string;
+    sumFieldId?: number | undefined;
+    groupFieldId?: number | undefined;
+    dateRangeType?: string;
+    createdBy?: string;
+    updatedBy?: string | undefined;
+    updatedDate?: Date | undefined;
+    rowVersion?: string;
+}
+
+export class SetMetricActiveRequest implements ISetMetricActiveRequest {
+    isActive?: boolean;
+
+    constructor(data?: ISetMetricActiveRequest) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.isActive = _data["isActive"];
+        }
+    }
+
+    static fromJS(data: any): SetMetricActiveRequest {
+        data = typeof data === 'object' ? data : {};
+        let result = new SetMetricActiveRequest();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["isActive"] = this.isActive;
+        return data;
+    }
+}
+
+export interface ISetMetricActiveRequest {
+    isActive?: boolean;
+}
+
+export class DisplaySettingsDto implements IDisplaySettingsDto {
+    cardsPerRow?: number;
+
+    constructor(data?: IDisplaySettingsDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.cardsPerRow = _data["cardsPerRow"];
+        }
+    }
+
+    static fromJS(data: any): DisplaySettingsDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new DisplaySettingsDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["cardsPerRow"] = this.cardsPerRow;
+        return data;
+    }
+}
+
+export interface IDisplaySettingsDto {
+    cardsPerRow?: number;
+}
+
+export class MetricSettingsDto implements IMetricSettingsDto {
+    items?: MetricSettingsItemDto[];
+
+    constructor(data?: IMetricSettingsDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["items"])) {
+                this.items = [] as any;
+                for (let item of _data["items"])
+                    this.items!.push(MetricSettingsItemDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): MetricSettingsDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new MetricSettingsDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.items)) {
+            data["items"] = [];
+            for (let item of this.items)
+                data["items"].push(item.toJSON());
+        }
+        return data;
+    }
+}
+
+export interface IMetricSettingsDto {
+    items?: MetricSettingsItemDto[];
+}
+
+export class MetricSettingsItemDto implements IMetricSettingsItemDto {
+    metricId?: number;
+    metricName?: string;
+    iconCode?: string | undefined;
+    displayOrder?: number | undefined;
+    isVisible?: boolean;
+
+    constructor(data?: IMetricSettingsItemDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.metricId = _data["metricId"];
+            this.metricName = _data["metricName"];
+            this.iconCode = _data["iconCode"];
+            this.displayOrder = _data["displayOrder"];
+            this.isVisible = _data["isVisible"];
+        }
+    }
+
+    static fromJS(data: any): MetricSettingsItemDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new MetricSettingsItemDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["metricId"] = this.metricId;
+        data["metricName"] = this.metricName;
+        data["iconCode"] = this.iconCode;
+        data["displayOrder"] = this.displayOrder;
+        data["isVisible"] = this.isVisible;
+        return data;
+    }
+}
+
+export interface IMetricSettingsItemDto {
+    metricId?: number;
+    metricName?: string;
+    iconCode?: string | undefined;
+    displayOrder?: number | undefined;
+    isVisible?: boolean;
+}
+
+export class SaveDisplaySettingsRequest implements ISaveDisplaySettingsRequest {
+    cardsPerRow?: number;
+
+    constructor(data?: ISaveDisplaySettingsRequest) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.cardsPerRow = _data["cardsPerRow"];
+        }
+    }
+
+    static fromJS(data: any): SaveDisplaySettingsRequest {
+        data = typeof data === 'object' ? data : {};
+        let result = new SaveDisplaySettingsRequest();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["cardsPerRow"] = this.cardsPerRow;
+        return data;
+    }
+}
+
+export interface ISaveDisplaySettingsRequest {
+    cardsPerRow?: number;
+}
+
+export class SaveMetricSettingsRequest implements ISaveMetricSettingsRequest {
+    items?: MetricSettingsItemDto[];
+
+    constructor(data?: ISaveMetricSettingsRequest) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            if (Array.isArray(_data["items"])) {
+                this.items = [] as any;
+                for (let item of _data["items"])
+                    this.items!.push(MetricSettingsItemDto.fromJS(item));
+            }
+        }
+    }
+
+    static fromJS(data: any): SaveMetricSettingsRequest {
+        data = typeof data === 'object' ? data : {};
+        let result = new SaveMetricSettingsRequest();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        if (Array.isArray(this.items)) {
+            data["items"] = [];
+            for (let item of this.items)
+                data["items"].push(item.toJSON());
+        }
+        return data;
+    }
+}
+
+export interface IMetricSettingsDto {
+    items?: MetricSettingsItemDto[];
 }
 
 export class MetricCardDto implements IMetricCardDto {
@@ -628,174 +1076,8 @@ export class ClaimDto implements IClaimDto {
     }
 }
 
-export interface IClaimDto {
-    claimId?: number;
-    claimDate?: string;
-    claimantName?: string;
-    claimDescription?: string | undefined;
-    claimAmount?: number;
-    claimantsCount?: number;
-    claimDepartment?: string | undefined;
-}
-
-export class MetricDetailDto implements IMetricDetailDto {
-    key?: string;
-    title?: string;
-    dataValue?: string;
-    recordsInSample?: number;
-    sourceName?: string;
-    createdDate?: string;
-    valueFieldName?: string | undefined;
-    groupFieldName?: string | undefined;
-    groupFieldLabel?: string;
-    totalRecords?: number;
-    totalValue?: number | undefined;
-    systems?: SystemGroupDto[];
-    records?: { [key: string]: any; }[];
-    isStale?: boolean;
-
-    constructor(data?: IMetricDetailDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.key = _data["key"];
-            this.title = _data["title"];
-            this.dataValue = _data["dataValue"];
-            this.recordsInSample = _data["recordsInSample"];
-            this.sourceName = _data["sourceName"];
-            this.createdDate = _data["createdDate"];
-            this.valueFieldName = _data["valueFieldName"];
-            this.groupFieldName = _data["groupFieldName"];
-            this.groupFieldLabel = _data["groupFieldLabel"];
-            this.totalRecords = _data["totalRecords"];
-            this.totalValue = _data["totalValue"];
-            if (Array.isArray(_data["systems"])) {
-                this.systems = [] as any;
-                for (let item of _data["systems"])
-                    this.systems!.push(SystemGroupDto.fromJS(item));
-            }
-            if (Array.isArray(_data["records"])) {
-                this.records = [] as any;
-                for (let item of _data["records"])
-                    this.records!.push(item);
-            }
-            this.isStale = _data["isStale"];
-        }
-    }
-
-    static fromJS(data: any): MetricDetailDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new MetricDetailDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["key"] = this.key;
-        data["title"] = this.title;
-        data["dataValue"] = this.dataValue;
-        data["recordsInSample"] = this.recordsInSample;
-        data["sourceName"] = this.sourceName;
-        data["createdDate"] = this.createdDate;
-        data["valueFieldName"] = this.valueFieldName;
-        data["groupFieldName"] = this.groupFieldName;
-        data["groupFieldLabel"] = this.groupFieldLabel;
-        data["totalRecords"] = this.totalRecords;
-        data["totalValue"] = this.totalValue;
-        if (Array.isArray(this.systems)) {
-            data["systems"] = [];
-            for (let item of this.systems)
-                data["systems"].push(item.toJSON());
-        }
-        if (Array.isArray(this.records)) {
-            data["records"] = [];
-            for (let item of this.records)
-                data["records"].push(item);
-        }
-        data["isStale"] = this.isStale;
-        return data;
-    }
-}
-
-export interface IMetricDetailDto {
-    key?: string;
-    title?: string;
-    dataValue?: string;
-    recordsInSample?: number;
-    sourceName?: string;
-    createdDate?: string;
-    valueFieldName?: string | undefined;
-    groupFieldName?: string | undefined;
-    groupFieldLabel?: string;
-    totalRecords?: number;
-    totalValue?: number | undefined;
-    systems?: SystemGroupDto[];
-    records?: { [key: string]: any; }[];
-    isStale?: boolean;
-}
-
-export class SystemGroupDto implements ISystemGroupDto {
-    sourceId?: number;
-    sourceName?: string;
-    groupValue?: string;
-    records?: number;
-    totalValue?: number | undefined;
-    isError?: boolean;
-
-    constructor(data?: ISystemGroupDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.sourceId = _data["sourceId"];
-            this.sourceName = _data["sourceName"];
-            this.groupValue = _data["groupValue"];
-            this.records = _data["records"];
-            this.totalValue = _data["totalValue"];
-            this.isError = _data["isError"];
-        }
-    }
-
-    static fromJS(data: any): SystemGroupDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new SystemGroupDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["sourceId"] = this.sourceId;
-        data["sourceName"] = this.sourceName;
-        data["groupValue"] = this.groupValue;
-        data["records"] = this.records;
-        data["totalValue"] = this.totalValue;
-        data["isError"] = this.isError;
-        return data;
-    }
-}
-
-export interface ISystemGroupDto {
-    sourceId?: number;
-    sourceName?: string;
-    groupValue?: string;
-    records?: number;
-    totalValue?: number | undefined;
-    isError?: boolean;
+export interface ISaveMetricSettingsRequest {
+    items?: MetricSettingsItemDto[];
 }
 
 export class ProblemDetails implements IProblemDetails {

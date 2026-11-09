@@ -391,11 +391,6 @@ p-button.actionButton {
   color: #bb4338;
 }
 
-/* ---------- הודעה קופצת במסך "ניהול נתונים" ----------
-   זהה ל-.toast בדמו: bottom:23px; left:25px; background:#1c3d60; color:#fff;
-   padding:13px 19px; border-radius:10px; box-shadow:0 5px 22px #162b4388.
-   כאן ולא ב-SCSS של הרכיב, כי ה-theme של PrimeNG מוזרק בזמן ריצה
-   אחרי סגנונות הרכיב וגובר עליהם. */
 .demoToast.p-toast {
   top: auto;
   right: auto;
@@ -448,4 +443,90 @@ p-button.actionButton {
 .demoToast.p-toast .p-toast-message-icon,
 .demoToast.p-toast .p-toast-close-button {
   display: none;
+}
+
+.tasksControlTable.p-datatable {
+  width: 100%;
+  text-align: right;
+  background: #ffffff;
+}
+
+/* הקונטיינר וה-scrollable של PrimeNG מקבלים border-radius רקע ולכן מאפסים */
+.tasksControlTable .p-datatable-table-container,
+.tasksControlTable .p-datatable-table,
+.tasksControlTable .p-datatable-table-container > table {
+  border-collapse: collapse;
+  border-radius: 0;
+  background: #ffffff;
+}
+
+/* קווי הטבלה של ה-theme (שורות זוגיות, גבולות) — מכבים, נשאר רק הקו התחתון */
+.tasksControlTable .p-datatable-table > .p-datatable-thead > tr > th,
+.tasksControlTable .p-datatable-table > .p-datatable-tbody > tr > td {
+  border-width: 0 0 1px;
+  border-style: solid;
+  border-color: #e9eef5;
+  background: transparent;
+}
+
+/* כותרות העמודות */
+.tasksControlTable .p-datatable-thead > tr > th {
+  padding: 13px 14px;
+  background: #f7f9fc;
+  color: #71839b;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: right;
+  white-space: nowrap;
+  vertical-align: middle;
+  box-shadow: none;
+  outline: none;
+}
+
+/* תוכן הכותרת והאייקון יורשים את הגדרות התא */
+.tasksControlTable .p-datatable-thead > tr > th .p-datatable-column-header-content,
+.tasksControlTable .p-datatable-thead > tr > th .p-datatable-sortable-column-icon {
+  padding: 0;
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  color: inherit;
+  text-align: inherit;
+}
+
+/* תאי הנתונים */
+.tasksControlTable .p-datatable-tbody > tr > td {
+  height: 52px;
+  padding: 13px 14px;
+  background: #ffffff;
+  color: #19304d;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: right;
+  vertical-align: middle;
+}
+
+/* הדגשת שורה במעבר עכבר */
+.tasksControlTable .p-datatable-tbody > tr:hover > td,
+.tasksControlTable .p-datatable-tbody > tr.p-datatable-row-hover > td {
+  background: #edf6ff;
+}
+
+/* השורה האחרונה — בלי קו תחתון כפול עם מסגרת הפאנל */
+.tasksControlTable .p-datatable-tbody > tr:last-child > td {
+  border-bottom: 0;
+}
+
+/* תא ההודעה הריקה — ממורכז ובלי רקע */
+.tasksControlTable .p-datatable-tbody > tr > td.emptyMessage {
+  height: auto;
+  padding: 52px;
+  text-align: center;
+  color: #7186a0;
 }
