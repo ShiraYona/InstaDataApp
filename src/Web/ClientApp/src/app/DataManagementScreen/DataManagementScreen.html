@@ -1,6 +1,4 @@
 <div class="dataManagement" dir="rtl">
-  <p-toast position="bottom-left"></p-toast>
-
   <p-confirmdialog
     [closeOnEscape]="true"
     [focusTrap]="true">
@@ -99,6 +97,7 @@
 
   <app-adding-new-data-entry
     [(visible)]="dialogVisible"
+    [metric]="editedRow"
     (saved)="onDataSaved()">
   </app-adding-new-data-entry>
 </div>

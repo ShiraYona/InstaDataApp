@@ -1,4 +1,4 @@
-using InstaDataApp.Domain.Entities;
+﻿using InstaDataApp.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -45,55 +45,6 @@ public class DataSourceFieldConfiguration : IEntityTypeConfiguration<DataSourceF
     }
 }
 
-/// <summary>CTRL_Metrics — ההגדרות של הנתונים (הטופס "יצירת נתון חדש").</summary>
-public class MetricConfiguration : IEntityTypeConfiguration<Metric>
-{
-    public void Configure(EntityTypeBuilder<Metric> builder)
-    {
-        builder.ToTable("CTRL_Metrics", schema: "dbo");
-        builder.HasKey(x => x.MetricID);
-
-        builder.Property(x => x.MetricName).HasMaxLength(80).IsRequired();
-        // העמודה האמיתית ב-CTRL_Metrics היא INT — מפתח ל-CTRL_CalculationTypes,
-        // ולא מחרוזת COUNT / SUM / DIRECT
-        builder.Property(x => x.CalculationTypeID).HasColumnName("CalculationTypeID").IsRequired();
-        builder.Property(x => x.DateRangeType).HasMaxLength(50).IsRequired();
-        builder.Property(x => x.IconCode).HasMaxLength(50);
-        builder.Property(x => x.CreatedBy).HasMaxLength(128).IsRequired();
-        builder.Property(x => x.UpdatedBy).HasMaxLength(128);
-
-        // IsActive — BIT: EF ממפה bool ל-BIT כברירת מחדל; 0 = כבוי, 1 = מוצג בלוח
-        builder.Property(x => x.IsActive).IsRequired();
-
-        // RowVersion מנוהל על ידי המסד — טוקן זרימה מקבילית
-        builder.Property(x => x.RowVersion).IsRowVersion();
-
-        builder.HasOne(x => x.Source)
-            .WithMany()
-            .HasForeignKey(x => x.SourceID)
-            .OnDelete(DeleteBehavior.NoAction);
-
-        builder.HasIndex(x => x.MetricName).IsUnique();
-    }
-}
-
-/// <summary>CTRL_MetricDetailFields — שדות הפירוט של נתון, לפי סדר תצוגה.</summary>
-public class MetricDetailFieldConfiguration : IEntityTypeConfiguration<MetricDetailField>
-{
-    public void Configure(EntityTypeBuilder<MetricDetailField> builder)
-    {
-        builder.ToTable("CTRL_MetricDetailFields", schema: "dbo");
-
-        // מפתח מורכב: אותו שדה לא יופיע פעמיים באותו נתון
-        builder.HasKey(x => new { x.MetricID, x.FieldID });
-
-        builder.HasOne(x => x.Metric)
-            .WithMany(x => x.DetailFields)
-            .HasForeignKey(x => x.MetricID)
-            .OnDelete(DeleteBehavior.Cascade);
-    }
-}
-
 /// <summary>CTRL_ICON — סמלי הכרטיס (ID / Name / Value / IconClass).</summary>
 public class CardIconConfiguration : IEntityTypeConfiguration<CardIcon>
 {
@@ -102,6 +53,7 @@ public class CardIconConfiguration : IEntityTypeConfiguration<CardIcon>
         builder.ToTable("CTRL_ICON", schema: "dbo");
         builder.HasKey(x => x.ID);
 
+        builder.Property(x => x.ID).HasColumnName("ID").ValueGeneratedOnAdd();
         builder.Property(x => x.Name).HasMaxLength(50).IsRequired();
         builder.Property(x => x.Value).HasMaxLength(100).IsRequired();
         builder.Property(x => x.IconClass).HasMaxLength(100).IsRequired();
@@ -116,7 +68,7 @@ public class CalculationPeriodConfiguration : IEntityTypeConfiguration<Calculati
     public void Configure(EntityTypeBuilder<CalculationPeriod> builder)
     {
         builder.ToTable("CTRL_CalculationDays", schema: "dbo");
-        builder.HasKey(x => x.ID);
+        builder.HasKey(x => x.Id);
 
         // Name = הטקסט שמוצג ("30 ימים"); Value = מספר הימים עצמו (INT)
         builder.Property(x => x.Name).HasMaxLength(100).IsRequired();
@@ -130,7 +82,7 @@ public class CalculationTypeConfiguration : IEntityTypeConfiguration<Calculation
     public void Configure(EntityTypeBuilder<CalculationTypeDefinition> builder)
     {
         builder.ToTable("CTRL_CalculationTypes", schema: "dbo");
-        builder.HasKey(x => x.ID);
+        builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Name).HasMaxLength(50).IsRequired();
         builder.Property(x => x.Value).HasMaxLength(100).IsRequired();

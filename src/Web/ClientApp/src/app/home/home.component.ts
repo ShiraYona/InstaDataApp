@@ -27,6 +27,10 @@ export class HomeComponent {
   /** הנתון נשמר — סגירת הדיאלוג נעשתה ברכיב; כאן מרעננים את המסך */
   onNewDataSaved(): void {
     this.newDataVisible = false;
+  }
+
+  /** הנתון נשמר בתוך הדיאלוג (המזהה מוחזר מהשרת) */
   onDataSaved(_id: number): void {
+    this.newDataVisible = false;
   }
 }

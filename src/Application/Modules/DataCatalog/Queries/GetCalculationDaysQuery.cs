@@ -16,6 +16,6 @@ public class GetCalculationDaysQueryHandler : IRequestHandler<GetCalculationDays
         _context.CalculationDays
             .AsNoTracking()
             .OrderBy(x => x.Value)
-            .Select(x => new CalculationDayDto(x.CalculationDayId, x.Name, x.Value))
+            .Select(x => new CalculationDayDto(x.Id, x.Name, x.Value))
             .ToListAsync(cancellationToken);
 }

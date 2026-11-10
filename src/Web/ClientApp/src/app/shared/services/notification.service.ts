@@ -113,6 +113,6 @@ export class NotificationService {
   }
 
   private show(severity: Severity, summary: string, detail: string): void {
-    this.messages.add({ severity, summary, detail, life: LIFETIME[severity] });
+    this.messages.add({ severity, summary, detail, life: LIFETIME[severity], styleClass: 'demoToast' });
   }
 }

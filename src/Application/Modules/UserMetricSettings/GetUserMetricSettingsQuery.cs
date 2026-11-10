@@ -23,7 +23,7 @@ public class GetUserMetricSettingsQueryHandler(IApplicationDbContext db)
             .Where(m => m.IsActive)
             .Select(m => new
             {
-                m.MetricId,
+                m.MetricID,
                 m.MetricName,
                 m.IconCode,
                 m.CreatedDate,
@@ -43,10 +43,10 @@ public class GetUserMetricSettingsQueryHandler(IApplicationDbContext db)
         var items = metrics
             .Select(m =>
             {
-                userSettings.TryGetValue(m.MetricId, out var s);
+                userSettings.TryGetValue(m.MetricID, out var s);
                 return new
                 {
-                    m.MetricId,
+                    m.MetricID,
                     m.MetricName,
                     m.IconCode,
                     m.CreatedDate,
@@ -58,9 +58,9 @@ public class GetUserMetricSettingsQueryHandler(IApplicationDbContext db)
             .OrderBy(x => x.DisplayOrder.HasValue ? 0 : 1)   // מסודרים קודם
             .ThenBy(x => x.DisplayOrder ?? int.MaxValue)      // לפי מיקום אישי
             .ThenByDescending(x => x.CreatedDate)             // חדשים — תאריך יורד
-            .ThenByDescending(x => x.MetricId)                // שובר שוויון
+            .ThenByDescending(x => x.MetricID)                // שובר שוויון
             .Select(x => new MetricSettingsItemDto(
-                x.MetricId,
+                x.MetricID,
                 x.MetricName,
                 x.IconCode,
                 x.DisplayOrder,

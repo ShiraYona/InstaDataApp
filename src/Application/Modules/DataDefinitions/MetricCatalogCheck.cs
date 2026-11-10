@@ -55,7 +55,7 @@ public static class MetricCatalogCheck
         CancellationToken cancellationToken)
     {
         var definition = await context.CalculationTypes
-            .FirstOrDefaultAsync(type => type.ID == requestedId, cancellationToken);
+            .FirstOrDefaultAsync(type => type.Id == requestedId, cancellationToken);
 
         return definition
             ?? throw Fail(nameof(MetricDraftDto.CalculationTypeId), "סוג החישוב שנבחר אינו מוכר.");
@@ -76,12 +76,14 @@ public static class MetricCatalogCheck
             return MetricConstants.DateRangeBoardFilter;
         }
 
-        var periods = await context.CalculationPeriods
+        var periods = await context.CalculationDays
             .Select(period => new PeriodCode(period.Name, period.Value.ToString()))
             .ToListAsync(cancellationToken);
 
-        var match = periods.FirstOrDefault(period => period.Name == requested)
-            ?? periods.FirstOrDefault(period => period.Value == requested.Trim());
+        // קודם לפי ה-Value: ב-Value של "לפי מסנן הלוח" יכול להיות גם "1",
+        // והערך שמגיע מהטופס ("1") חייב להיבחר לפי ה-Value ולא לפי ה-Name של תקופה אחרת.
+        var match = periods.FirstOrDefault(period => period.Value == requested.Trim())
+            ?? periods.FirstOrDefault(period => period.Name == requested);
 
         return match?.Name
             ?? throw Fail(nameof(MetricDraftDto.DateRangeType), "תקופת החישוב שנבחרה אינה מוכרת.");
@@ -206,7 +208,7 @@ public sealed record MetricCanonicalValues(
     public string CalculationTypeCode => CalculationTypeMap.ToCode(CalculationType.Name);
 
     /// <summary>הערך שנשמר ב-CTRL_Metrics.CalculationTypeID</summary>
-    public int CalculationTypeId => CalculationType.ID;
+    public int CalculationTypeId => CalculationType.Id;
 }
 
 /// <summary>כללי הטופס שעובדים בלי מסד הנתונים</summary>
@@ -234,8 +236,11 @@ public class MetricDraftShapeValidator : AbstractValidator<MetricDraftDto>
             .GreaterThan(0)
             .WithMessage("יש לבחור סוג חישוב.");
 
+        // גם ה-Value של התקופה ("30") וגם ה-Name השמור ("30 ימים") נדרשים להיות חוקיים:
+        // השמירה נשמרת לפי Name, והטופס שולח Value.
         RuleFor(x => x.DateRangeType)
-            .Must(MetricConstants.AllowedDateRanges.Contains)
+            .Must(value => MetricConstants.AllowedDateRanges.Contains(value)
+                || MetricConstants.IsStoredDateRange(value))
             .WithMessage("תקופת החישוב שנבחרה אינה חוקית.");
 
         RuleFor(x => x.IconCode).MaximumLength(MetricConstants.IconCodeMaxLength);

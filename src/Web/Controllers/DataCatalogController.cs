@@ -1,5 +1,6 @@
 using InstaDataApp.Application.Modules.DataCatalog.Commands;
 using InstaDataApp.Application.Modules.DataCatalog.Queries;
+using InstaDataApp.Application.Modules.DataDefinitions;
 using InstaDataApp.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -17,9 +18,20 @@ public class DataCatalogController : ControllerBase
     public DataCatalogController(ISender sender) => _sender = sender;
 
     [HttpGet]
-    public async Task<ActionResult<List<Metric>>> Get(CancellationToken cancellationToken) =>
+    public async Task<ActionResult<List<MetricListItemDto>>> Get(CancellationToken cancellationToken) =>
         Ok(await _sender.Send(new GetMetricsQuery(), cancellationToken));
 
+
+    /// <summary>עדכון נתון קיים — מעדכן את השורה, לא יוצר חדשה</summary>
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(
+        int id,
+        [FromBody] MetricDraftDto draft,
+        CancellationToken cancellationToken)
+    {
+        var updated = await _sender.Send(new UpdateMetricCommand(id, draft), cancellationToken);
+        return updated ? NoContent() : NotFound();
+    }
 
     [HttpPut("{id:int}/active")]
     public async Task<IActionResult> SetActive(

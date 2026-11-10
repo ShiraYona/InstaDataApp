@@ -6,7 +6,6 @@ import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
-import { ToastModule } from 'primeng/toast';
 
 /** משימה — מבנה הנתונים של המסך */
 export interface TaskRow {
@@ -21,7 +20,7 @@ export interface TaskRow {
 @Component({
   selector: 'app-tasks-control',
   standalone: true,
-  imports: [FormsModule, ButtonModule, DialogModule, DropdownModule, InputTextModule, TableModule, ToastModule],
+  imports: [FormsModule, ButtonModule, DialogModule, DropdownModule, InputTextModule, TableModule],
   templateUrl: './tasks-control.component.html',
   styleUrl: './tasks-control.component.scss',
   providers: [MessageService]

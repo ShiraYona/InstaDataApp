@@ -63,7 +63,6 @@ export interface MetricDraft {
   detailFieldIds: number[];
   /** האם להציג את הנתון במערכת הניהול והבקרה (נשמר ב-IsActive) */
   displayInDashboard: boolean;
-  dateMode: { field: string | null; label: string; note: string };
 }
 
 export interface DataDefinitionDraft {

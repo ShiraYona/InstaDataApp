@@ -353,9 +353,10 @@ tbody tr.is-active td {
 .dialog-backdrop {
   position: fixed;
   inset: 0;
-  background: #0b1837a8;
+background: #00000065;   /* ~22% אטימות – רואים את הקומפוננטה שמתחת */
   display: grid;
-  place-items: center;
+  place-items: start center;   /* מיושר למעלה, לא למרכז */
+  overflow: auto;              /* הגלילה תהיה של הרקע */
   padding: 22px;
   z-index: 1000;
 }
@@ -365,8 +366,8 @@ tbody tr.is-active td {
   border-radius: 17px;
   padding: 24px 28px;
   width: min(100%, 1050px);
-  max-height: 91vh;
-  overflow: auto;
+  max-height: none;            /* מגביל רק דרך ה-backdrop */
+  overflow: visible;
   box-shadow: 0 20px 70px #06102c66;
   box-sizing: border-box;
 }

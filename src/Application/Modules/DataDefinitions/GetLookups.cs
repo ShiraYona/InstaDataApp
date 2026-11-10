@@ -46,7 +46,7 @@ public class GetDateRangeTypesQueryHandler : IRequestHandler<GetDateRangeTypesQu
 
     public async Task<List<LookupOptionDto>> Handle(GetDateRangeTypesQuery request, CancellationToken cancellationToken)
     {
-        var days = await _context.CalculationPeriods
+        var days = await _context.CalculationDays
             .OrderBy(period => period.Value)
             .Select(period => new LookupOptionDto
             {
@@ -84,10 +84,10 @@ public class GetCalculationTypesQueryHandler : IRequestHandler<GetCalculationTyp
         CancellationToken cancellationToken)
     {
         var types = await _context.CalculationTypes
-            .OrderBy(type => type.ID)
+            .OrderBy(type => type.Id)
             .Select(type => new LookupOptionDto
             {
-                Value = type.ID.ToString(),
+                Value = type.Id.ToString(),
                 Label = type.Name + " (" + type.Value + ")"
             })
             .ToListAsync(cancellationToken);

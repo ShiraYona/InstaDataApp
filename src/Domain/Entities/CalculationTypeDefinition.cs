@@ -3,9 +3,9 @@ namespace InstaDataApp.Domain.Entities;
 /// <summary>
 /// סוג חישוב (COUNT / SUM / ...) — ממופה לטבלה הקיימת <c>dbo.CTRL_CalculationTypes</c>.
 /// </summary>
-public class CalculationType
+public class CalculationTypeDefinition
 {
-    /// <summary>מזהה — עמודה <c>ID</c> (IDENTITY)</summary>
+    /// <summary>מזהה — עמודה <c>Id</c> (IDENTITY)</summary>
     public int Id { get; set; }
 
     /// <summary>שם לתצוגה (ייחודי ב-DB)</summary>

@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, Input, output } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MetricDetail, SystemGroup } from '../shared/models/controlPanel/MetricDetail';
@@ -11,12 +11,23 @@ import { ControlPanel } from '../shared/services/control-panel';
   templateUrl: './detailed-dialogue.component.html',
   styleUrl: './detailed-dialogue.component.scss'
 })
-export class DetailedDialogueComponent implements OnInit {
+export class DetailedDialogueComponent {
   private readonly api = inject(ControlPanel);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  readonly metricKey = signal('');
+private readonly _metricKey = signal('');
+readonly metricKeyValue = this._metricKey.asReadonly();
+
+@Input({ required: true })
+set metricKey(v: string) {
+  this._metricKey.set(v);
+  if (v) this.load(v);
+}
+
+readonly closed = output<void>();
+
+
 
   readonly detail = signal<MetricDetail | null>(null);
   readonly loading = signal(false);
@@ -24,13 +35,6 @@ export class DetailedDialogueComponent implements OnInit {
   readonly selectedSourceId = signal<number | null>(null);
   readonly search = signal('');
   readonly selectedGroup = signal<string | null>(null);
-
-  ngOnInit(): void {
-    const key = this.route.snapshot.paramMap.get('key');
-    if (!key) { this.close(); return; }
-    this.metricKey.set(key);
-    this.load(key);
-  }
 
   private load(key: string, groupValue: string | null = null): void {
     this.loading.set(true);
@@ -54,7 +58,7 @@ export class DetailedDialogueComponent implements OnInit {
     if (!d) return [] as { key: string; label: string; value: string }[];
     return [
       { key: 'value', label: 'ערך הנתון', value: d.dataValue || '—' },
-      { key: 'records', label: 'רשומות', value: String(d.recordsInSample ?? 0) },
+     { key: 'records', label: 'רשומות', value: String(d.totalRecords ?? 0) },
       { key: 'source', label: 'מקור נתונים', value: d.sourceName || '—' },
       { key: 'date', label: 'תאריך יצירה', value: d.createdDate || '—' }
     ];
@@ -68,7 +72,7 @@ export class DetailedDialogueComponent implements OnInit {
 
    showRecords(row: SystemGroup): void {
     this.selectedGroup.set(row.groupValue ?? null);
-    this.load(this.metricKey(), row.groupValue ?? null);
+    this.load(this._metricKey(), row.groupValue ?? null);
   }
 
 
@@ -83,9 +87,10 @@ export class DetailedDialogueComponent implements OnInit {
     return v == null ? '—' : String(v);
   }
 
-  close(): void {
-    this.router.navigate(['/control-panel']);
-  }
+close(): void {
+  this.closed.emit();
+}
+
 
   exportCsv(): void {
     const cols = this.columns();
@@ -95,7 +100,7 @@ export class DetailedDialogueComponent implements OnInit {
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `metric-${this.metricKey()}.csv`;
+    a.download = `metric-${this._metricKey()}.csv`;
     a.click();
   }
   

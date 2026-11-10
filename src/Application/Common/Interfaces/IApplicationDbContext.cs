@@ -21,27 +21,14 @@ public interface IApplicationDbContext
     DbSet<UserDisplaySettings> UserDisplaySettings { get; }
     DbSet<UserMetricSetting> UserMetricSettings { get; }
     DbSet<Metric> Metrics { get; }
-   Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
     DbSet<DataSource> DataSources { get; }
-
     DbSet<DataSourceField> DataSourceFields { get; }
-
-    DbSet<Metric> Metrics { get; }
-
     DbSet<MetricDetailField> MetricDetailFields { get; }
 
-    /// <summary>טבלאות עזר — CTRL_ICON / CTRL_CalculationDays / CTRL_CalculationTypes</summary>
     DbSet<CardIcon> CardIcons { get; }
-
-    DbSet<CalculationPeriod> CalculationPeriods { get; }
-
+    DbSet<CalculationPeriod> CalculationDays { get; }
     DbSet<CalculationTypeDefinition> CalculationTypes { get; }
 
-    DbSet<UserDisplaySettings> UserDisplaySettings { get; }
-    DbSet<UserMetricSetting> UserMetricSettings { get; }
-    Task<int> SaveChangesAsync(CancellationToken cancellationToken);
-
-    DbSet<CalculationDay> CalculationDays { get; }
-    DbSet<CalculationType> CalculationTypes { get; }
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

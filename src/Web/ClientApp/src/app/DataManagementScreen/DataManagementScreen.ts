@@ -3,16 +3,15 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TableModule } from 'primeng/table';
-import { ToastModule } from 'primeng/toast';
 
 import { AddingNewDataEntryComponent } from '../adding-new-data-entry/adding-new-data-entry.component';
 import { DataDefinitionService } from '../shared/services/data-definition.service';
-import { Metric } from '../web-api-client';
+import { MetricListItemDto } from '../web-api-client';
 
 @Component({
   selector: 'app-data-management-screen',
   standalone: true,
-  imports: [AddingNewDataEntryComponent, ButtonModule, ConfirmDialogModule, TableModule, ToastModule],
+  imports: [AddingNewDataEntryComponent, ButtonModule, ConfirmDialogModule, TableModule],
 
   templateUrl: './DataManagementScreen.html',
   styleUrl: './DataManagementScreen.scss',
@@ -25,9 +24,12 @@ export class DataManagementScreen implements OnInit {
 
   dialogVisible = false;
 
+  /** הנתון שנערך — null = דיאלוג "יצירת נתון חדש" */
+  editedRow: MetricListItemDto | null = null;
+
   isLoading = false;
 
-  rows: Metric[] = [];
+  rows: MetricListItemDto[] = [];
 
   ngOnInit(): void {
     this.loadRows();
@@ -58,6 +60,8 @@ export class DataManagementScreen implements OnInit {
   }
 
   createRow(): void {
+    // יצירה — הדיאלוג נפתח ריק, בלי נתון לעריכה
+    this.editedRow = null;
     this.dialogVisible = true;
   }
 
@@ -66,11 +70,13 @@ export class DataManagementScreen implements OnInit {
     this.loadRows();
   }
 
-  editRow(_row: Metric): void {
+  /** עריכה — הדיאלוג נפתח ממולא בערכי השורה, והשמירה מעדכנת אותה */
+  editRow(row: MetricListItemDto): void {
+    this.editedRow = row;
     this.dialogVisible = true;
   }
 
-  toggleRow(row: Metric): void {
+  toggleRow(row: MetricListItemDto): void {
     if (row.metricId == null) {
       return;
     }
@@ -85,7 +91,7 @@ export class DataManagementScreen implements OnInit {
     });
   }
 
-  deleteRow(row: Metric): void {
+  deleteRow(row: MetricListItemDto): void {
     if (row.metricId == null) {
       return;
     }
@@ -102,7 +108,7 @@ export class DataManagementScreen implements OnInit {
   }
 
   /** מחיקת הנתון בשרת — לאחר שהמשתמש אישר בחלון האישור */
-  private applyDelete(row: Metric): void {
+  private applyDelete(row: MetricListItemDto): void {
     if (row.metricId == null) {
       return;
     }
