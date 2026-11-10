@@ -7,19 +7,16 @@ import { SelectModule } from 'primeng/select';
 import { DataCatalogClient } from '../web-api-client';
 import { DisplayLayoutService } from '../shared/services/display-layout.service';
 
-/** ברירת המחדל למספר הכרטיסים בשורה — זהה לברירת המחדל בצד השרת */
 const DEFAULT_CARDS_PER_ROW = 4;
 
-/** אפשרות בתפריט בחירה (תקופה / כרטיסים בשורה). value = null מייצג "הכל" */
 export interface FilterOption {
   label: string;
   value: number | null;
 }
 
-/** ערכי הסינון — נשלחים להורה בכל שינוי ובכל רענון */
 export interface FilterState {
   period: number | null;
-  cardsPerRow: number;
+  cardsPerRow: number | null;
   searchMetricName: string;
 }
 
@@ -35,6 +32,8 @@ export class ControlPanelFiltersComponent implements OnInit {
   @Output() filtersChanged = new EventEmitter<FilterState>();
 
   @Output() refreshRequested = new EventEmitter<FilterState>();
+
+  @Output() cardsPerRowChanged = new EventEmitter<number | null>();
 
   private readonly dataCatalogClient = inject(DataCatalogClient);
   private readonly layoutService = inject(DisplayLayoutService);
@@ -79,6 +78,7 @@ export class ControlPanelFiltersComponent implements OnInit {
 
 
   onFilterChange(): void {
+    this.cardsPerRowChanged.emit(this.cardsPerRow);
     this.filtersChanged.emit(this.currentState());
   }
 

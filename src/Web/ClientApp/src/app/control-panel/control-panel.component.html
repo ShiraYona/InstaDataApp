@@ -21,9 +21,12 @@
 }
 
 
-<app-control-panel-filters></app-control-panel-filters>
+<app-control-panel-filters
+  (filtersChanged)="onFiltersChanged($event)"
+  (cardsPerRowChanged)="onCardsPerRowChanged($event)">
+</app-control-panel-filters>
 
-
-
-<app-control-panel-cube (detail)="openDetail($event)"
-></app-control-panel-cube>
+<app-control-panel-cube
+  [columns]="cardsPerRow() ?? 4"
+  (detail)="openDetail($event)">
+</app-control-panel-cube>
