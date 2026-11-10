@@ -28,5 +28,7 @@
 
 <app-control-panel-cube
   [columns]="cardsPerRow() ?? 4"
+  [period]="period()"
+  [searchMetricName]="searchMetricName()"
   (detail)="openDetail($event)">
 </app-control-panel-cube>
