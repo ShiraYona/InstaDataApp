@@ -12,9 +12,13 @@ import { Claim } from '../models/controlPanel/Claim';
 export class ControlPanel {
   private readonly http = inject(HttpClient);
 
-  /** הכרטיסים הפעילים של הקובייה */
-  getCards(): Observable<MetricCard[]> {
-    return this.http.get<MetricCard[]>('/api/Metrics');
+  /** הכרטיסים הפעילים של הקובייה — מסוננים לפי תקופה (ימים) ושם נתון */
+  getCards(metricName?: string | null, days?: number | null): Observable<MetricCard[]> {
+    const p = new URLSearchParams();
+    if (metricName?.trim()) p.set('metricName', metricName.trim());
+    if (days != null) p.set('days', String(days));
+    const q = p.toString();
+    return this.http.get<MetricCard[]>(`/api/Metrics${q ? '?' + q : ''}`);
   }
 
   /** טבלת התשלומים */
