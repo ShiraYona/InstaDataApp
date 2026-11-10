@@ -14,15 +14,19 @@ namespace InstaDataApp.Web.Controllers;
 public class MetricsController(
     ISender sender,
     IWebHostEnvironment environment,
-    IApplicationDbContext context) : ControllerBase
+    IApplicationDbContext context,
+    IUser currentUser) : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType(typeof(List<MetricCardDto>), StatusCodes.Status200OK)]
     [AllowAnonymous]
-    public Task<List<MetricCardDto>> GetActiveMetrics(CancellationToken cancellationToken)
-    {
-        return sender.Send(new GetActiveMetricsQuery(), cancellationToken);
-    }
+public Task<List<MetricCardDto>> GetActiveMetrics(
+    [FromQuery] string? metricName, [FromQuery] int? days, CancellationToken cancellationToken)
+{
+    return sender.Send(
+        new GetActiveMetricsQuery(metricName, days, currentUser.Id),
+        cancellationToken);
+}
 
 // //שליפת כל הפרמטרים
 // public async Task<ActionResult<List<MetricCardDto>>> Get(

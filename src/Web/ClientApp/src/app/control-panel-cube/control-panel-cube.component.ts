@@ -62,9 +62,12 @@ export class ControlPanelCubeComponent {
     });
   }
 
-  openDetails(key: string): void {
-    this.router.navigate(['/detailed-dialogue', key]);
-  }
+readonly detail = output<string>();
+
+openDetails(key: string): void {
+  this.detail.emit(key);
+}
+
   goToDetail(id: number) { this.router.navigate(['/detailed-dialogue', id]); }
 
 }

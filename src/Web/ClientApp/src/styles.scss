@@ -375,59 +375,59 @@ p-button.actionButton {
   color: #bb4338;
 }
 
-.demoToast.p-toast {
-  top: auto;
-  right: auto;
-  bottom: 23px;
-  left: 25px;
-  width: auto;
-  max-width: min(420px, calc(100vw - 50px));
-  white-space: pre-line;
-  word-break: normal;
-  direction: rtl;
-  text-align: right;
-}
+// .demoToast.p-toast {
+//   top: auto;
+//   right: auto;
+//   bottom: 23px;
+//   left: 25px;
+//   width: auto;
+//   max-width: min(420px, calc(100vw - 50px));
+//   white-space: pre-line;
+//   word-break: normal;
+//   direction: rtl;
+//   text-align: right;
+// }
 
-.demoToast.p-toast .p-toast-message {
-  margin: 0;
-  background: #1c3d60;
-  color: #ffffff;
-  padding: 13px 19px;
-  border: 0;
-  border-radius: 10px;
-  box-shadow: 0 5px 22px #162b4388;
-  transform: none;
-  opacity: 1;
-}
+// .demoToast.p-toast .p-toast-message {
+//   margin: 0;
+//   background: #1c3d60;
+//   color: #ffffff;
+//   padding: 13px 19px;
+//   border: 0;
+//   border-radius: 10px;
+//   box-shadow: 0 5px 22px #162b4388;
+//   transform: none;
+//   opacity: 1;
+// }
 
-.demoToast.p-toast .p-toast-message-content {
-  padding: 0;
-  gap: 0;
-  align-items: center;
-}
+// .demoToast.p-toast .p-toast-message-content {
+//   padding: 0;
+//   gap: 0;
+//   align-items: center;
+// }
 
-.demoToast.p-toast .p-toast-message-text {
-  margin: 0;
-  gap: 0;
-}
+// .demoToast.p-toast .p-toast-message-text {
+//   margin: 0;
+//   gap: 0;
+// }
 
-.demoToast.p-toast .p-toast-summary,
-.demoToast.p-toast .p-toast-detail {
-  margin: 0;
-  padding: 0;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 1.4;
-  color: #ffffff;
-  text-align: right;
-}
+// .demoToast.p-toast .p-toast-summary,
+// .demoToast.p-toast .p-toast-detail {
+//   margin: 0;
+//   padding: 0;
+//   font-family: inherit;
+//   font-size: 13px;
+//   font-weight: 400;
+//   line-height: 1.4;
+//   color: #ffffff;
+//   text-align: right;
+// }
 
-.demoToast.p-toast .p-toast-icon-close,
-.demoToast.p-toast .p-toast-message-icon,
-.demoToast.p-toast .p-toast-close-button {
-  display: none;
-}
+// .demoToast.p-toast .p-toast-icon-close,
+// .demoToast.p-toast .p-toast-message-icon,
+// .demoToast.p-toast .p-toast-close-button {
+//   display: none;
+// }
 
 .tasksControlTable.p-datatable {
   width: 100%;

@@ -42,18 +42,27 @@ export class DataDefinitionService {
   private readonly baseUrl = `${environment.baseUrl}/api/data-definitions`;
 
 
-  private readonly sources$ = this.shareOnce(() =>
+  /** לא readonly — טעינה מחדש מחליפה את המופע (ר' getSources) */
+  private sources$ = this.shareOnce(() =>
     this.http.get<LookupOption[]>(`${this.baseUrl}/sources`));
-  private readonly calculationPeriods$ = this.shareOnce(() =>
+  /** לא readonly — טעינה מחדש מחליפה את המופע (ר' getCalculationPeriods) */
+  private calculationPeriods$ = this.shareOnce(() =>
     this.http.get<LookupOption[]>(`${this.baseUrl}/calculation-periods`));
-  private readonly cardIconList$ = this.shareOnce(() =>
+  private cardIconList$ = this.shareOnce(() =>
     this.http.get<LookupOption[]>(`${this.baseUrl}/card-icons`));
   private readonly calculationTypeList$ = this.shareOnce(() =>
     this.http.get<LookupOption[]>(`${this.baseUrl}/calculation-types`));
 
 
-  /** מקורות הנתונים לרשימה הנפתחת — נשלפים מ-CTRL_DataSources הפעילים */
-  getSources(): Observable<LookupOption[]> {
+  /**
+   * מקורות הנתונים לרשימה הנפתחת — נשלפים מ-CTRL_DataSources הפעילים.
+   * forceReload — כמו בתקופות: בדיאלוג העריכה הרשימה צריכה להיות עדכנית.
+   */
+  getSources(forceReload = false): Observable<LookupOption[]> {
+    if (forceReload) {
+      this.sources$ = this.shareOnce(() =>
+        this.http.get<LookupOption[]>(`${this.baseUrl}/sources`));
+    }
     return this.sources$;
   }
 
@@ -62,13 +71,28 @@ export class DataDefinitionService {
     return this.http.get<DataSource>(`${this.baseUrl}/sources/${sourceId}`);
   }
 
-  /** מספר הימים לחישוב (לפי מסנן הלוח / 7 / 30 / 90 ימים) — מ-CTRL_CalculationDays */
-  getCalculationPeriods(): Observable<LookupOption[]> {
+  /**
+   * מספר הימים לחישוב (לפי מסנן הלוח / 7 / 30 / 90 ימים) — מ-CTRL_CalculationDays.
+   * forceReload — טעינה מחדש מהשרת, למשל בפתיחת דיאלוג העריכה, כי רשימה
+   * שנשמרה במטמון לפני שנוספה תקופה חדשה אינה מעודכנת.
+   */
+  getCalculationPeriods(forceReload = false): Observable<LookupOption[]> {
+    if (forceReload) {
+      this.calculationPeriods$ = this.shareOnce(() =>
+        this.http.get<LookupOption[]>(`${this.baseUrl}/calculation-periods`));
+    }
     return this.calculationPeriods$;
   }
 
-  /** סמלי הכרטיס — נשלפים מ-CTRL_ICON (המילה והאייקון מגיעים מהמסד) */
-  getCardIcons(): Observable<LookupOption[]> {
+  /**
+   * סמלי הכרטיס — נשלפים מ-CTRL_ICON (המילה והאייקון מגיעים מהמסד).
+   * forceReload — כמו בתקופות: בדיאלוג העריכה ה-select צריך להכיר את הסמל השמור.
+   */
+  getCardIcons(forceReload = false): Observable<LookupOption[]> {
+    if (forceReload) {
+      this.cardIconList$ = this.shareOnce(() =>
+        this.http.get<LookupOption[]>(`${this.baseUrl}/card-icons`));
+    }
     return this.cardIconList$;
   }
 
@@ -163,6 +187,16 @@ export class DataDefinitionService {
       .delete(metricId)
       .pipe(map(() => undefined));
   }
+
+  /** עדכון נתון קיים — מעדכן את השורה ב-CTRL_Metrics, לא יוצר חדשה */
+  updateMetric(metricId: number, draft: MetricDraft): Observable<void> {
+    return this.http
+      .put<void>(`${this.dataCatalogClientBaseUrl}/${metricId}`, this.toWire(draft))
+      .pipe(map(() => undefined));
+  }
+
+  /** כתובת הנתיב של DataCatalog — זהה לזה שנוצר ב-DataCatalogClient */
+  private readonly dataCatalogClientBaseUrl = `${environment.baseUrl}/api/DataCatalog`;
 
 
 }

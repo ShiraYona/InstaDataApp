@@ -24,6 +24,9 @@ export class DataManagementScreen implements OnInit {
 
   dialogVisible = false;
 
+  /** הנתון שנערך — null = דיאלוג "יצירת נתון חדש" */
+  editedRow: MetricListItemDto | null = null;
+
   isLoading = false;
 
   rows: MetricListItemDto[] = [];
@@ -57,6 +60,8 @@ export class DataManagementScreen implements OnInit {
   }
 
   createRow(): void {
+    // יצירה — הדיאלוג נפתח ריק, בלי נתון לעריכה
+    this.editedRow = null;
     this.dialogVisible = true;
   }
 
@@ -65,7 +70,9 @@ export class DataManagementScreen implements OnInit {
     this.loadRows();
   }
 
-  editRow(_row: MetricListItemDto): void {
+  /** עריכה — הדיאלוג נפתח ממולא בערכי השורה, והשמירה מעדכנת אותה */
+  editRow(row: MetricListItemDto): void {
+    this.editedRow = row;
     this.dialogVisible = true;
   }
 

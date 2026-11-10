@@ -16,10 +16,14 @@
     </p-button>
   </div>
 </div>
+@if (detailKey() !== null) {
+  <app-detailed-dialogue [metricKey]="detailKey()!" (closed)="closeDetail()" />
+}
 
 
 <app-control-panel-filters></app-control-panel-filters>
 
 
 
-<app-control-panel-cube></app-control-panel-cube>
+<app-control-panel-cube (detail)="openDetail($event)"
+></app-control-panel-cube>

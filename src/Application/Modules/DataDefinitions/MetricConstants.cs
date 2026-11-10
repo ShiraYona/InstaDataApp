@@ -42,6 +42,17 @@ public static class MetricConstants
     public static readonly string[] AllowedDateRanges =
         [.. DateRanges, DateRangeCurrentMonth, DateRangeQuarter, DateRangeYear, "7", "30", "90"];
 
+    public const int DateRangeNameMaxLength = 100;
+
+    /// <summary>
+    /// האם הערך הוא ה-Name של תקופה (כמו "30 ימים") ולא אחד הערכים הקבועים.
+    /// רשימת התקופות יושבת ב-CTRL_CalculationDays, ולכן ה-Name נבדק מולה
+    /// בנפרד (ראה MetricCatalogCheck.ResolveDateRangeAsync).
+    /// </summary>
+    public static bool IsStoredDateRange(string? value) =>
+        !string.IsNullOrWhiteSpace(value)
+        && value.Length <= DateRangeNameMaxLength
+        && !string.Equals(value, DateRangeBoardFilter, StringComparison.Ordinal);
 
     /// <summary>
     /// הערך שנכתב ב-CTRL_Metrics.CreatedBy כל עוד לא הוגדר מנגנון התחברות.

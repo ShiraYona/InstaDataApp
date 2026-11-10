@@ -9,7 +9,7 @@ using System.Globalization;
 
 namespace InstaDataApp.Application.Modules.Metrics.Queries.GetActiveMetrics;
 
-public record GetActiveMetricsQuery(string? MetricName = null, int? Days = null)
+public record GetActiveMetricsQuery(string? MetricName = null, int? Days = null, string? UserId = null)
     : IRequest<List<MetricCardDto>>;
 
 public class GetActiveMetricsQueryHandler(IApplicationDbContext context, ILogger<GetActiveMetricsQueryHandler> logger)
@@ -17,9 +17,22 @@ public class GetActiveMetricsQueryHandler(IApplicationDbContext context, ILogger
 {
     public async Task<List<MetricCardDto>> Handle(GetActiveMetricsQuery request, CancellationToken ct)
     {
-        var metrics = await context.CtrlMetrics.AsNoTracking()
-            .Where(m => m.IsActive)
-            .ToListAsync(ct);
+List<int>? visibleMetricIds = null;
+if (!string.IsNullOrWhiteSpace(request.UserId))
+{
+visibleMetricIds = await context.UserMetricSettings
+    .AsNoTracking()
+    .Where(x => x.UserId == request.UserId && x.IsVisible)
+    .Select(x => x.MetricId)
+    .ToListAsync(ct);
+}
+
+var query = context.CtrlMetrics.AsNoTracking().Where(m => m.IsActive);
+if (visibleMetricIds is not null)
+    query = query.Where(m => visibleMetricIds.Contains(m.MetricID));
+
+var metrics = await query.ToListAsync(ct);
+
 var calcTypes = await context.CtrlCalculationTypes.AsNoTracking()
     .ToDictionaryAsync(c => c.ID, ct);
 
@@ -38,6 +51,8 @@ var calcTypes = await context.CtrlCalculationTypes.AsNoTracking()
         }
 
         var cards = new List<MetricCardDto>(metrics.Count);
+if (metrics.Count == 0)
+    return cards;
 
         foreach (var metric in metrics)
         {

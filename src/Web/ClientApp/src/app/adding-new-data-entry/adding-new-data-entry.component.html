@@ -13,7 +13,7 @@
     (visibleChange)="visibleChange.emit($event)">
 
     <div class="modal-head">
-        <strong>יצירת נתון חדש</strong>
+        <strong>{{ dialogTitle }}</strong>
         <button type="button" class="close" aria-label="סגירה" (click)="cancel()">×</button>
     </div>
 
@@ -157,28 +157,30 @@
                             appendTo="self" />
                     </div>
 
-                    <!-- כמו בדמו: השדה קיים תמיד ומוסתר באמצעות display -->
-                    <div
-                        class="field"
-                        [class.empty]="!isFieldFilled('sumFieldId')"
-                        [style.display]="isSummaryVisible ? '' : 'none'">
-                        <label for="eSum">שדה לסיכום *</label>
-                        <p-select
-                            inputId="eSum"
-                            formControlName="sumFieldId"
-                            size="small"
-                            [options]="summaryFields"
-                            optionLabel="label"
-                            optionValue="fieldId"
-                            [readonly]="!selectedSource"
-                            placeholder="בחירת שדה"
-                            panelStyleClass="demo-select-panel"
-                            [panelStyle]="{ width: '100%' }"
-                            appendTo="self" />
-                        @if (isFieldInvalid('sumFieldId')) {
-                            <span class="error">יש לבחור שדה לסיכום</span>
-                        }
-                    </div>
+                    <!-- "שדה לסיכום" מוצג רק כשהוגדר סוג החישוב "סכימה" — אחרת אין לו משמעות -->
+                    @if (isSummaryVisible) {
+                        <div class="field" [class.empty]="!isFieldFilled('sumFieldId')">
+                            <label for="eSum">שדה לסיכום *</label>
+                            <p-select
+                                inputId="eSum"
+                                formControlName="sumFieldId"
+                                size="small"
+                                [options]="summaryFields"
+                                optionLabel="label"
+                                optionValue="fieldId"
+                                [readonly]="!selectedSource"
+                                placeholder="בחירת שדה"
+                                panelStyleClass="demo-select-panel"
+                                [panelStyle]="{ width: '100%' }"
+                                appendTo="self" />
+                            @if (!selectedSource) {
+                                <span class="hint">בחירת מקור נתונים תציג את השדות הזמינים לסיכום</span>
+                            }
+                            @if (isFieldInvalid('sumFieldId')) {
+                                <span class="error">יש לבחור שדה לסיכום</span>
+                            }
+                        </div>
+                    }
 
                     <!-- כמו בדמו: "קיבוץ לפי" ו"שדות להצגה בפירוט" לרוחב מלא -->
                     <div class="field full" [class.empty]="isFieldEmptyForDisplay('groupFieldId')">
@@ -237,7 +239,7 @@
 
             <div class="actionrow">
                 <div class="actionrow__buttons">
-                    <p-button label="שמירת נתון" [loading]="saving" [disabled]="previewing" (onClick)="save()" />
+                    <p-button [label]="saveLabel" [loading]="saving" [disabled]="previewing" (onClick)="save()" />
                     <p-button
                         label="תצוגה מקדימה"
                         severity="secondary"

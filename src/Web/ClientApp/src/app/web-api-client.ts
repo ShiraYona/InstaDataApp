@@ -83,14 +83,14 @@ export class DataCatalogClient {
         return _observableOf(null as any);
     }
 
-    setActive(id: number, body: SetMetricActiveRequest): Observable<FileResponse> {
-        let url_ = this.baseUrl + "/api/DataCatalog/{id}/active";
+    update(id: number, draft: MetricDraftDto): Observable<FileResponse> {
+        let url_ = this.baseUrl + "/api/DataCatalog/{id}";
         if (id === undefined || id === null)
             throw new Error("The parameter 'id' must be defined.");
         url_ = url_.replace("{id}", encodeURIComponent("" + id));
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
+        const content_ = JSON.stringify(draft);
 
         let options_ : any = {
             body: content_,
@@ -103,11 +103,11 @@ export class DataCatalogClient {
         };
 
         return this.http.request("put", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processSetActive(response_);
+            return this.processUpdate(response_);
         })).pipe(_observableCatch((response_: any) => {
             if (response_ instanceof HttpResponseBase) {
                 try {
-                    return this.processSetActive(response_ as any);
+                    return this.processUpdate(response_ as any);
                 } catch (e) {
                     return _observableThrow(e) as any as Observable<FileResponse>;
                 }
@@ -116,7 +116,7 @@ export class DataCatalogClient {
         }));
     }
 
-    protected processSetActive(response: HttpResponseBase): Observable<FileResponse> {
+    protected processUpdate(response: HttpResponseBase): Observable<FileResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -172,6 +172,65 @@ export class DataCatalogClient {
     }
 
     protected processDelete(response: HttpResponseBase): Observable<FileResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200 || status === 206) {
+            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
+            let fileNameMatch = contentDisposition ? /filename\*=(?:(\\?['"])(.*?)\1|(?:[^\s]+'.*?')?([^;\n]*))/g.exec(contentDisposition) : undefined;
+            let fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[3] || fileNameMatch[2] : undefined;
+            if (fileName) {
+                fileName = decodeURIComponent(fileName);
+            } else {
+                fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
+                fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
+            }
+            return _observableOf({ fileName: fileName, data: responseBlob as any, status: status, headers: _headers });
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    setActive(id: number, body: SetMetricActiveRequest): Observable<FileResponse> {
+        let url_ = this.baseUrl + "/api/DataCatalog/{id}/active";
+        if (id === undefined || id === null)
+            throw new Error("The parameter 'id' must be defined.");
+        url_ = url_.replace("{id}", encodeURIComponent("" + id));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_ : any = {
+            body: content_,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/octet-stream"
+            })
+        };
+
+        return this.http.request("put", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processSetActive(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processSetActive(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<FileResponse>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<FileResponse>;
+        }));
+    }
+
+    protected processSetActive(response: HttpResponseBase): Observable<FileResponse> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -705,8 +764,12 @@ export class MetricsClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    getActiveMetrics(): Observable<MetricCardDto[]> {
-        let url_ = this.baseUrl + "/api/Metrics";
+    getActiveMetrics(metricName: string | null | undefined, days: number | null | undefined): Observable<MetricCardDto[]> {
+        let url_ = this.baseUrl + "/api/Metrics?";
+        if (metricName !== undefined && metricName !== null)
+            url_ += "metricName=" + encodeURIComponent("" + metricName) + "&";
+        if (days !== undefined && days !== null)
+            url_ += "days=" + encodeURIComponent("" + days) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_ : any = {
@@ -1221,6 +1284,8 @@ export class MetricListItemDto implements IMetricListItemDto {
     dateRangeType?: string | undefined;
     iconCode?: string | undefined;
     isActive?: boolean;
+    detailFieldIds?: number[];
+    dateRangeValue?: string | undefined;
 
     constructor(data?: IMetricListItemDto) {
         if (data) {
@@ -1243,6 +1308,12 @@ export class MetricListItemDto implements IMetricListItemDto {
             this.dateRangeType = _data["dateRangeType"];
             this.iconCode = _data["iconCode"];
             this.isActive = _data["isActive"];
+            if (Array.isArray(_data["detailFieldIds"])) {
+                this.detailFieldIds = [] as any;
+                for (let item of _data["detailFieldIds"])
+                    this.detailFieldIds!.push(item);
+            }
+            this.dateRangeValue = _data["dateRangeValue"];
         }
     }
 
@@ -1265,6 +1336,12 @@ export class MetricListItemDto implements IMetricListItemDto {
         data["dateRangeType"] = this.dateRangeType;
         data["iconCode"] = this.iconCode;
         data["isActive"] = this.isActive;
+        if (Array.isArray(this.detailFieldIds)) {
+            data["detailFieldIds"] = [];
+            for (let item of this.detailFieldIds)
+                data["detailFieldIds"].push(item);
+        }
+        data["dateRangeValue"] = this.dateRangeValue;
         return data;
     }
 }
@@ -1280,6 +1357,84 @@ export interface IMetricListItemDto {
     dateRangeType?: string | undefined;
     iconCode?: string | undefined;
     isActive?: boolean;
+    detailFieldIds?: number[];
+    dateRangeValue?: string | undefined;
+}
+
+export class MetricDraftDto implements IMetricDraftDto {
+    name?: string;
+    sourceId?: number;
+    calculationTypeId?: number;
+    sumFieldId?: number | undefined;
+    groupFieldId?: number | undefined;
+    dateRangeType?: string;
+    iconCode?: string | undefined;
+    detailFieldIds?: number[];
+    displayInDashboard?: boolean;
+
+    constructor(data?: IMetricDraftDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.name = _data["name"];
+            this.sourceId = _data["sourceId"];
+            this.calculationTypeId = _data["calculationTypeId"];
+            this.sumFieldId = _data["sumFieldId"];
+            this.groupFieldId = _data["groupFieldId"];
+            this.dateRangeType = _data["dateRangeType"];
+            this.iconCode = _data["iconCode"];
+            if (Array.isArray(_data["detailFieldIds"])) {
+                this.detailFieldIds = [] as any;
+                for (let item of _data["detailFieldIds"])
+                    this.detailFieldIds!.push(item);
+            }
+            this.displayInDashboard = _data["displayInDashboard"];
+        }
+    }
+
+    static fromJS(data: any): MetricDraftDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new MetricDraftDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["name"] = this.name;
+        data["sourceId"] = this.sourceId;
+        data["calculationTypeId"] = this.calculationTypeId;
+        data["sumFieldId"] = this.sumFieldId;
+        data["groupFieldId"] = this.groupFieldId;
+        data["dateRangeType"] = this.dateRangeType;
+        data["iconCode"] = this.iconCode;
+        if (Array.isArray(this.detailFieldIds)) {
+            data["detailFieldIds"] = [];
+            for (let item of this.detailFieldIds)
+                data["detailFieldIds"].push(item);
+        }
+        data["displayInDashboard"] = this.displayInDashboard;
+        return data;
+    }
+}
+
+export interface IMetricDraftDto {
+    name?: string;
+    sourceId?: number;
+    calculationTypeId?: number;
+    sumFieldId?: number | undefined;
+    groupFieldId?: number | undefined;
+    dateRangeType?: string;
+    iconCode?: string | undefined;
+    detailFieldIds?: number[];
+    displayInDashboard?: boolean;
 }
 
 export class SetMetricActiveRequest implements ISetMetricActiveRequest {
@@ -1604,82 +1759,6 @@ export interface IPreviewRowDto {
     key?: string;
     label?: string;
     value?: number;
-}
-
-export class MetricDraftDto implements IMetricDraftDto {
-    name?: string;
-    sourceId?: number;
-    calculationTypeId?: number;
-    sumFieldId?: number | undefined;
-    groupFieldId?: number | undefined;
-    dateRangeType?: string;
-    iconCode?: string | undefined;
-    detailFieldIds?: number[];
-    displayInDashboard?: boolean;
-
-    constructor(data?: IMetricDraftDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.name = _data["name"];
-            this.sourceId = _data["sourceId"];
-            this.calculationTypeId = _data["calculationTypeId"];
-            this.sumFieldId = _data["sumFieldId"];
-            this.groupFieldId = _data["groupFieldId"];
-            this.dateRangeType = _data["dateRangeType"];
-            this.iconCode = _data["iconCode"];
-            if (Array.isArray(_data["detailFieldIds"])) {
-                this.detailFieldIds = [] as any;
-                for (let item of _data["detailFieldIds"])
-                    this.detailFieldIds!.push(item);
-            }
-            this.displayInDashboard = _data["displayInDashboard"];
-        }
-    }
-
-    static fromJS(data: any): MetricDraftDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new MetricDraftDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["name"] = this.name;
-        data["sourceId"] = this.sourceId;
-        data["calculationTypeId"] = this.calculationTypeId;
-        data["sumFieldId"] = this.sumFieldId;
-        data["groupFieldId"] = this.groupFieldId;
-        data["dateRangeType"] = this.dateRangeType;
-        data["iconCode"] = this.iconCode;
-        if (Array.isArray(this.detailFieldIds)) {
-            data["detailFieldIds"] = [];
-            for (let item of this.detailFieldIds)
-                data["detailFieldIds"].push(item);
-        }
-        data["displayInDashboard"] = this.displayInDashboard;
-        return data;
-    }
-}
-
-export interface IMetricDraftDto {
-    name?: string;
-    sourceId?: number;
-    calculationTypeId?: number;
-    sumFieldId?: number | undefined;
-    groupFieldId?: number | undefined;
-    dateRangeType?: string;
-    iconCode?: string | undefined;
-    detailFieldIds?: number[];
-    displayInDashboard?: boolean;
 }
 
 export class MetricCardDto implements IMetricCardDto {

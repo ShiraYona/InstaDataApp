@@ -8,6 +8,7 @@ import { Subscription } from 'rxjs';
 import { CALCULATION_TYPE_OPTIONS, CalculationType, CalculationTypeId, DataDefinitionDraft, DataSource, LookupOption, MetricDraft, PreviewResult } from '../shared/models/data-definition.model';
 import { CALCULATION_PERIOD_OPTIONS, CARD_ICON_OPTIONS, DataDefinitionService } from '../shared/services/data-definition.service';
 import { NotificationService } from '../shared/services/notification.service';
+import { MetricListItemDto } from '../web-api-client';
 
 
 const DEFAULT_CALCULATION_TYPE: CalculationType = 'COUNT';
@@ -89,6 +90,12 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
   @Input() visible = false;
   @Output() visibleChange = new EventEmitter<boolean>();
 
+  /**
+   * הנתון שנערך — null/undefined במצב "יצירת נתון חדש".
+   * כשהוא מועבר, הדיאלוג נפתח עם ערכי הנתון, והשמירה מעדכנת אותו במקום ליצור חדש.
+   */
+  @Input() metric: MetricListItemDto | null = null;
+
   @Output() saved = new EventEmitter<number>();
 
   /** מספר הימים לחישוב — נטען מ-CTRL_CalculationDays */
@@ -118,6 +125,16 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
 
   private sourceRequest?: Subscription;
 
+  /** מזהה הנתון הנערך — null במצב יצירה. קובע גם את הכותרת ואת סוג השמירה */
+  private editingMetricId: number | null = null;
+
+  /**
+   * ערכי העריכה שממתינים להשלמת הטעינות (תקופות / סמלים / מקורות).
+   * אסור להחילם לפני שהרשימות הגיעו — אחרת ברירות המחדל של "נתון חדש"
+   * ידרסו את הערכים השמורים.
+   */
+  private pendingEditMetric: MetricListItemDto | null = null;
+
   readonly form = this.fb.group({
     name: this.fb.control<string>('', { nonNullable: true, validators: [Validators.required] }),
     // המזהה נשמר כמחרוזת, בהתאמה ל-optionValue של p-select ול-LookupOption.value
@@ -141,6 +158,21 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
   });
 
   // --- רשימות נגזרות ---
+
+  /** האם הדיאלוג במצב עריכה של נתון קיים */
+  get isEditing(): boolean {
+    return this.editingMetricId !== null;
+  }
+
+  /** כותרת הדיאלוג — משתנה לפי המצב */
+  get dialogTitle(): string {
+    return this.isEditing ? 'עריכת נתון קיים' : 'יצירת נתון חדש';
+  }
+
+  /** תווית כפתור השמירה — "עדכון" בעריכה, "שמירת נתון" ביצירה */
+  get saveLabel(): string {
+    return this.isEditing ? 'עדכון נתון' : 'שמירת נתון';
+  }
 
   get isSummaryVisible(): boolean {
 
@@ -276,7 +308,26 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
     // פתיחה מחדש של הדיאלוג = טופס נקי, ללא שינויים שלא נשמרו
     if (changes['visible']?.currentValue === true) {
       this.resetForm();
+      this.startMode(this.metric);
+      return;
     }
+
+    // הנתון שנערך הוחלף בזמן שהדיאלוג פתוח — ממלאים מחדש
+    if (changes['metric']) {
+      this.editingMetricId = this.metric?.metricId ?? null;
+      this.pendingEditMetric = this.isEditing ? this.metric : null;
+      this.tryApplyEditValues();
+    }
+  }
+
+  /** קובע את מצב הפתיחה: יצירת נתון חדש, או עריכת נתון שנבחר */
+  private startMode(metric: MetricListItemDto | null): void {
+    this.editingMetricId = metric?.metricId ?? null;
+    this.pendingEditMetric = this.isEditing ? metric : null;
+
+    // הרשימות עשויות להיטען לפני שנוספו שורות חדשות — בטעינה מחדש יימצא הערך השמור
+    this.reloadLookups();
+    this.tryApplyEditValues();
   }
 
   ngOnDestroy(): void {
@@ -284,22 +335,25 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
   }
 
   /** טוען את תקופות החישוב וקובע את ברירת המחדל לפי מה שחוזר מהשרת */
-  private loadLookups(): void {
+  private loadLookups(forceReload = false): void {
     this.subscriptions.add(
-      this.service.getCalculationPeriods().subscribe({
+      this.service.getCalculationPeriods(forceReload).subscribe({
         next: periods => {
           this.rangeOptions = periods;
           this.selectDefaultPeriod();
+          // ערכי העריכה ממתינים לרשימה הזו (תקופת החישוב נבחרת מה-Value שבה)
+          this.tryApplyEditValues();
         },
         error: (error: unknown) => this.notifications.errorFromServer(error, 'טעינת תקופות החישוב נכשלה')
       })
     );
 
     this.subscriptions.add(
-      this.service.getCardIcons().subscribe({
+      this.service.getCardIcons(forceReload).subscribe({
         next: icons => {
           this.cardIcons = icons;
           this.selectDefaultIcon();
+          this.tryApplyEditValues();
         },
         error: (error: unknown) => this.notifications.errorFromServer(error, 'טעינת סמלי הכרטיס נכשלה')
       })
@@ -312,10 +366,20 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
           // אין ברירת מחדל קשיחה: נבחרת שורת הסכימה אם קיימת, אחרת הראשונה ברשימה
           const sum = types.find(option => option.label.includes(SUM_LABEL_MARKER));
           this.applyCalculationType((sum ?? types[0])?.value ?? null);
+          this.tryApplyEditValues();
         },
         error: (error: unknown) => this.notifications.errorFromServer(error, 'טעינת סוגי החישוב נכשלה')
       })
     );
+  }
+
+  /** טעינה מחדש של הרשימות — בדיאלוג העריכה, כדי שהערכים השמורים יימצאו בהן */
+  private reloadLookups(): void {
+    if (!this.isEditing) {
+      return;
+    }
+    this.loadLookups(true);
+    this.loadSources(true);
   }
 
   /**
@@ -353,13 +417,14 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
     }
   }
 
-  private loadSources(): void {
+  private loadSources(forceReload = false): void {
     this.subscriptions.add(
-      this.service.getSources().subscribe({
+      this.service.getSources(forceReload).subscribe({
         next: sources => {
           this.sources = sources;
           this.selectDefaultIcon();
           this.selectDefaultSource();
+          this.tryApplyEditValues();
         },
         error: (error: unknown) => this.notifications.errorFromServer(error, 'טעינת מקורות הנתונים נכשלה')
       })
@@ -397,6 +462,8 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
             next: source => {
               this.selectedSource = source;
               this.applyDefaultsAfterSourceSelected(source);
+              // שדות הפירוט והסיכום נבחרים מתוך שדות המקור — רק עכשיו אפשר להשלים את העריכה
+              this.tryApplyEditValues();
             },
             error: (error: unknown) => this.notifications.errorFromServer(error, 'טעינת שדות המקור נכשלה')
           });
@@ -416,12 +483,24 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
 
   
   private applyDefaultsAfterSourceSelected(source: DataSource): void {
-    this.form.patchValue({
-      dateRangeType: this.findBoardFilterPeriod(),
-      groupFieldId: NO_GROUPING,
-      sumFieldId: source.fields.find(f => f.isSummable)?.fieldId ?? null,
-      detailFieldIds: source.fields.slice(0, DEFAULT_DETAIL_FIELD_COUNT).map(f => f.fieldId)
-    });
+    // בעריכה — שדות הפירוט והסיכום מגיעים מהנתון השמור, לא מברירת המחדל של "נתון חדש"
+    const edit = this.pendingEditMetric;
+    if (edit) {
+      this.form.patchValue({
+        dateRangeType: edit.dateRangeValue ?? this.form.controls.dateRangeType.value,
+        groupFieldId: edit.groupFieldId ?? NO_GROUPING,
+        sumFieldId: edit.sumFieldId ?? null,
+        detailFieldIds: (edit.detailFieldIds ?? []).filter(fieldId =>
+          source.fields.some(field => field.fieldId === fieldId))
+      });
+    } else {
+      this.form.patchValue({
+        dateRangeType: this.findBoardFilterPeriod(),
+        groupFieldId: NO_GROUPING,
+        sumFieldId: source.fields.find(f => f.isSummable)?.fieldId ?? null,
+        detailFieldIds: source.fields.slice(0, DEFAULT_DETAIL_FIELD_COUNT).map(f => f.fieldId)
+      });
+    }
 
     this.applyCalculationType(this.form.controls.calculationTypeId.value);
   }
@@ -464,6 +543,9 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
     this.selectedSource = null;
     this.lastSourceId = null;
     this.previewResult = null;
+    // לפני startMode, שקובע את המצב מחדש לפי metric
+    this.editingMetricId = null;
+    this.pendingEditMetric = null;
     this.form.reset({
       name: '',
       sourceId: null,
@@ -479,6 +561,68 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
     });
     // reset מעדכן ערכים בלי emitEvent, לכן מסדירים את הוולידטורים ידנית
     this.applyCalculationType(this.form.controls.calculationTypeId.value);
+  }
+
+  /**
+   * ממלא את הטופס מערכי הנתון הנערך — רק כשיש את כל מה שנדרש:
+   * הרשימות (מקורות / תקופות / סמלים / סוגי חישוב) ושדות המקור.
+   * נקראת מכל טעינה שמסתיימת, ומדלגת עד שהתנאים מתקיימים.
+   * בסיום מנקה את הערכים הממתינים, כדי שברירות המחדל של "נתון חדש"
+   * לא ידרסו את השמורים.
+   */
+  private tryApplyEditValues(): void {
+    const edit = this.pendingEditMetric;
+    if (!edit) {
+      return;
+    }
+
+    // הערכים נבחרים מתוך הרשימות — לפני שהן הגיעו ה-select מציג ריק
+    if (this.sources.length === 0 || this.rangeOptions.length === 0) {
+      return;
+    }
+
+    const sourceId = edit.sourceId == null ? null : String(edit.sourceId);
+    if (sourceId === null) {
+      this.pendingEditMetric = null;
+      return;
+    }
+
+    // מקור שלא ברשימה (למשל הושבת) — לא ניתן להציג את שדותיו
+    if (!this.sources.some(option => option.value === sourceId)) {
+      this.notifications.error('מקור הנתונים של הנתון אינו זמין — לא ניתן להציג את פרטיו');
+      this.pendingEditMetric = null;
+      return;
+    }
+
+    // קביעת המקור מפעילה טעינת שדות; ערכי התלות יוחלו כשהם יגיעו
+    if (this.form.controls.sourceId.value !== sourceId) {
+      this.form.controls.sourceId.setValue(sourceId);
+      return;
+    }
+
+    if (!this.selectedSource || this.selectedSource.sourceId !== Number(sourceId)) {
+      return;
+    }
+
+    this.form.patchValue({
+      name: edit.metricName ?? '',
+      // סמל שאינו ברשימה — נשאיר את הבחירה הקיימת במקום להציג ריק
+      cardSourceId: this.cardIcons.some(option => option.value === edit.iconCode)
+        ? edit.iconCode ?? null
+        : this.form.controls.cardSourceId.value,
+      iconCode: edit.iconCode ?? null,
+      calculationTypeId: edit.calculationTypeId ?? null,
+      dateRangeType: edit.dateRangeValue ?? this.findBoardFilterPeriod(),
+      groupFieldId: edit.groupFieldId ?? NO_GROUPING,
+      sumFieldId: edit.sumFieldId ?? null,
+      detailFieldIds: (edit.detailFieldIds ?? []).filter(fieldId =>
+        this.selectedSource!.fields.some(field => field.fieldId === fieldId)),
+      displayInDashboard: edit.isActive ?? true
+    });
+
+    // רכיבי ה-checkbox נקראים מהמערך, ולכן אין צורך בעדכון נוסף
+    this.applyCalculationType(this.form.controls.calculationTypeId.value);
+    this.pendingEditMetric = null;
   }
 
   /** תווית השדה לפי מזההו — לתצוגת "שדה תאריך" (הערך עצמו אינו נבחר בטופס) */
@@ -582,6 +726,27 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
     }
 
     this.saving = true;
+
+    const metricId = this.editingMetricId;
+    if (metricId !== null) {
+      // עריכה: עדכון השורה הקיימת — לא נוצרת רשומה חדשה
+      this.subscriptions.add(
+        this.service.updateMetric(metricId, this.buildDraft()).subscribe({
+          next: () => {
+            this.saving = false;
+            this.notifications.success('הנתון עודכן');
+            this.saved.emit(metricId);
+            this.cancel();
+          },
+          error: (error: unknown) => {
+            this.saving = false;
+            this.notifications.errorFromServer(error, 'עדכון הנתון נכשל');
+          }
+        })
+      );
+      return;
+    }
+
     this.subscriptions.add(
       this.service.save(this.buildDraft()).subscribe({
         next: id => {
