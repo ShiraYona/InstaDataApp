@@ -2,12 +2,10 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, map, of, tap } from 'rxjs';
 
-/** מבנה התשובה מה-API עבור מספר הכרטיסים בשורה */
 interface DisplaySettingsDto {
   cardsPerRow: number;
 }
 
-/** פריט בודד של נתון בהגדרות המשתמש */
 export interface MetricSettingItem {
   metricId: number;
   metricName: string;
@@ -16,7 +14,6 @@ export interface MetricSettingItem {
   isVisible: boolean;
 }
 
-/** תשובת ה-API לשליפת הנתונים */
 export interface MetricSettingsResponse {
   items: MetricSettingItem[];
 }
@@ -27,7 +24,6 @@ export class DisplayLayoutService {
 
   private readonly apiUrl = '/api/user-display-settings';
 
-  /** הערך שנשמר לאחרונה מהשרת — משמש כגיבוי אם הקריאה נכשלה */
   private serverCardsPerRow: number | null = null;
 
 
@@ -43,14 +39,10 @@ export class DisplayLayoutService {
     );
   }
 
-  /** שמירת מספר הכרטיסים בשורה בשרת */
-saveCardsPerRow(cardsPerRow: number): Observable<void> {
-  return this.http.put<void>(this.apiUrl, { cardsPerRow }).pipe(
-    tap(() => {
-      this.serverCardsPerRow = cardsPerRow;
-    })
-  );
-}
+  saveCardsPerRow(cardsPerRow: number): Observable<void> {
+    this.serverCardsPerRow = cardsPerRow;
+    return this.http.put<void>(this.apiUrl, { cardsPerRow });
+  }
 
   loadMetricSettings(): Observable<MetricSettingsResponse> {
     return this.http.get<MetricSettingsResponse>(`${this.apiUrl}/metrics`);

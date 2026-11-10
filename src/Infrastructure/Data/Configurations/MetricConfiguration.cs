@@ -4,13 +4,12 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace InstaDataApp.Infrastructure.Data.Configurations;
 
+
 public class MetricConfiguration : IEntityTypeConfiguration<Metric>
 {
     public void Configure(EntityTypeBuilder<Metric> builder)
     {
-        builder.ToTable("CTRL_Metrics", table => table.HasCheckConstraint(
-            "CK__CTRL_Metr__Calcu__267ABA7A",
-            "[CalculationType]='DIRECT' OR [CalculationType]='SUM' OR [CalculationType]='COUNT'"));
+        builder.ToTable("CTRL_Metrics");
 
         builder.HasKey(x => x.MetricId);
 
@@ -24,11 +23,11 @@ public class MetricConfiguration : IEntityTypeConfiguration<Metric>
             .IsRequired();
 
         builder.Property(x => x.SourceId)
-            .HasColumnName("SourceID");
+            .HasColumnName("SourceID")
+            .IsRequired();
 
-        builder.Property(x => x.CalculationType)
-            .HasColumnName("CalculationType")
-            .HasColumnType("varchar(20)")
+        builder.Property(x => x.CalculationTypeId)
+            .HasColumnName("CalculationTypeID")
             .IsRequired();
 
         builder.Property(x => x.SumFieldId)
@@ -47,7 +46,8 @@ public class MetricConfiguration : IEntityTypeConfiguration<Metric>
             .HasMaxLength(50);
 
         builder.Property(x => x.IsActive)
-            .HasColumnName("IsActive");
+            .HasColumnName("IsActive")
+            .IsRequired();
 
         builder.Property(x => x.CreatedBy)
             .HasColumnName("CreatedBy")
@@ -70,5 +70,12 @@ public class MetricConfiguration : IEntityTypeConfiguration<Metric>
         builder.Property(x => x.RowVersion)
             .HasColumnName("RowVersion")
             .IsRowVersion();
+
+        // מפתח זר ל-CTRL_CalculationTypes. ב-DB קיים FK בשם
+        // FK_CTRL_Metrics_CalculationTypes — EF משתמש בו למיפוי בלבד.
+        builder.HasOne<CalculationType>()
+            .WithMany()
+            .HasForeignKey(x => x.CalculationTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

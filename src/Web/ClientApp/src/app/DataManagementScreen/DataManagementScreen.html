@@ -1,10 +1,11 @@
 <div class="dataManagement" dir="rtl">
-  <p-toast position="bottom-left" styleClass="demoToast"></p-toast>
+  <p-toast position="bottom-left"></p-toast>
 
-  <!-- דיאלוג יצירת / עריכת נתון -->
-  <!-- <app-adding-new-data-entry [(visible)]="dialogVisible"></app-adding-new-data-entry> -->
+  <p-confirmdialog
+    [closeOnEscape]="true"
+    [focusTrap]="true">
+  </p-confirmdialog>
 
-  <!-- כותרת המסך: כותרת ותת-כותרת מימין, כפתור "יצירת נתון חדש" משמאל -->
   <header class="screenHeader">
     <div class="screenHeader__titles">
       <h1 class="screenHeader__title">ניהול נתונים</h1>
@@ -20,7 +21,6 @@
     </p-button>
   </header>
 
-  <!-- הודעת מידע כללית -->
   <div class="infoBanner">
     מקורות הנתונים והשדות המוצגים כאן הם דוגמה לצורך המחשה. שמות הטבלאות והשדות
     במערכת הגבייה יוגדרו לאחר מיפוי מול מסד הנתונים.
@@ -96,4 +96,9 @@
       </p-table>
     </div>
   </section>
+
+  <app-adding-new-data-entry
+    [(visible)]="dialogVisible"
+    (saved)="onDataSaved()">
+  </app-adding-new-data-entry>
 </div>

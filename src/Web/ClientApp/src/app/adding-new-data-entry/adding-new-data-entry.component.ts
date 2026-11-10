@@ -5,17 +5,12 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { Subscription } from 'rxjs';
+import { CALCULATION_TYPE_OPTIONS, CalculationType, DataDefinitionDraft, DataSource, LookupOption, PreviewResult } from '../shared/models/data-definition.model';
+import { CALCULATION_PERIOD_OPTIONS, CARD_ICON_OPTIONS, DataDefinitionService } from '../shared/services/data-definition.service';
+import { NotificationService } from '../shared/services/notification.service';
 
-import {
-  CalculationTypeId,
-  DataSource,
-  LookupOption,
-  MetricDraft,
-  PreviewResult
-} from '../../../shared/models/data-definition.model';
-import { DataDefinitionService } from '../../../shared/services/data-definition.service';
-import { NotificationService } from '../../../shared/services/notification.service';
 
+const DEFAULT_CALCULATION_TYPE: CalculationType = 'COUNT';
 
 const DEFAULT_DETAIL_FIELD_COUNT = 3;
 

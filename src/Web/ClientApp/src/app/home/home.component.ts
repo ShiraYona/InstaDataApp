@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 
-import { AddingNewDataEntryComponent } from '../features/insta-data/adding-new-data-entry/adding-new-data-entry.component';
-
 import { RouterLink } from '@angular/router';
+import { AddingNewDataEntryComponent } from '../adding-new-data-entry/adding-new-data-entry.component';
+
 
 @Component({
   selector: 'app-home',

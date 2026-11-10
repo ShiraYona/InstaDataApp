@@ -24,7 +24,7 @@ export const routes: Routes = [
   {
     path: 'new-data-entry',
     loadComponent: () =>
-      import('./features/insta-data/adding-new-data-entry/adding-new-data-entry.component').then(
+      import('./adding-new-data-entry/adding-new-data-entry.component').then(
         m => m.AddingNewDataEntryComponent
       )
   },

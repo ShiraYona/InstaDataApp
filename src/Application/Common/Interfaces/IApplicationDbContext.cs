@@ -41,4 +41,7 @@ public interface IApplicationDbContext
     DbSet<UserDisplaySettings> UserDisplaySettings { get; }
     DbSet<UserMetricSetting> UserMetricSettings { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
+
+    DbSet<CalculationDay> CalculationDays { get; }
+    DbSet<CalculationType> CalculationTypes { get; }
 }

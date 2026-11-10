@@ -44,6 +44,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<UserDisplaySettings> UserDisplaySettings => Set<UserDisplaySettings>();
     public DbSet<UserMetricSetting> UserMetricSettings => Set<UserMetricSetting>();
     public DbSet<Metric> Metrics => Set<Metric>();
+    public DbSet<CalculationDay> CalculationDays => Set<CalculationDay>();
+    public DbSet<CalculationType> CalculationTypes => Set<CalculationType>();
+
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

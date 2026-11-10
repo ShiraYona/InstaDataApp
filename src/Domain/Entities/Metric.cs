@@ -1,11 +1,14 @@
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace InstaDataApp.Domain.Entities;
 
 /// <summary>
-/// נתון מוגדר — טבלת CTRL_Metrics.
+/// נתון שהוגדר ע"י בעל הרשאת ניהול נתונים.
+/// ממופה לטבלה הקיימת CTRL_Metrics.
 /// </summary>
 public class Metric
 {
-    public int MetricID { get; set; }
+    public int MetricId { get; set; }
 
     public string MetricName { get; set; } = string.Empty;
 
@@ -22,8 +25,18 @@ public class Metric
     /// <summary>השדה שלפיו יתבצע קיבוץ — null משמעו ללא קיבוץ</summary>
     public int? GroupFieldID { get; set; }
 
-    /// <summary>DIRECT / SUM / COUNT — נאכף ב-DB באמצעות CHECK constraint</summary>
-    public string CalculationType { get; set; } = string.Empty;
+    /// <summary>מזהה סוג החישוב — מפתח זר ל-<c>CTRL_CalculationTypes</c></summary>
+    public int CalculationTypeId { get; set; }
+
+    /// <summary>שם סוג החישוב לתצוגה — נטען ב-JOIN, לא נשמר בטבלה</summary>
+    [NotMapped]
+    public string? CalculationTypeName { get; set; }
+
+    /// <summary>שדה הסכום — רלוונטי רק ל-SUM</summary>
+    public int? SumFieldId { get; set; }
+
+    /// <summary>שדה הקיבוץ — אופציונלי</summary>
+    public int? GroupFieldId { get; set; }
 
     /// <summary>DAY / MONTH / YEAR</summary>
     public string DateRangeType { get; set; } = string.Empty;

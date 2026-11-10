@@ -28,15 +28,14 @@
     </p-select>
   </div>
 
-  <!-- חיפוש נתון — תופס את שאר הרוחב (flex:1 בדמו) -->
   <div class="filter filter--search">
-    <label class="filter__label" for="filterSearchText">חיפוש נתון</label>
+    <label class="filter__label" for="filtersearchMetricName">חיפוש נתון</label>
     <input
-      id="filterSearchText"
+      id="filtersearchMetricName"
       pInputText
       fluid
       type="text"
-      [(ngModel)]="searchText"
+      [(ngModel)]="searchMetricName"
       (ngModelChange)="onFilterChange()"
       placeholder="חיפוש לפי שם נתון" />
   </div>
