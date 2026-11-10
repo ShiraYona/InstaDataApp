@@ -4,9 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace InstaDataApp.Infrastructure.Data.Configurations;
 
-/// <summary>
-/// מיפוי לטבלה הקיימת CTRL_Metrics.
-/// </summary>
+
 public class MetricConfiguration : IEntityTypeConfiguration<Metric>
 {
     public void Configure(EntityTypeBuilder<Metric> builder)

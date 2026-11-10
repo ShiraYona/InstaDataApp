@@ -1,4 +1,5 @@
 
+
 import { mergeMap as _observableMergeMap, catchError as _observableCatch } from 'rxjs/operators';
 import { Observable, throwError as _observableThrow, of as _observableOf } from 'rxjs';
 import { Injectable, Inject, Optional, InjectionToken } from '@angular/core';
@@ -6,14 +7,18 @@ import { HttpClient, HttpHeaders, HttpResponse, HttpResponseBase } from '@angula
 
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
 
+
+export interface FileResponse {
+    data: Blob;
+    status: number;
+    fileName?: string;
+    headers?: { [name: string]: any };
+}
+
 @Injectable({
     providedIn: 'root'
 })
-<<<<<<<<< Temporary merge branch 1
 export class DataCatalogClient {
-=========
-export class UserDisplaySettingsClient {
->>>>>>>>> Temporary merge branch 2
     private http: HttpClient;
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
@@ -23,13 +28,9 @@ export class UserDisplaySettingsClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-<<<<<<<<< Temporary merge branch 1
     get(): Observable<Metric[]> {
         let url_ = this.baseUrl + "/api/DataCatalog";
-=========
-    get(): Observable<DisplaySettingsDto> {
-        let url_ = this.baseUrl + "/api/user-display-settings";
->>>>>>>>> Temporary merge branch 2
+
         url_ = url_.replace(/[?&]$/, "");
 
         let options_ : any = {
@@ -47,7 +48,6 @@ export class UserDisplaySettingsClient {
                 try {
                     return this.processGet(response_ as any);
                 } catch (e) {
-<<<<<<<<< Temporary merge branch 1
                     return _observableThrow(e) as any as Observable<Metric[]>;
                 }
             } else
@@ -56,16 +56,7 @@ export class UserDisplaySettingsClient {
     }
 
     protected processGet(response: HttpResponseBase): Observable<Metric[]> {
-=========
-                    return _observableThrow(e) as any as Observable<DisplaySettingsDto>;
-                }
-            } else
-                return _observableThrow(response_) as any as Observable<DisplaySettingsDto>;
-        }));
-    }
 
-    protected processGet(response: HttpResponseBase): Observable<DisplaySettingsDto> {
->>>>>>>>> Temporary merge branch 2
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -76,7 +67,6 @@ export class UserDisplaySettingsClient {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             let result200: any = null;
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-<<<<<<<<< Temporary merge branch 1
             if (Array.isArray(resultData200)) {
                 result200 = [] as any;
                 for (let item of resultData200)
@@ -85,8 +75,6 @@ export class UserDisplaySettingsClient {
             else {
                 result200 = <any>null;
             }
-=========
-            result200 = DisplaySettingsDto.fromJS(resultData200);
             return _observableOf(result200);
             }));
         } else if (status !== 200 && status !== 204) {
@@ -533,7 +521,6 @@ export interface FileResponse {
     status: number;
     fileName?: string;
     headers?: { [name: string]: any };
->>>>>>>>> Temporary merge branch 2
 }
 
 export class ApiException extends Error {

@@ -2,6 +2,8 @@
 
 :host {
   display: block;
+  padding: 24px 32px;
+  box-sizing: border-box;
 }
 
 /* ---- רשת הכרטיסים ---- */
@@ -9,6 +11,7 @@
   display: grid;
   grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
   gap: 17px;
+  box-sizing: border-box;
 }
 
 /* ---- כרטיס ---- */
@@ -32,7 +35,32 @@
   }
 }
 
-.metric .mh {
+/* ---- ערך הקבוצה שהכרטיס מייצג ---- */
+.mgroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  min-width: 0;
+}
+
+.mgroup-label {
+  color: #6e8198;
+  white-space: nowrap;
+}
+
+.mgroup-value {
+  font-weight: 700;
+  color: #19304d;
+  background: #edf4fe;
+  border-radius: 999px;
+  padding: 2px 9px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mh {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -205,4 +233,15 @@
   .cube-cards {
     grid-template-columns: 1fr;
   }
+}
+.sign {
+  font-size: 0.8em;
+  font-weight: 500;
+  color: #666;
+  margin-inline-start: 4px;
+}
+.metric .micon .pi {
+  font-size: 19px;
+  line-height: 1;
+  display: block;
 }

@@ -6,7 +6,6 @@ import { definePreset } from '@primeng/themes';
 import Aura from '@primeng/themes/aura';
 import { MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
-
 import { AuthorizeInterceptor } from '../api-authorization/authorize.interceptor';
 import { environment } from '../environments/environment';
 import { routes } from './app.routes';

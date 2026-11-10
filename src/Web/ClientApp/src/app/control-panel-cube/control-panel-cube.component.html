@@ -1,24 +1,49 @@
+@if (loading()) {
+  <p class="empty-cards">טוען נתונים...</p>
+} @else if (error()) {
+  <p class="empty-cards">שגיאה בטעינת הנתונים</p>
+}
+
+@if (!loading() && !error()) {
 <div class="cube-cards" dir="rtl" [style.--cols]="columns + ''">
-  @for (metric of metrics; track metric.key) {
+  @for (metric of metrics(); track metric.key) {
+
+
     <article class="metric">
       <!-- כותרת: שם הנתון + סמל -->
       <div class="mh">
         <div class="mname">{{ metric.title }}</div>
-        <div class="micon">{{ metric.icon }}</div>
+                <div class="micon">
+          @if (metric.icon) {
+            <i class="pi" [ngClass]="metric.icon"></i>
+          }
+        </div>
       </div>
+
+      <!-- ערך קבוצה — הכרטיס מייצג את כל מה ששייך לקבוצה -->
+      @if (metric.groupValue !== undefined) {
+        <div class="mgroup">
+          <span class="mgroup-label">{{ metric.groupFieldLabel ?? 'קבוצה' }}</span>
+          <span class="mgroup-value">{{ metric.groupValue || '—' }}</span>
+        </div>
+      }
 
       <!-- ערך מרכזי -->
       <div>
         <div class="value">
           {{ metric.value }}
+
           @if (metric.unit) {
             <span class="unit">{{ metric.unit }}</span>
+          }  
+          @if (metric.signType) {
+            <span class="sign">{{ metric.signType }}</span>
           }
         </div>
 
         <!-- מקור + קישור לפירוט -->
         <div class="mf">
-          <span>{{ metric.source }}</span>
+          <span>מקור : {{ metric.source }}</span>
           <button type="button" class="click" (click)="openDetails(metric.key)">לפירוט ←</button>
         </div>
       </div>
@@ -61,10 +86,4 @@
     <p class="empty-cards">לא הוגדרו נתונים להצגה</p>
   }
 </div>
-
-<!-- ===== חלון הפירוט — נפתח מתוך הכרטיס, סגירה מחזירה לכאן ===== -->
-@if (detailsId(); as id) {
-  <app-detailed-dialogue
-    [metricId]="id"
-    [title]="titleById().get(id) ?? ''"
-    (closed)="detailsId.set('')" />}
+}
