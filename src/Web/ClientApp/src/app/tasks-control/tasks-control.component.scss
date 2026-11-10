@@ -213,54 +213,7 @@
   margin-top: 22px;
 }
 
-/* ---------- toast — .toast ---------- */
-::ng-deep .demoToast.p-toast {
-  bottom: 23px;
-  left: 25px;
-  right: auto;
-  top: auto;
-  width: auto;
-  max-width: min(420px, calc(100vw - 50px));
-  white-space: pre-line;
-  direction: rtl;
-  text-align: right;
-}
-
-::ng-deep .demoToast .p-toast-message {
-  margin: 0;
-  background: #1c3d60;
-  color: #ffffff;
-  padding: 13px 19px;
-  border: 0;
-  border-radius: 10px;
-  box-shadow: 0 5px 22px #162b4388;
-}
-
-::ng-deep .demoToast .p-toast-message-content {
-  padding: 0;
-  gap: 0;
-  align-items: center;
-}
-
-::ng-deep .demoToast .p-toast-message-text { margin: 0; gap: 0; }
-
-::ng-deep .demoToast .p-toast-summary,
-::ng-deep .demoToast .p-toast-detail {
-  margin: 0;
-  padding: 0;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 1.4;
-  color: #ffffff;
-  text-align: right;
-}
-
-::ng-deep .demoToast .p-toast-icon-close,
-::ng-deep .demoToast .p-toast-message-icon,
-::ng-deep .demoToast .p-toast-close-button {
-  display: none;
-}
+/* ההודעה הקופצת מוגדרת גלובלית ב-src/styles.scss (‎.demoToast) */
 
 /* ---------- מסכים צרים ---------- */
 @media (max-width: 760px) {

@@ -5,7 +5,7 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { Subscription } from 'rxjs';
-import { CALCULATION_TYPE_OPTIONS, CalculationType, DataDefinitionDraft, DataSource, LookupOption, PreviewResult } from '../shared/models/data-definition.model';
+import { CALCULATION_TYPE_OPTIONS, CalculationType, CalculationTypeId, DataDefinitionDraft, DataSource, LookupOption, MetricDraft, PreviewResult } from '../shared/models/data-definition.model';
 import { CALCULATION_PERIOD_OPTIONS, CARD_ICON_OPTIONS, DataDefinitionService } from '../shared/services/data-definition.service';
 import { NotificationService } from '../shared/services/notification.service';
 

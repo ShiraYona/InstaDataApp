@@ -15,7 +15,7 @@ public class DeleteMetricCommandHandler : IRequestHandler<DeleteMetricCommand, b
     public async Task<bool> Handle(DeleteMetricCommand request, CancellationToken cancellationToken)
     {
         var metric = await _context.Metrics
-            .FirstOrDefaultAsync(m => m.MetricId == request.MetricId, cancellationToken);
+            .FirstOrDefaultAsync(m => m.MetricID == request.MetricId, cancellationToken);
 
         if (metric is null)
             return false;

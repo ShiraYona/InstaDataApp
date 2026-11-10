@@ -60,8 +60,15 @@
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
   </Target>
 
+  <!--
+    יצירת לקוח TypeScript (web-api-client.ts) מה-OpenAPI של השרת.
+    לא אוטומטי בכל build: הרצה מפורשת עם
+      dotnet msbuild Web.csproj -t:NSwag
+    כדי שרק מי ששינה את ה-API ייצור מחדש את הלקוח במכוון.
+  -->
   <Target Name="NSwag" AfterTargets="PostBuildEvent" Condition=" '$(Configuration)' == 'Debug' ">
-    <Exec Command="dotnet &quot;$(NSwagExe_Net80)&quot; run config.nswag /variables:Configuration=$(Configuration)" Condition="false" />
+    <!-- NSwagExe_Net80 הוא כבר פקודת dotnet מלאה (dotnet "...dotnet-nswag.dll") -->
+    <Exec Command="$(NSwagExe_Net80) run config.nswag /variables:Configuration=$(Configuration)" />
   </Target>
 
   <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">

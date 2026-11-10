@@ -19,7 +19,7 @@ public class MetricDraftValidator : AbstractValidator<MetricDraftDto>
         // סוג החישוב "סכימה" — מזוהה לפי שורת הקטלוג שכולה SUM
         _sumTypeIds = context.CalculationTypes
             .Where(type => type.Name == MetricConstants.CalculationSum || type.Value.Contains("סכימ"))
-            .Select(type => type.ID)
+            .Select(type => type.Id)
             .ToHashSet();
 
         RuleFor(x => x.Name)
@@ -33,7 +33,7 @@ public class MetricDraftValidator : AbstractValidator<MetricDraftDto>
 
         RuleFor(x => x.CalculationTypeId)
             .GreaterThan(0)
-            .MustAsync((id, ct) => _context.CalculationTypes.AnyAsync(t => t.ID == id, ct))
+            .MustAsync((id, ct) => _context.CalculationTypes.AnyAsync(t => t.Id == id, ct))
             .WithMessage("סוג חישוב לא חוקי.");
 
         RuleFor(x => x.DateRangeType)

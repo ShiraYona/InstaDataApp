@@ -3,12 +3,13 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, map, shareReplay, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  CardIconOption,
   DataSource,
   LookupOption,
   MetricDraft,
   PreviewResult
 } from '../models/data-definition.model';
-import { DataCatalogClient, Metric, SetMetricActiveRequest } from '../../web-api-client';
+import { DataCatalogClient, MetricListItemDto, SetMetricActiveRequest } from '../../web-api-client';
 
 /**
  * ערכי ברירת מחדל של קטלוגי העזר (בשרת יגיעו מטבלאות עזר).
@@ -25,10 +26,10 @@ export const CARD_ICON_OPTIONS: CardIconOption[] = [
 ];
 
 export const CALCULATION_PERIOD_OPTIONS: LookupOption[] = [
-  { id: 1, label: 'לפי מסנן הלוח' },
-  { id: 2, label: '7 ימים' },
-  { id: 3, label: '30 ימים' },
-  { id: 4, label: '90 ימים' }
+  { value: '1', label: 'לפי מסנן הלוח' },
+  { value: '2', label: '7 ימים' },
+  { value: '3', label: '30 ימים' },
+  { value: '4', label: '90 ימים' }
 ];
 
 
@@ -40,9 +41,7 @@ export class DataDefinitionService {
 
   private readonly baseUrl = `${environment.baseUrl}/api/data-definitions`;
 
-  private readonly baseUrl = '/api/data-definitions';
 
- 
   private readonly sources$ = this.shareOnce(() =>
     this.http.get<LookupOption[]>(`${this.baseUrl}/sources`));
   private readonly calculationPeriods$ = this.shareOnce(() =>
@@ -148,7 +147,7 @@ export class DataDefinitionService {
   //הוספות של הני
   
     /** קטלוג הנתונים — כל הנתונים מטבלת CTRL_Metrics */
-  getAllMetrics(): Observable<Metric[]> {
+  getAllMetrics(): Observable<MetricListItemDto[]> {
     return this.dataCatalogClient.get();
   }
     /** שינוי מצב פעיל / מושבת — נשמר ב-DB */

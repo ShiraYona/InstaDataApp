@@ -17,7 +17,7 @@ public class DataCatalogController : ControllerBase
     public DataCatalogController(ISender sender) => _sender = sender;
 
     [HttpGet]
-    public async Task<ActionResult<List<Metric>>> Get(CancellationToken cancellationToken) =>
+    public async Task<ActionResult<List<MetricListItemDto>>> Get(CancellationToken cancellationToken) =>
         Ok(await _sender.Send(new GetMetricsQuery(), cancellationToken));
 
 

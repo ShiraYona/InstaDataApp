@@ -55,7 +55,7 @@ public static class MetricCatalogCheck
         CancellationToken cancellationToken)
     {
         var definition = await context.CalculationTypes
-            .FirstOrDefaultAsync(type => type.ID == requestedId, cancellationToken);
+            .FirstOrDefaultAsync(type => type.Id == requestedId, cancellationToken);
 
         return definition
             ?? throw Fail(nameof(MetricDraftDto.CalculationTypeId), "סוג החישוב שנבחר אינו מוכר.");
@@ -76,7 +76,7 @@ public static class MetricCatalogCheck
             return MetricConstants.DateRangeBoardFilter;
         }
 
-        var periods = await context.CalculationPeriods
+        var periods = await context.CalculationDays
             .Select(period => new PeriodCode(period.Name, period.Value.ToString()))
             .ToListAsync(cancellationToken);
 
@@ -206,7 +206,7 @@ public sealed record MetricCanonicalValues(
     public string CalculationTypeCode => CalculationTypeMap.ToCode(CalculationType.Name);
 
     /// <summary>הערך שנשמר ב-CTRL_Metrics.CalculationTypeID</summary>
-    public int CalculationTypeId => CalculationType.ID;
+    public int CalculationTypeId => CalculationType.Id;
 }
 
 /// <summary>כללי הטופס שעובדים בלי מסד הנתונים</summary>
