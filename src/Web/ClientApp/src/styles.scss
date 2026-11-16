@@ -94,7 +94,7 @@ body {
   padding: 22px;
   box-shadow: 0 4px 16px rgba(22, 51, 76, 0.03);
 }
-.panel + .panel { margin-top: 23px; }
+// .panel + .panel { margin-top: 23px; }
 
 .sectionhead {
   display: flex;
@@ -469,10 +469,11 @@ p-button.actionButton {
   background: transparent;
 }
 
-/* כותרות העמודות */
+/* כותרות העמודות — רקע זהה לרקע העמוד (#f3f6fb). ה-!important נדרש כי
+   ה-thead של PrimeNG מגדיר את הרקע דרך משתנה CSS ברמת התא */
 .tasksControlTable .p-datatable-thead > tr > th {
   padding: 13px 14px;
-  background: #f7f9fc;
+  background: #f3f6fb !important;
   color: #71839b;
   font-family: inherit;
   font-size: 13px;

@@ -32,6 +32,6 @@ export class NotificationService {
   }
 
   private show(severity: NotificationSeverity, summary: string, detail: string): void {
-    this.messages.add({ severity, summary, detail, life: 4000 });
+    this.messages.add({ severity, summary, detail, life: 2000 });
   }
 }

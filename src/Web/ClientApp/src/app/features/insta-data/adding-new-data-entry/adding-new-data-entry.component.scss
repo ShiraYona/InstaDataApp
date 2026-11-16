@@ -60,11 +60,18 @@
 
 // --- .modalhead ---
 .modal-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24px 28px;
-  border-bottom: 1px solid #e7edf5;
+  // display: flex;
+  // align-items: center;
+  // justify-content: space-between;
+  // padding: 24px 28px;
+  // border-bottom: 1px solid #e7edf5;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 28px;
+    border-bottom: 1px solid #e7edf5;
+
 
   strong {
     font-size: 20px;
