@@ -8,9 +8,9 @@
   width: 100%;
   direction: rtl;
   position: sticky;
-  top: 0;
-  z-index: 20;
-    background: #fff;
+  top: 0;              /* ← אם יש header עליון קבוע, שנה ל-top: 56px (גובה ה-header) */
+  z-index: 100;        /* ← 20 היה נמוך מדי; 100 נמצא מעל הכרטיסים */
+  background: #fff;
   padding-bottom: 4px;
 }
 

@@ -23,6 +23,8 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
   readonly error = signal(false);
   @Input() columns = 4;
   @Input() period: number = 30;
+   @Input() fromDate: string | null = null;
+  @Input() toDate: string | null = null;
   @Input() searchMetricName = '';
 
   readonly alertRule = output<string>();
@@ -30,7 +32,7 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
   readonly drill = output<string>();
 
   /** מקור השינויים בפילטרים — debounce + switchMap מונעים בקשות כפולות ותשובות מיושנות */
-  private readonly filter$ = new Subject<{ metricName: string; days: number | null }>();
+  private readonly filter$ = new Subject<{ metricName: string; fromDate: string | null; toDate: string | null }>();
 
   constructor() {
     this.filter$
@@ -39,7 +41,7 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
         switchMap(f => {
           this.loading.set(true);
           this.error.set(false);
-      return this.controlPanel.getCards(f.metricName, f.days).pipe(
+      return this.controlPanel.getCards(f.metricName, f.fromDate, f.toDate).pipe(
   timeout(60000),
   catchError(() => {
     this.error.set(true);
@@ -81,14 +83,37 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['period'] || changes['searchMetricName']) {
+    if (changes['period'] || changes['searchMetricName'] || changes['fromDate'] || changes['toDate']) {
       this.pushFilters();
     }
   }
 
   private pushFilters(): void {
-    this.filter$.next({ metricName: this.searchMetricName, days: this.period });
+    const { from, to } = this.resolveRange();
+    this.filter$.next({ metricName: this.searchMetricName, fromDate: from, toDate: to });
   }
+
+  /** טווח: בחירה ידנית אם קיימת, אחרת [today - period, today] */
+  private resolveRange(): { from: string | null; to: string | null } {
+    if (this.fromDate && this.toDate) {
+      return { from: this.fromDate, to: this.toDate };
+    }
+    if (this.period == null || this.period < 0) {
+      return { from: null, to: null };
+    }
+    const to = new Date();
+    const from = new Date();
+    from.setDate(from.getDate() - this.period);
+    return { from: this.toIso(from), to: this.toIso(to) };
+  }
+
+  private toIso(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
   /** "נסה שוב" — מפעיל מחדש את החישוב (השליפה שולפת את כל הכרטיסים, כי זו קריאת השרת) */
   retry(): void {
     this.pushFilters();

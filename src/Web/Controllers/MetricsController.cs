@@ -23,10 +23,10 @@ public class MetricsController(
     [ProducesResponseType(typeof(List<MetricCardDto>), StatusCodes.Status200OK)]
     [AllowAnonymous]
 public Task<List<MetricCardDto>> GetActiveMetrics(
-    [FromQuery] string? metricName, [FromQuery] int? days, CancellationToken cancellationToken)
+    [FromQuery] string? metricName, [FromQuery] DateOnly? fromDate, [FromQuery] DateOnly? toDate, CancellationToken cancellationToken)
 {
     return sender.Send(
-        new GetActiveMetricsQuery(metricName, days, currentUser.Id),
+        new GetActiveMetricsQuery(metricName, fromDate, toDate, currentUser.Id),
         cancellationToken);
 }
 

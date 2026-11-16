@@ -96,7 +96,7 @@
     <p class="empty-cards">
       @if (searchMetricName?.trim()) {
         לא נמצאו נתונים המתאימים לחיפוש "{{ searchMetricName }}"
-      } @else if (period !== null) {
+      } @else if (period !== null || (fromDate && toDate)) {
         לא נמצאו נתונים בתקופה הנבחרת
       } @else {
         לא הוגדרו נתונים להצגה

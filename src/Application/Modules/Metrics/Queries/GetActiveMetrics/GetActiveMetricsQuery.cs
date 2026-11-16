@@ -9,7 +9,11 @@ using System.Globalization;
 
 namespace InstaDataApp.Application.Modules.Metrics.Queries.GetActiveMetrics;
 
-public record GetActiveMetricsQuery(string? MetricName = null, int? Days = null, string? UserId = null)
+public record GetActiveMetricsQuery(
+    string? MetricName = null,
+    DateOnly? FromDate = null,
+    DateOnly? ToDate = null,
+    string? UserId = null)
     : IRequest<List<MetricCardDto>>;
 
 public class GetActiveMetricsQueryHandler(IApplicationDbContext context, ILogger<GetActiveMetricsQueryHandler> logger)
@@ -42,7 +46,7 @@ var calcTypes = await context.CtrlCalculationTypes.AsNoTracking()
         Dictionary<int, List<MetricGroupDto>> groupsByMetric;
         try
         {
-            groupsByMetric = await LoadGroupsAsync(request.MetricName, request.Days, ct);
+            groupsByMetric = await LoadGroupsAsync(request.MetricName, request.FromDate, request.ToDate, ct);
         }
         catch (Exception ex)
         {
@@ -108,7 +112,7 @@ if (metrics.Count == 0)
     }
 
     private async Task<Dictionary<int, List<MetricGroupDto>>> LoadGroupsAsync(
-        string? metricName, int? days, CancellationToken ct)
+        string? metricName, DateOnly? fromDate, DateOnly? toDate, CancellationToken ct)
     {
         var connection = context.Database.GetDbConnection();
         if (connection.State != ConnectionState.Open) await connection.OpenAsync(ct);
@@ -116,38 +120,15 @@ if (metrics.Count == 0)
         await using var cmd = connection.CreateCommand();
         cmd.CommandType = CommandType.StoredProcedure;
         cmd.CommandText = "dbo.usp_Metrics_GetActiveMetricsGrouped";
-        cmd.CommandTimeout =60;
+        cmd.CommandTimeout = 60;
 
         AddParam(cmd, "@MetricName", string.IsNullOrWhiteSpace(metricName) ? null : metricName,
             DbType.String, 80);
-        AddParam(cmd, "@Days", days, DbType.Int32);
+        AddParam(cmd, "@FromDate", fromDate?.ToDateTime(TimeOnly.MinValue), DbType.Date);
+        AddParam(cmd, "@ToDate",   toDate?.ToDateTime(TimeOnly.MinValue),   DbType.Date);
 
         var result = new Dictionary<int, List<MetricGroupDto>>();
-
-        await using var reader = await cmd.ExecuteReaderAsync(ct);
-        var metricIdOrdinal = reader.GetOrdinal("MetricID");
-        var valueOrdinal    = reader.GetOrdinal("Value");
-        var recordsOrdinal  = reader.GetOrdinal("Records");
-        var totalOrdinal    = reader.GetOrdinal("TotalValue");
-        var isErrorOrdinal = reader.GetOrdinal("IsError");
-
-        while (await reader.ReadAsync(ct))
-        {
-            var id = reader.GetInt32(metricIdOrdinal);
-            if (!result.TryGetValue(id, out var list))
-                result[id] = list = new List<MetricGroupDto>();
-
-            list.Add(new MetricGroupDto
-            {
-                Value = reader.IsDBNull(valueOrdinal) ? "" : reader.GetValue(valueOrdinal)?.ToString() ?? "",
-                Records = reader.IsDBNull(recordsOrdinal) ? 0 : (int)Convert.ToInt64(reader.GetValue(recordsOrdinal)),
-                TotalValue = reader.IsDBNull(totalOrdinal) ? null : Convert.ToDecimal(reader.GetValue(totalOrdinal)),
-                IsError   = !reader.IsDBNull(isErrorOrdinal) && reader.GetBoolean(isErrorOrdinal)
-            });
-        }
-
-        return result;
-    }
+}
 
     private static void AddParam(DbCommand cmd, string name, object? value, DbType type, int? size = null)
     {
