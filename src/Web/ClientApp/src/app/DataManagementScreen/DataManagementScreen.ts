@@ -15,7 +15,7 @@ import { MetricListItemDto } from '../web-api-client';
 
   templateUrl: './DataManagementScreen.html',
   styleUrl: './DataManagementScreen.scss',
-  providers: [ConfirmationService, MessageService]
+  providers: [ConfirmationService]
 })
 export class DataManagementScreen implements OnInit {
   private readonly dataService = inject(DataDefinitionService);

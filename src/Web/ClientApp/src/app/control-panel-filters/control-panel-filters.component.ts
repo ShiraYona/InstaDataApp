@@ -39,13 +39,13 @@ export class ControlPanelFiltersComponent implements OnInit {
   private readonly layoutService = inject(DisplayLayoutService);
   private readonly destroyRef = inject(DestroyRef);
 
-  period: number | null = null;
+  period: number = 30;
+  private savedPeriod: number = 30;
   cardsPerRow: number = DEFAULT_CARDS_PER_ROW;
   private savedCardsPerRow: number | null = null;
   searchMetricName = '';
  
    periodOptions: FilterOption[] = [
-    { label: 'כל התקופה', value: null }
   ];
   readonly cardsPerRowOptions: FilterOption[] = [
     { label: '2 כרטיסים', value: 2 },
@@ -56,7 +56,6 @@ export class ControlPanelFiltersComponent implements OnInit {
     this.dataCatalogClient.getCalculationDays().subscribe({
            next: days => {
         this.periodOptions = [
-          { label: 'כל התקופה', value: null },
           ...days
             .filter(d => d.value != null && d.name != null)
             .map(d => ({ label: d.name!, value: d.value! }))
@@ -74,17 +73,36 @@ export class ControlPanelFiltersComponent implements OnInit {
         this.cardsPerRow = this.savedCardsPerRow;
         this.onFilterChange();
       });
+
+    // תקופת נתונים של המשתמש — ברירת מחדל 30 כשאין הגדרה
+    this.layoutService
+      .loadPeriod()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(days => {
+        this.savedPeriod = days;
+        this.period = days;
+        this.onFilterChange();
+      });
   }
 
 
   onFilterChange(): void {
+    // שינוי "תקופת נתונים" נשמר לשרת מיד
+    if (this.period !== this.savedPeriod) {
+      this.savedPeriod = this.period;
+      this.layoutService
+        .savePeriod(this.period)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({ error: () => { /* נשמור להזדמנות הבאה */ } });
+    }
+
     this.cardsPerRowChanged.emit(this.cardsPerRow);
     this.filtersChanged.emit(this.currentState());
   }
 
   refresh(): void {
     this.searchMetricName = '';
-    this.period = null;
+    this.period = this.savedPeriod;
 
     if (this.savedCardsPerRow !== null) {
       this.cardsPerRow = this.savedCardsPerRow;
