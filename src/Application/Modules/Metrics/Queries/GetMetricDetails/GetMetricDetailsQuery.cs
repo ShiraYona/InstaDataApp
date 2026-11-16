@@ -30,10 +30,11 @@ public class GetMetricDetailsQueryHandler(IApplicationDbContext context, ILogger
 
         var metric = await context.CtrlMetrics.AsNoTracking()
             .FirstOrDefaultAsync(m => m.MetricID == metricId, ct);
-        var calc = await context.CtrlCalculationTypes.AsNoTracking()
-            .FirstOrDefaultAsync(c => c.ID == metric!.CalculationTypeID, ct);
-        metric!.CalculationType = calc;
         if (metric is null) return null;
+
+        var calc = await context.CtrlCalculationTypes.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.ID == metric.CalculationTypeID, ct);
+        metric.CalculationType = calc;
 
         var source = await context.CtrlDataSources.AsNoTracking()
             .FirstOrDefaultAsync(s => s.SourceID == metric.SourceID, ct);
@@ -43,11 +44,11 @@ public class GetMetricDetailsQueryHandler(IApplicationDbContext context, ILogger
         var fields = await context.CtrlDataSourceFields.AsNoTracking()
             .Where(f => f.IsActive).ToListAsync(ct);
 
-        // עמודת המערכת — לפי GroupFieldID בלבד
-        var groupField = fields.FirstOrDefault(f => f.FieldID == metric.GroupFieldID);
-var sumField = fields.FirstOrDefault(f => f.FieldID == metric.SumFieldID)
-            ?? fields.FirstOrDefault(f => f.SourceID == metric.SourceID
-                                       && f.FieldID == metric.SumFieldID);
+        // עמודת המערכת — לפי GroupFieldID במסגרת אותו מקור בלבד
+        var groupField = fields.FirstOrDefault(f => f.FieldID == metric.GroupFieldID
+                                                 && f.SourceID == metric.SourceID);
+        var sumField = fields.FirstOrDefault(f => f.FieldID == metric.SumFieldID
+                                               && f.SourceID == metric.SourceID);
         var dto = new MetricDetailDto
         {
             Key = request.Key,
@@ -57,15 +58,23 @@ var sumField = fields.FirstOrDefault(f => f.FieldID == metric.SumFieldID)
             GroupFieldName = groupField?.FieldName,
             GroupFieldLabel = groupField?.DisplayName ?? "מערכת",
             SignType = metric.CalculationType?.SignType,
+            CalcType = metric.CalculationType?.Value,
             ValueFieldName = sumField?.DisplayName ?? sumField?.FieldName
         };
 
         var connection = await OpenAsync(ct);
 
-        // שדה התאריך של המקור — לסינון תקופה כמו בכרטיס
-        var dateFieldName = fields.FirstOrDefault(f => f.FieldID == source.DateFieldID)?.FieldName;
-        var dateExpr = dateFieldName is not null && Safe.IsMatch(dateFieldName)
-            ? $"[{dateFieldName}]" : null;
+        // שדה התאריך של המקור — לסינון תקופה כמו בכרטיס.
+        // מאומת מול העמודות האמיתיות: רק עמודה קיימת ומטיפוס תאריך
+        var sourceColumns = await ActualColumnsAsync(connection, source.ObjectName,
+            source.SchemaName ?? "dbo", ct);
+        var dateFieldName = fields.FirstOrDefault(f => f.FieldID == source.DateFieldID
+                                                    && f.SourceID == source.SourceID)?.FieldName;
+        var dateExpr = dateFieldName is not null
+                       && Safe.IsMatch(dateFieldName)
+                       && IsDateColumn(sourceColumns, dateFieldName)
+            ? $"[{dateFieldName}]"
+            : null;
 
         dto.DataValue = await CardValueAsync(connection, source, metric, sumField?.FieldName, groupField?.FieldName, ct);
 
@@ -100,15 +109,25 @@ var sumField = fields.FirstOrDefault(f => f.FieldID == metric.SumFieldID)
     {
         var actual = await ActualColumnsAsync(conn, source.ObjectName, source.SchemaName ?? "dbo", ct);
 
-        var visible = fields.Where(f => f.SourceID == source.SourceID && f.IsVisible
-                                     && actual.Contains(f.FieldName))
-            .OrderBy(f => f.DisplayOrder).ToList();
+        // עמודת התאריך מוצגת רק אם היא באמת עמודת תאריך
+        var dateName = fields.FirstOrDefault(f => f.FieldID == source.DateFieldID
+                                                && f.SourceID == source.SourceID)?.FieldName;
+        if (!IsDateColumn(actual, dateName)) dateName = null;
 
-        var dateName = fields.FirstOrDefault(f => f.FieldID == source.DateFieldID)?.FieldName;
         var groupName = fields.FirstOrDefault(f => f.SourceID == source.SourceID
                                                  && f.FieldID == metric.GroupFieldID)?.FieldName;
         var sumName = fields.FirstOrDefault(f => f.SourceID == source.SourceID
                                                && f.FieldID == metric.SumFieldID)?.FieldName;
+
+        // רק השדות שהנתון מגדיר + עמודת מפתח לזההות
+        var relevantNames = new[] { dateName, groupName, sumName }
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var visible = fields.Where(f => f.SourceID == source.SourceID && f.IsVisible
+                                     && actual.ContainsKey(f.FieldName)
+                                     && relevantNames.Contains(f.FieldName))
+            .OrderBy(f => f.DisplayOrder).ToList();
 
         var ordered = new List<CtrlDataSourceField>();
         void Add(string? name)
@@ -131,23 +150,37 @@ var sumField = fields.FirstOrDefault(f => f.FieldID == metric.SumFieldID)
         }).ToList();
     }
 
-    private static readonly Dictionary<string, HashSet<string>> ColumnsCache = new();
+    private static readonly Dictionary<string, Dictionary<string, string>> ColumnsCache = new();
 
-    private static async Task<HashSet<string>> ActualColumnsAsync(DbConnection conn, string objectName,
+    // מחזיר מילון: שם עמודה → טיפוס הנתונים שלה בטבלה בפועל
+    private static async Task<Dictionary<string, string>> ActualColumnsAsync(DbConnection conn, string objectName,
         string schema, CancellationToken ct)
     {
         var full = $"{schema}.{objectName}";
         if (ColumnsCache.TryGetValue(full, out var cached)) return cached;
 
         await using var cmd = CreateCommand(conn,
-            "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @s AND TABLE_NAME = @t",
+            "SELECT COLUMN_NAME, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @s AND TABLE_NAME = @t",
             new Dictionary<string, object?> { ["@s"] = schema, ["@t"] = objectName });
 
-        var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         await using var reader = await cmd.ExecuteReaderAsync(ct);
-        while (await reader.ReadAsync(ct)) set.Add(reader.GetString(0));
-        ColumnsCache[full] = set;
-        return set;
+        while (await reader.ReadAsync(ct))
+            map[reader.GetString(0)] = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+        ColumnsCache[full] = map;
+        return map;
+    }
+
+    // האם העמודה קיימת בטבלה ובאמת מטיפוס תאריך
+    private static bool IsDateColumn(Dictionary<string, string> actual, string? column)
+    {
+        if (string.IsNullOrWhiteSpace(column)) return false;
+        if (!actual.TryGetValue(column, out var type)) return false;
+        return type.Equals("date", StringComparison.OrdinalIgnoreCase)
+            || type.Equals("datetime", StringComparison.OrdinalIgnoreCase)
+            || type.Equals("datetime2", StringComparison.OrdinalIgnoreCase)
+            || type.Equals("smalldatetime", StringComparison.OrdinalIgnoreCase)
+            || type.Equals("datetimeoffset", StringComparison.OrdinalIgnoreCase);
     }
 
 

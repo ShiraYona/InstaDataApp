@@ -7,7 +7,10 @@
 
     <div class="stats">
       @for (item of summary(); track item.key) {
-        <div class="stat"><strong>{{ item.value }}</strong><span>{{ item.label }}</span></div>
+        <!-- ב-COUNT מספר הרשומות זהה לערך המחושב — אין טעם להציגו פעמיים -->
+        @if (!(isCount() && item.key === 'records')) {
+          <div class="stat"><strong>{{ item.value }}</strong><span>{{ item.label }}</span></div>
+        }
       }
     </div>
 
@@ -23,7 +26,10 @@
             <thead>
               <tr>
                 <th>{{ groupName() }}</th>
-                <th>מספר רשומות</th>
+                <!-- בעמודת "מספר רשומות" ובעמודה המחושבת — אין מה להציג ב-COUNT (שניהם אותו ערך) -->
+                @if (!isCount()) {
+                  <th>מספר רשומות</th>
+                }
                 <th>{{ isCount() ? 'ערך מחושב (Count)' : 'ערך מחושב (Sum)' }}</th>
                 <th class="col-detail">הצגת רשומות</th>
               </tr>
@@ -32,7 +38,9 @@
               @for (row of systems(); track $index) {
                 <tr [class.is-active]="row.groupValue === selectedGroup()">
                   <td>{{ row.sourceName || '—' }}</td>
-                  <td class="col-num">{{ row.records | number }}</td>
+                  @if (!isCount()) {
+                    <td class="col-num">{{ row.records | number }}</td>
+                  }
                   <td class="col-amount">{{ isCount() ? (row.records | number) : formatCurrency(row.totalValue) }}</td>
                   <td class="col-detail">
                     @if (row.isError) {
@@ -44,7 +52,7 @@
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="4" class="empty-cell">לא נמצאו קבוצות</td></tr>
+                <tr><td [attr.colspan]="isCount() ? 3 : 4" class="empty-cell">לא נמצאו קבוצות</td></tr>
               }
             </tbody>
           </table>

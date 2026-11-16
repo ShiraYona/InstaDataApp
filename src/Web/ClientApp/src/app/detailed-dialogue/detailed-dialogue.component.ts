@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MetricDetail, SystemGroup } from '../shared/models/controlPanel/MetricDetail';
 import { ControlPanel } from '../shared/services/control-panel';
 import { timeout } from 'rxjs/operators';
+import { MetricCard } from '../shared/models/controlPanel/MetricCard';
 
 @Component({
   selector: 'app-detailed-dialogue',
@@ -25,6 +26,8 @@ export class DetailedDialogueComponent {
     this._metricKey.set(v);
     if (v) this.load(v);
   }
+/** הכרטיס מהמסך הראשי — משמש כגיבוי כשהפירוט נכשל */
+@Input() card: MetricCard | null = null;
 
   readonly closed = output<void>();
 
@@ -58,25 +61,43 @@ export class DetailedDialogueComponent {
       });
   }
 
-  readonly systems = computed(() => this.detail()?.systems ?? []);
-  readonly groupName = computed(() => this.detail()?.groupFieldLabel || '');
+  readonly systems = computed<SystemGroup[]>(() => {
+    const fromDetail = this.detail()?.systems;
+    if (fromDetail?.length) return fromDetail;
+    // גיבוי מהכרטיס הראשי כשהפירוט לא נטען
+    return (this.card?.groups ?? []).map(g => ({
+      sourceId: 0,
+      sourceName: g.value || '—',
+      groupValue: g.value,
+      records: g.records,
+      totalValue: g.totalValue ?? null
+    }));
+  });
+
+ readonly groupName = computed(() =>
+  this.detail()?.groupFieldLabel || this.card?.groupFieldLabel || ''
+);
   readonly columns = computed(() =>
     (this.detail()?.columns ?? []).map(c => ({ key: c.fieldName, label: c.label, dataType: c.dataType }))
   );
   readonly totalRecords = computed(() => this.detail()?.totalRecords ?? 0);
   readonly totalValue = computed(() => this.detail()?.totalValue ?? null);
-  readonly isCount = computed(() => (this.detail()?.signType ?? '').toUpperCase() === 'COUNT');
-
-  readonly summary = computed(() => {
+  // COUNT מזוהה לפי סוג החישוב עצמו (calcType); SignType נשמר כגיבוי בלבד
+  readonly isCount = computed(() => {
     const d = this.detail();
-    if (!d) return [] as { key: string; label: string; value: string }[];
-    return [
-      { key: 'value', label: 'ערך הנתון', value: d.dataValue || '—' },
-      { key: 'records', label: 'רשומות', value: String(d.totalRecords ?? 0) },
-      { key: 'source', label: 'מקור נתונים', value: d.sourceName || '—' },
-      { key: 'date', label: 'תאריך יצירה', value: d.createdDate || '—' }
-    ];
+    const calc = (d?.calcType ?? d?.signType ?? '').trim().toUpperCase();
+    return calc === 'COUNT';
   });
+
+readonly summary = computed(() => {
+  const d = this.detail();
+  const c = this.card;
+  return [
+    { key: 'value',   label: 'ערך הנתון',   value: d?.dataValue   || c?.value   || '—' },
+    { key: 'records', label: 'רשומות',       value: String(d?.totalRecords ?? 0) },
+    { key: 'source',  label: 'מקור נתונים', value: d?.sourceName  || c?.source     || '—' },
+  ];
+});
 
   // חיפוש רק על העמודות המותרות להצגה
   readonly filteredRecords = computed(() => {
