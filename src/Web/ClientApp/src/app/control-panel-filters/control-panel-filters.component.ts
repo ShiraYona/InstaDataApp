@@ -1,20 +1,23 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, DestroyRef, EventEmitter, inject, OnInit, Output } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
+import { DataCatalogClient } from '../web-api-client';
+import { DisplayLayoutService } from '../shared/services/display-layout.service';
 
-/** אפשרות לתפריטי הבחירה */
+const DEFAULT_CARDS_PER_ROW = 4;
+
 export interface FilterOption {
   label: string;
-  value: string;
+  value: number | null;
 }
 
-/** ערכי הסינון הנוכחיים — נשלחים להורה בעת שינוי או רענון */
 export interface FilterState {
-  period: string;
-  cardsPerRow: string;
-  searchText: string;
+  period: number | null;
+  cardsPerRow: number | null;
+  searchMetricName: string;
 }
 
 @Component({
@@ -24,45 +27,78 @@ export interface FilterState {
   templateUrl: './control-panel-filters.component.html',
   styleUrl: './control-panel-filters.component.scss'
 })
-export class ControlPanelFiltersComponent {
-  /** נשלח בכל שינוי סינון ובכל לחיצה על "רענון" */
+export class ControlPanelFiltersComponent implements OnInit {
+  /** שינוי סינון — ההורה מסנן מחדש את התצוגה */
   @Output() filtersChanged = new EventEmitter<FilterState>();
+
   @Output() refreshRequested = new EventEmitter<FilterState>();
 
-  /** ברירת המחדל זהה לזו שבמערכת הניהול והבקרה: "כל התקופה" */
-  period: string = 'all';
-  cardsPerRow: string = '4';
-  searchText: string = '';
+  @Output() cardsPerRowChanged = new EventEmitter<number | null>();
 
-  /** תקופות הנתונים — תואמות ל-state.period של מערכת הניהול והבקרה */
-  readonly periodOptions: FilterOption[] = [
-    { label: 'כל התקופה', value: 'all' },
-    { label: '7 ימים אחרונים', value: 'week' },
-    { label: '30 ימים אחרונים', value: 'month' },
-    { label: '90 ימים אחרונים', value: 'quarter' }
+  private readonly dataCatalogClient = inject(DataCatalogClient);
+  private readonly layoutService = inject(DisplayLayoutService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  period: number | null = null;
+  cardsPerRow: number = DEFAULT_CARDS_PER_ROW;
+  private savedCardsPerRow: number | null = null;
+  searchMetricName = '';
+ 
+   periodOptions: FilterOption[] = [
+    { label: 'כל התקופה', value: null }
   ];
-
-  /** מספר הכרטיסים בשורה — תואם ל-state.cols (2 / 3 / 4) */
   readonly cardsPerRowOptions: FilterOption[] = [
-    { label: '2 כרטיסים', value: '2' },
-    { label: '3 כרטיסים', value: '3' },
-    { label: '4 כרטיסים', value: '4' }
+    { label: '2 כרטיסים', value: 2 },
+    { label: '3 כרטיסים', value: 3 },
+    { label: '4 כרטיסים', value: 4 }
   ];
+    ngOnInit(): void {
+    this.dataCatalogClient.getCalculationDays().subscribe({
+           next: days => {
+        this.periodOptions = [
+          { label: 'כל התקופה', value: null },
+          ...days
+            .filter(d => d.value != null && d.name != null)
+            .map(d => ({ label: d.name!, value: d.value! }))
+        ];
+      },
 
-  private get state(): FilterState {
-    return {
-      period: this.period,
-      cardsPerRow: this.cardsPerRow,
-      searchText: this.searchText.trim()
-    };
+      error: () => { /* נשארת רק "כל התקופה" */ }
+    });
+
+    this.layoutService
+      .loadCardsPerRow()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(value => {
+        this.savedCardsPerRow = value ?? DEFAULT_CARDS_PER_ROW;
+        this.cardsPerRow = this.savedCardsPerRow;
+        this.onFilterChange();
+      });
   }
 
+
   onFilterChange(): void {
-    this.filtersChanged.emit(this.state);
+    this.cardsPerRowChanged.emit(this.cardsPerRow);
+    this.filtersChanged.emit(this.currentState());
   }
 
   refresh(): void {
-    this.refreshRequested.emit(this.state);
-    this.filtersChanged.emit(this.state);
+    this.searchMetricName = '';
+    this.period = null;
+
+    if (this.savedCardsPerRow !== null) {
+      this.cardsPerRow = this.savedCardsPerRow;
+    }
+
+    this.onFilterChange();
+    this.refreshRequested.emit(this.currentState());
+  }
+
+  private currentState(): FilterState {
+    return {
+      period: this.period,
+      cardsPerRow: this.cardsPerRow,
+      searchMetricName: this.searchMetricName.trim()
+    };
   }
 }

@@ -1,4 +1,4 @@
-using FluentValidation.Results;
+﻿using FluentValidation.Results;
 using InstaDataApp.Application.Common.Exceptions;
 using InstaDataApp.Application.Common.Interfaces;
 using MediatR;
@@ -45,8 +45,8 @@ public class UpdateUserMetricSettingsCommandHandler(
 
         var validIds = await db.Metrics
             .AsNoTracking()
-            .Where(m => m.IsActive && requestedIds.Contains(m.MetricId))
-            .Select(m => m.MetricId)
+            .Where(m => m.IsActive && requestedIds.Contains(m.MetricID))
+            .Select(m => m.MetricID)
             .ToListAsync(ct);
 
         var invalidIds = requestedIds.Except(validIds).ToList();

@@ -1,0 +1,558 @@
+:host {
+  display: block;
+  direction: rtl;
+  text-align: right;
+  font-family: Arial, 'Segoe UI', sans-serif;
+  color: #1a2233;
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  button {
+    font: inherit;
+    cursor: pointer;
+  }
+}
+
+
+.new-data-dialog-mask.p-dialog-mask {
+  background: rgba(6, 16, 44, 0.25);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+
+.new-data-dialog {
+  // הדיאלוג נפרס לגובה התוכן; אם הוא גבוה מהמסך — נגלל רק הוא
+  align-items: flex-start;
+  overflow-y: auto;
+}
+
+:host ::ng-deep .new-data-dialog.p-dialog {
+  background: #fff;
+  border: 0;
+  border-radius: 14px;
+  width: min(100%, 1000px);
+  overflow: visible;
+  box-shadow: 0 20px 70px #06102c66;
+
+  .p-dialog-content {
+    padding: 0;
+    background: #fff;
+    overflow: visible;
+    border-radius: 14px;
+  }
+
+ 
+  .p-dialog-close-button {
+    display: none;
+  }
+}
+
+
+.modal-head {
+  // display: flex;
+  // align-items: center;
+  // justify-content: space-between;
+  // padding: 24px 28px;
+  // border-bottom: 1px solid #e7edf5;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 28px;
+    border-bottom: 1px solid #e7edf5;
+
+
+  strong {
+    font-size: 18px;
+    font-weight: 700;
+    color: #19304d;
+  }
+}
+
+
+.close {
+  border: 0;
+  background: #f0f3f8;
+  color: #48617f;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  font-size: 23px;
+  line-height: 1;
+  padding: 0;
+  display: grid;
+  place-items: center;
+
+  &:hover {
+    background: #e6ebf3;
+  }
+}
+
+// --- .modalbody ---
+.modal-body {
+  padding: 22px 24px 26px;
+}
+
+// --- .formgrid ---
+.formgrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 20px;
+
+  & + & {
+    margin-top: 16px;
+  }
+}
+
+// --- .field ---
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+
+  > label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #33415c;
+  }
+}
+
+.field {
+  &.empty {
+    > label {
+      color: #7b8799;
+    }
+  }
+}
+
+.full {
+  grid-column: 1 / -1;
+}
+
+.source-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.fieldset {
+  border-top: 1px solid #e7edf5;
+  margin-top: 21px;
+  padding-top: 21px;
+}
+
+:host ::ng-deep .select-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  i {
+    font-size: 14px;
+    color: #5b7391;
+  }
+}
+
+.hint {
+  font-size: 12px;
+  color: #8c97a8;
+}
+
+.error {
+  font-size: 12px;
+  color: #e0322f;
+  margin-top: 2px;
+}
+
+:host ::ng-deep .field {
+  p-select,
+  .p-select {
+    width: 100%;
+  }
+
+  .p-inputtext {
+    width: 100%;
+  }
+
+  .p-inputtext,
+  .p-select {
+    background: #fff;
+    border: 1px solid #d4dfeb;
+    border-radius: 8px;
+    color: #223b5a;
+    font-size: 13px;
+  }
+
+  .p-inputtext,
+  .p-select-label {
+    padding: 10px;
+    color: #223b5a;
+    text-align: right;
+    background: transparent;
+    border: 0;
+    min-height: 40px;
+  }
+
+  // --- חיווי "מלא / ריק" ---
+  .p-inputtext,
+  .p-select {
+    border-color: #8ea3bd;
+  }
+
+  .p-inputtext,
+  .p-select-label {
+    color: #141b26;
+    font-weight: 600;
+  }
+
+  // שדה ריק: מסגרת אפורה-בהירה, טקסט ו-placeholder אפורים.
+  &.empty {
+    .p-inputtext,
+    .p-select {
+      background: #fff;
+      border-color: #d4dfeb;
+    }
+
+    .p-inputtext,
+    .p-select-label {
+      color: #99a3b1;
+      font-weight: 400;
+    }
+
+    .p-inputtext::placeholder {
+      color: #b4bcc7;
+    }
+  }
+
+  // "שדה תאריך" הוא שדה טקסט מושבת; בלי `opacity` — כדי שהמסגרת והטקסט יישארו גלויים
+  .p-inputtext:disabled,
+  .p-inputtext.p-disabled {
+    background: #fff;
+    border: 1px solid #e2e7ef;
+    color: #6b7688;
+    opacity: 1;
+    cursor: default;
+
+    &::placeholder {
+      color: #6b7688;
+    }
+  }
+
+  // החץ נשאר בצד שמאל, כמו <select> בדמו
+  .p-select-label {
+    display: flex;
+    align-items: center;
+    padding-left: 32px;
+    // מונע מהערך שנבחר לשבור את השורה ולשנות את גובה השדה
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .p-select-dropdown {
+    width: 32px;
+    color: #6b7688;
+  }
+
+  // התווית של p-select צריכה להיות flex על התיבה עצמה — אחרת החץ לא ממורכז
+  .p-select {
+    display: flex;
+    align-items: center;
+  }
+
+  .p-inputtext:enabled:focus,
+  .p-select:not(.p-disabled).p-focus {
+    outline: 2px solid #3b6fb6;
+    outline-offset: 1px;
+    box-shadow: none;
+  }
+
+  .p-select:not(.p-disabled):hover {
+    border-color: #cdd6e2;
+  }
+}
+
+
+.checks {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+
+  justify-content: flex-start;
+  direction: rtl;
+
+  .check-item {
+    display: flex;
+    align-items: center;
+
+    flex-direction: row-reverse;
+    direction: rtl;
+    gap: 12px;
+    background: #f6f9fc;
+    border: 1px solid #e3eaf3;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #33415c;
+    // הכרטיס הוא <label> — כל הקליק עליו מסמן את ה-input
+    cursor: pointer;
+
+    &:has(.check-item__input:checked) {
+      background: #eaf1fb;
+      border-color: #b8cde8;
+    }
+
+    .check-item__label {
+      user-select: none;
+    }
+  }
+}
+
+.check-item__input {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: 1px solid #c4cfdd;
+  border-radius: 5px;
+  background: #fff;
+  cursor: pointer;
+  display: grid;
+  place-content: center;
+  transition: background 120ms, border-color 120ms;
+
+  // סימן ה-V — pseudo-element, מוצג רק במצב checked
+  &::before {
+    content: '';
+    width: 10px;
+    height: 6px;
+    border: 2px solid #fff;
+    border-top: 0;
+    border-right: 0;
+    transform: rotate(-45deg) translate(1px, -1px) scale(0);
+    transition: transform 120ms;
+  }
+
+  &:checked {
+    background: #1765ce;
+    border-color: #1765ce;
+
+    &::before {
+      transform: rotate(-45deg) translate(1px, -1px) scale(1);
+    }
+  }
+
+  &:hover:not(:checked) {
+    border-color: #8ea3bd;
+  }
+
+  // מיקוד מקלדת — outline ברור
+  &:focus-visible {
+    outline: 2px solid #3b6fb6;
+    outline-offset: 2px;
+  }
+}
+
+// --- .toggle ---
+// יושב במקטע נפרד עם קו עליון — ולכן אינו צריך מרווח עליון משלו.
+// הכרטיס הוא <label>: הטקסט מימין והריבוע משמאלו (row-reverse ב-RTL).
+.toggle {
+  display: flex;
+  align-items: center;
+  flex-direction: row-reverse;
+  direction: rtl;
+  justify-content: flex-end;
+  text-align: right;
+  gap: 8px;
+  cursor: pointer;
+
+  .toggle__label {
+    user-select: none;
+  }
+
+  // אותו .check-item__input, אך עם מרווח מתאים לשורה
+  .check-item__input {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+// --- .actionrow ---
+// שורה אחת: הכפתורים בצד ימין (תחילת השורה ב-RTL) והצ'קבוקס בצד שמאל
+.actionrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: 22px;
+
+  // הטקסט עצמו מודגש — ה-label של p-button הוא span פנימי,
+  // ולכן font-weight על הכפתור לא מספיק
+  ::ng-deep .p-button-label {
+    font-weight: 700;
+  }
+}
+
+.actionrow__buttons {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+// .btn
+:host ::ng-deep .actionrow .p-button:not(.p-button-outlined) {
+  background: #1765ce;
+  border: 1px solid #1765ce;
+  color: #fff;
+  padding: 11px 18px;
+  border-radius: 9px;
+  font-weight: 700;
+
+  &:hover {
+    background: #1354ad;
+    border-color: #1354ad;
+    color: #fff;
+  }
+}
+
+// .btn.light
+:host ::ng-deep .actionrow .p-button-outlined {
+  background: #fff;
+  border: 1px solid #d7e1ee;
+  color: #2b4d77;
+  padding: 11px 18px;
+  border-radius: 9px;
+  font-weight: 700;
+
+  &:hover {
+    background: #f1f5fb;
+    border-color: #cdd6e2;
+    color: #2b4d77;
+  }
+}
+
+// --- פאנל ---
+// --- .panel ---
+.panel {
+  background: #fff;
+  border: 1px solid #e2eaf4;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 22px;
+  box-shadow: 0 4px 16px #16334c07;
+
+  strong {
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  p {
+    margin: 6px 0;
+    color: #6e8198;
+    line-height: 1.55;
+  }
+
+  &__rows {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+      color: #223b5a;
+      padding: 8px 0;
+      border-top: 1px solid #eef2f8;
+
+      &:first-child {
+        border-top: 0;
+      }
+    }
+  }
+}
+
+@media (max-width: 760px) {
+  .formgrid,
+  .source-row {
+    grid-template-columns: 1fr;
+  }
+
+  .actionrow {
+    justify-content: flex-start;
+  }
+}
+
+
+:host ::ng-deep .demo-select-panel.p-select-overlay {
+  min-width: 0;
+  padding: 5px;
+  border: 1px solid #e2e7ef;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 32px #06102c1f;
+  overflow: hidden;
+  // הגובה נקבע לפי התוכן — לא נשאר גובה קבוע של ה-preset אחרי שהרשימה קצרה
+  height: auto;
+  max-height: none;
+
+  .p-select-list-container {
+    padding: 0;
+    max-height: none !important;
+    overflow: visible;
+  }
+
+  .p-select-list {
+    padding: 0;
+    margin: 0;
+    gap: 0;
+  }
+
+  // שורה ברשימה — גובה אחיד, יישור לימין, בלי שבירת שורה
+  .p-select-option {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: right;
+    min-height: 38px;
+    padding: 8px 12px;
+    border-radius: 7px;
+    font-size: 13px;
+
+    gap: 10px;
+    color: #223b5a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    // Aura כבר צובעת את הנבחר ואת ה-focus — מחזירים רק גוונים תואמים לדיאלוג
+    &.p-select-option-selected,
+    &.p-select-option-selected.p-focus {
+      background: #eaf1fb;
+      color: #2f5d9e;
+      font-weight: 700;
+    }
+
+    &:not(.p-select-option-selected):not(.p-disabled).p-focus {
+      background: #f3f6fb;
+      color: #1a2233;
+    }
+  }
+
+  .p-select-option-check-icon,
+  .p-select-option-blank-icon {
+    margin-inline-start: 0;
+    margin-inline-end: 0;
+    flex-shrink: 0;
+  }
+}

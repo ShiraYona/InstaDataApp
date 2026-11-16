@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 
-import { AddingNewDataEntryComponent } from '../features/insta-data/adding-new-data-entry/adding-new-data-entry.component';
-
 import { RouterLink } from '@angular/router';
+import { AddingNewDataEntryComponent } from '../adding-new-data-entry/adding-new-data-entry.component';
+
 
 @Component({
   selector: 'app-home',
@@ -16,12 +16,21 @@ export class HomeComponent {
   title = 'כותרת';
   description = 'טקסט לדוגמה';
 
+  /** הדיאלוג "יצירת נתון חדש" נפתח מעל המסך הזה — אין ניווט */
+  newDataVisible = false;
   dialogVisible = false;
 
   openNewDataDialog(): void {
-    this.dialogVisible = true;
+    this.newDataVisible = true;
   }
 
+  /** הנתון נשמר — סגירת הדיאלוג נעשתה ברכיב; כאן מרעננים את המסך */
+  onNewDataSaved(): void {
+    this.newDataVisible = false;
+  }
+
+  /** הנתון נשמר בתוך הדיאלוג (המזהה מוחזר מהשרת) */
   onDataSaved(_id: number): void {
+    this.newDataVisible = false;
   }
 }

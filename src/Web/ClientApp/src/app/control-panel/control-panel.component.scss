@@ -1,0 +1,95 @@
+:host {
+  display: block;
+  width: 100%;
+  direction: rtl;
+}
+
+/* .headline מתוך הדמו */
+.headline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  flex-wrap: wrap;
+  max-width: 1610px;
+  margin: 0 auto;
+  font-family: Arial, 'Segoe UI', sans-serif;
+  color: #19304d;
+  box-sizing: border-box;
+}
+
+.headline h1 {
+  font-size: 30px;
+  margin: 0 0 8px;
+}
+
+.headline p {
+  margin: 6px 0;
+  color: #6e8198;
+  line-height: 1.55;
+}
+
+/* .eyebrow מתוך הדמו */
+.eyebrow {
+  margin-bottom: 8px;
+  color: #6981a3;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: .4px;
+}
+
+.headline__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.headlineBtn__icon {
+  display: inline-block;
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* .btn.light — כפתור לבן עם מסגרת */
+::ng-deep .headlineBtn.p-button {
+  padding: 11px 18px;
+  border: 1px solid #d7e1ee;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #2b4d77;
+  box-shadow: none;
+  font-family: inherit;
+  font-weight: 700;
+}
+
+::ng-deep .headlineBtn.p-button:not(:disabled):hover {
+  border-color: #c6d4e6;
+  background: #f6f9fc;
+  color: #2b4d77;
+}
+
+/* .btn — כפתור כחול */
+::ng-deep .headlineBtnPrimary.p-button {
+  padding: 11px 18px;
+  border: 1px solid #1765ce;
+  border-radius: 9px;
+  background: #1765ce;
+  color: #ffffff;
+  box-shadow: none;
+  font-family: inherit;
+  font-weight: 700;
+}
+
+::ng-deep .headlineBtnPrimary.p-button:not(:disabled):hover {
+  border-color: #0d54b6;
+  background: #0d54b6;
+  color: #ffffff;
+}
+
+/* התאמות רוחב כמו בדמו */
+@media (max-width: 48rem) {
+  .headline__actions {
+    width: 100%;
+  }
+}

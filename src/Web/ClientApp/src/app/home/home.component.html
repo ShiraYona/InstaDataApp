@@ -25,6 +25,9 @@
   <button class="btn" routerLink="/display-management">ניהול תצוגה</button>
 </div>
 
+<!-- הדיאלוג מוטמע במסך שממנו הוא נפתח — הרקע שמאחוריו נשאר גלוי ומטושטש -->
 <app-adding-new-data-entry
+    [(visible)]="newDataVisible"
+    (saved)="onNewDataSaved()" />
   [(visible)]="dialogVisible"
   (saved)="onDataSaved($event)" />

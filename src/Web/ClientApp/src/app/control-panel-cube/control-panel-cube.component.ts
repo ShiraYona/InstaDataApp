@@ -1,67 +1,99 @@
-import { DecimalPipe } from '@angular/common';
-import { Component, Input, computed, output, signal } from '@angular/core';
-
-import { DetailedDialogueComponent } from '../detailed-dialogue/detailed-dialogue.component';
-
-export type CubeStatus = 'ok' | 'warn' | 'danger';
-
-export interface CubeMetric {
-  key: string;
-  title: string;
-  icon: string;
-  value: string;
-  unit?: string;
-  source: string;
-  /** אחוז שינוי מול תקופה קודמת (השוואה נעשית בשרת) */
-  trend: number;
-  /** האם קיים בסיס להשוואה מול התקופה הקודמת */
-  hasComparison?: boolean;
-  trendPositive: boolean;
-  status: CubeStatus;
-  updated: boolean;
-  targetText?: string;
-}
+import { DecimalPipe, NgClass } from '@angular/common';
+import { Component, Input, SimpleChanges, inject, OnChanges, OnInit, output, signal } from '@angular/core';
+import { Router } from '@angular/router';
+import { of, Subject } from 'rxjs';
+import { catchError, debounceTime, switchMap } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ControlPanel } from '../shared/services/control-panel';
+import { CubeMetric, CubeStatus } from '../shared/models/controlPanel/CubeMetric';
 
 @Component({
   selector: 'app-control-panel-cube',
   standalone: true,
-  imports: [DecimalPipe, DetailedDialogueComponent],
+  imports: [DecimalPipe,NgClass],
   templateUrl: './control-panel-cube.component.html',
   styleUrl: './control-panel-cube.component.scss'
 })
-export class ControlPanelCubeComponent {
+export class ControlPanelCubeComponent implements OnInit, OnChanges {
+  private readonly controlPanel = inject(ControlPanel);
+  private readonly router = inject(Router);
 
-  /** נתוני דמה לתצוגה — יוחלפו בנתונים אמיתיים מהשרת */
-  private readonly defaultMetrics: CubeMetric[] = [
-    { key: 'item-1', title: 'פריט 1', icon: '🧾', value: '0', unit: 'פעולות', source: 'מקור: פריט 1', trend: 0, trendPositive: true, status: 'ok', updated: true },
-    { key: 'item-2', title: 'פריט 2', icon: '₪', value: '₪0', source: 'מקור: פריט 2', trend: 0, trendPositive: true, status: 'ok', updated: true },
-    { key: 'item-3', title: 'פריט 3', icon: '🏷', value: '0', unit: 'פעולות', source: 'מקור: פריט 3', trend: 0, trendPositive: true, status: 'ok', updated: false, targetText: 'יעד: 0 (0%)' },
-    { key: 'item-4', title: 'פריט 4', icon: '⌂', value: '0', unit: 'פעולות', source: 'מקור: פריט 4', trend: 0, trendPositive: false, status: 'ok', updated: true },
-    { key: 'item-5', title: 'פריט 5', icon: '⚖', value: '0', unit: 'פעולות', source: 'מקור: פריט 5', trend: 0, trendPositive: true, status: 'warn', updated: true },
-    { key: 'item-6', title: 'פריט 6', icon: '◉', value: '0', unit: 'פעולות', source: 'מקור: פריט 6', trend: 0, trendPositive: true, status: 'ok', updated: true },
-    { key: 'item-7', title: 'פריט 7', icon: '▤', value: '0', unit: 'פעולות', source: 'מקור: פריט 7', trend: 0, trendPositive: true, status: 'ok', updated: true },
-    { key: 'item-8', title: 'פריט 8', icon: '⊞', value: '0', unit: 'פעולות', source: 'מקור: פריט 8', trend: 0, trendPositive: true, status: 'ok', updated: true }
-  ];
-
-  /** הנתון שחלון הפירוט פתוח עבורו — מחרוזת ריקה = החלון סגור */
-  readonly detailsId = signal<string>('');
-
-  /** הכרטיסים עצמם (לפי צבע/מיקום) — התבנית קוראת להם metrics */
-  readonly metrics = this.defaultMetrics;
-
-  /** מפתח נתון -> כותרת, לשימוש בחלון הפירוט */
-  readonly titleById = computed(() => new Map(this.metrics.map(metric => [metric.key, metric.title])));
-
-  /** מספר העמודות ברשת הכרטיסים */
+  readonly metrics = signal<CubeMetric[]>([]);
+  readonly loading = signal(true);
+  readonly error = signal(false);
   @Input() columns = 4;
+  @Input() period: number | null = null;
+  @Input() searchMetricName = '';
 
-  /** אירועים שהורים יכולים לקלוט מהכרטיסייה */
   readonly alertRule = output<string>();
   readonly target = output<string>();
   readonly drill = output<string>();
 
-  /** פתיחת חלון הפירוט עבור נתון */
-  openDetails(key: string): void {
-    this.detailsId.set(key);
+  /** מקור השינויים בפילטרים — debounce + switchMap מונעים בקשות כפולות ותשובות מיושנות */
+  private readonly filter$ = new Subject<{ metricName: string; days: number | null }>();
+
+  constructor() {
+    this.filter$
+      .pipe(
+        debounceTime(300),
+        switchMap(f => {
+          this.loading.set(true);
+          this.error.set(false);
+          return this.controlPanel.getCards(f.metricName, f.days).pipe(
+            catchError(() => {
+              this.error.set(true);
+              this.loading.set(false);
+              return of([]);
+            })
+          );
+        }),
+        takeUntilDestroyed()
+      )
+      .subscribe(rows => {
+        this.metrics.set(
+          rows.map(row => ({
+            key: row.key ?? '',
+            title: row.title ?? '',
+            icon: row.icon?.trim() || 'pi pi-question-circle',
+            value: row.value ?? '',
+            unit: row.unit ?? undefined,
+            source: row.source ?? '',
+            trend: row.trend ?? 0,
+            hasComparison: row.hasComparison,
+            trendPositive: row.trendPositive ?? false,
+            status: (row.status ?? 'ok') as CubeStatus,
+            updated: row.updated ?? false,
+            groupFieldLabel: row.groupFieldLabel ?? undefined,
+            groupValue: row.groupValue ?? undefined,
+            groups: row.groups ?? undefined,
+            signType: row.signType ?? undefined,
+            targetText: row.targetText ?? undefined
+          }))
+        );
+        this.loading.set(false);
+      });
   }
+
+  ngOnInit(): void {
+    this.pushFilters();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['period'] || changes['searchMetricName']) {
+      this.pushFilters();
+    }
+  }
+
+  private pushFilters(): void {
+    this.filter$.next({ metricName: this.searchMetricName, days: this.period });
+  }
+
+readonly detail = output<string>();
+
+openDetails(key: string): void {
+  this.detail.emit(key);
+}
+
+  goToDetail(id: number) { this.router.navigate(['/detailed-dialogue', id]); }
+
 }

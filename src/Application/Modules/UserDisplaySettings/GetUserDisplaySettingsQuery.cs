@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace InstaDataApp.Application.Modules.UserDisplaySettings;
 
-/// <summary>שליפת הגדרות התצוגה של משתמש. ברירת מחדל — 4.</summary>
 public record GetUserDisplaySettingsQuery(string UserId) : IRequest<DisplaySettingsDto>;
 
 public class GetUserDisplaySettingsQueryHandler(IApplicationDbContext db)

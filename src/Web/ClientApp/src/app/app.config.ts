@@ -6,7 +6,6 @@ import { definePreset } from '@primeng/themes';
 import Aura from '@primeng/themes/aura';
 import { MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
-
 import { AuthorizeInterceptor } from '../api-authorization/authorize.interceptor';
 import { environment } from '../environments/environment';
 import { routes } from './app.routes';
@@ -26,6 +25,27 @@ export const MyPreset = definePreset(Aura, {
       800: '#20355a',
       900: '#1a2b48',
       950: '#101b2e'
+    },
+
+    border: {
+      radius: {
+        sm: '6px',
+        md: '8px',
+        lg: '10px',
+        xl: '14px'
+      }
+    }
+  },
+  components: {
+    // צבע ריבוע הסימון הנבחר — מגיע מה-preset ולא מ-CSS של הרכיב
+    checkbox: {
+      checkedBackground: '#2f5d9e',
+      checkedHoverBackground: '#274f88',
+      checkedBorderColor: '#2f5d9e',
+      checkedHoverBorderColor: '#2f5d9e',
+      // הסימון (V) לבן על הרקע הכחול
+      checkedIconColor: '#ffffff',
+      checkedHoverIconColor: '#ffffff'
     }
   }
 });
