@@ -90,12 +90,15 @@ if (metrics.Count == 0)
                 GroupField = groupField?.FieldName,
                 GroupFieldLabel = groupField?.DisplayName ?? groupField?.FieldName,
                 DateField = dateFieldName,
-                Value = groups.Sum(x => x.TotalValue ?? 0).ToString("N2", CultureInfo.GetCultureInfo("he-IL")),
-                Groups = groups,
-                Updated = true,
                 SignType = calcTypes.TryGetValue(metric.CalculationTypeID, out var calcType)
                     ? calcType.SignType
                     : null,
+                Value = groups.Sum(x => x.TotalValue ?? 0).ToString(
+                    string.Equals(calcType?.SignType, "COUNT", StringComparison.OrdinalIgnoreCase) ? "N0" : "N2",
+                    CultureInfo.GetCultureInfo("he-IL")),
+                Groups = groups,
+                Updated = true,
+                IsError = groups.Any(x => x.IsError),
                 Icon = metric.IconCode ?? string.Empty,
                 IsStale = false
             });
@@ -113,7 +116,7 @@ if (metrics.Count == 0)
         await using var cmd = connection.CreateCommand();
         cmd.CommandType = CommandType.StoredProcedure;
         cmd.CommandText = "dbo.usp_Metrics_GetActiveMetricsGrouped";
-        cmd.CommandTimeout = 120;
+        cmd.CommandTimeout =60;
 
         AddParam(cmd, "@MetricName", string.IsNullOrWhiteSpace(metricName) ? null : metricName,
             DbType.String, 80);
@@ -126,6 +129,7 @@ if (metrics.Count == 0)
         var valueOrdinal    = reader.GetOrdinal("Value");
         var recordsOrdinal  = reader.GetOrdinal("Records");
         var totalOrdinal    = reader.GetOrdinal("TotalValue");
+        var isErrorOrdinal = reader.GetOrdinal("IsError");
 
         while (await reader.ReadAsync(ct))
         {
@@ -137,7 +141,8 @@ if (metrics.Count == 0)
             {
                 Value = reader.IsDBNull(valueOrdinal) ? "" : reader.GetValue(valueOrdinal)?.ToString() ?? "",
                 Records = reader.IsDBNull(recordsOrdinal) ? 0 : (int)Convert.ToInt64(reader.GetValue(recordsOrdinal)),
-                TotalValue = reader.IsDBNull(totalOrdinal) ? null : Convert.ToDecimal(reader.GetValue(totalOrdinal))
+                TotalValue = reader.IsDBNull(totalOrdinal) ? null : Convert.ToDecimal(reader.GetValue(totalOrdinal)),
+                IsError   = !reader.IsDBNull(isErrorOrdinal) && reader.GetBoolean(isErrorOrdinal)
             });
         }
 

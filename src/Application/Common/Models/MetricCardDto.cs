@@ -26,6 +26,8 @@ public class MetricCardDto
     public string? DateField { get; set; }
     /// <summary>הנתון לא נשלף מה-DB (שגיאה/אין חריגה בפועל) — מוצג באפור</summary>
     public bool IsStale { get; set; }
+    /// <summary>חישוב הנתון נכשל — מוצג בכרטיס שגיאה + "נסה שוב"</summary>
+    public bool IsError { get; set; }
     public double Trend { get; set; }
     public bool? HasComparison { get; set; }
     public bool TrendPositive { get; set; } = true;
@@ -39,5 +41,6 @@ public class MetricGroupDto
     public string Value { get; set; } = string.Empty;
     public int Records { get; set; }
     public decimal? TotalValue { get; set; }
+    public bool IsError { get; set; }
 }
 

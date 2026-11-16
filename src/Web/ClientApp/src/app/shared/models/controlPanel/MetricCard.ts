@@ -22,4 +22,6 @@ export interface MetricCard {
   updated?: boolean;
   targetText?: string;
   signType?: string;
+  /** חישוב הכרטיס נכשל */
+  isError?: boolean;
 }

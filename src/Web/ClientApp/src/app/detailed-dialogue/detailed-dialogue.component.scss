@@ -402,3 +402,7 @@ background: #00000065;   /* ~22% אטימות – רואים את הקומפונ
     padding: 18px 16px;
   }
 }
+.th-sort { cursor: pointer; user-select: none; white-space: nowrap; }
+.pager { display: flex; align-items: center; justify-content: center; gap: .75rem; padding: .75rem 0; }
+.col-num { text-align: left; direction: ltr; unicode-bidi: embed; }
+is-active { background: #f0f4ff; }

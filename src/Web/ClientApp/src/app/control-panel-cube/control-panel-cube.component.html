@@ -1,7 +1,10 @@
 @if (loading()) {
   <p class="empty-cards">טוען נתונים...</p>
 } @else if (error()) {
-  <p class="empty-cards">שגיאה בטעינת הנתונים</p>
+  <div class="empty-cards">
+    <p>לא ניתן לטעון את הנתון</p>
+    <button type="button" class="btn light sm" (click)="retry()">נסה שוב</button>
+  </div>
 }
 
 @if (!loading() && !error()) {
@@ -10,6 +13,13 @@
 
 
     <article class="metric">
+            @if (metric.isError) {
+        <div class="card-error">
+          <span>⚠ שגיאה בחישוב הנתון</span>
+          <button type="button" class="btn light sm" (click)="retry()">נסה שוב</button>
+        </div>
+      }
+
       <!-- כותרת: שם הנתון + סמל -->
       <div class="mh">
         <div class="mname">{{ metric.title }}</div>
@@ -82,8 +92,16 @@
         <button type="button" class="btn light sm" (click)="drill.emit(metric.key)">ניתוח עומק</button>
       </div>
     </article>
-  } @empty {
-    <p class="empty-cards">לא הוגדרו נתונים להצגה</p>
+   } @empty {
+    <p class="empty-cards">
+      @if (searchMetricName?.trim()) {
+        לא נמצאו נתונים המתאימים לחיפוש "{{ searchMetricName }}"
+      } @else if (period !== null) {
+        לא נמצאו נתונים בתקופה הנבחרת
+      } @else {
+        לא הוגדרו נתונים להצגה
+      }
+    </p>
   }
 </div>
 }

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { MetricCard } from '../models/controlPanel/MetricCard';
@@ -37,12 +37,25 @@ export class ControlPanel {
   }
 
   /** פירוט נתון — חלוקה לפי מערכת + רשומות */
-  getDetails(key: string, sourceId?: number | null, groupValue?: string | null): Observable<MetricDetail> {
+  getDetails(key: string, sourceId?: number | null, groupValue?: string | null, search?: string | null): Observable<MetricDetail> {
     const p = new URLSearchParams();
     if (sourceId != null) p.set('sourceId', String(sourceId));
     if (groupValue != null) p.set('groupValue', groupValue);
+    if (search?.trim()) p.set('search', search.trim());
     const q = p.toString();
     return this.http.get<MetricDetail>(`/api/Metrics/${key}/details${q ? '?' + q : ''}`);
+  }
+
+  /** ייצוא רשומות הפירוט ל-CSV — נוצר בצד השרת, לפי אותו סינון */
+  exportDetailsCsv(key: string, groupValue?: string | null, search?: string | null): Observable<HttpResponse<Blob>> {
+    const p = new URLSearchParams();
+    if (groupValue != null) p.set('groupValue', groupValue);
+    if (search?.trim()) p.set('search', search.trim());
+    const q = p.toString();
+    return this.http.get(`/api/Metrics/${key}/details/export${q ? '?' + q : ''}`, {
+      observe: 'response',
+      responseType: 'blob'
+    });
   }
 
 getMetricDetail(id: number): Promise<MetricDetail> {

@@ -1776,6 +1776,7 @@ export class MetricCardDto implements IMetricCardDto {
     groups?: MetricGroupDto[];
     dateField?: string | undefined;
     isStale?: boolean;
+    isError?: boolean;
     trend?: number;
     hasComparison?: boolean | undefined;
     trendPositive?: boolean;
@@ -1813,6 +1814,7 @@ export class MetricCardDto implements IMetricCardDto {
             }
             this.dateField = _data["dateField"];
             this.isStale = _data["isStale"];
+            this.isError = _data["isError"];
             this.trend = _data["trend"];
             this.hasComparison = _data["hasComparison"];
             this.trendPositive = _data["trendPositive"];
@@ -1850,6 +1852,7 @@ export class MetricCardDto implements IMetricCardDto {
         }
         data["dateField"] = this.dateField;
         data["isStale"] = this.isStale;
+        data["isError"] = this.isError;
         data["trend"] = this.trend;
         data["hasComparison"] = this.hasComparison;
         data["trendPositive"] = this.trendPositive;
@@ -1876,6 +1879,7 @@ export interface IMetricCardDto {
     groups?: MetricGroupDto[];
     dateField?: string | undefined;
     isStale?: boolean;
+    isError?: boolean;
     trend?: number;
     hasComparison?: boolean | undefined;
     trendPositive?: boolean;
@@ -1889,6 +1893,7 @@ export class MetricGroupDto implements IMetricGroupDto {
     value?: string;
     records?: number;
     totalValue?: number | undefined;
+    isError?: boolean;
 
     constructor(data?: IMetricGroupDto) {
         if (data) {
@@ -1904,6 +1909,7 @@ export class MetricGroupDto implements IMetricGroupDto {
             this.value = _data["value"];
             this.records = _data["records"];
             this.totalValue = _data["totalValue"];
+            this.isError = _data["isError"];
         }
     }
 
@@ -1919,6 +1925,7 @@ export class MetricGroupDto implements IMetricGroupDto {
         data["value"] = this.value;
         data["records"] = this.records;
         data["totalValue"] = this.totalValue;
+        data["isError"] = this.isError;
         return data;
     }
 }
@@ -1927,6 +1934,7 @@ export interface IMetricGroupDto {
     value?: string;
     records?: number;
     totalValue?: number | undefined;
+    isError?: boolean;
 }
 
 export class PaymentDto implements IPaymentDto {

@@ -11,7 +11,8 @@ using System.Text.RegularExpressions;
 
 namespace InstaDataApp.Application.Modules.Metrics.Queries.GetMetricDetails;
 
-public record GetMetricDetailsQuery(string Key, string? GroupValue = null, int? SourceId = null)
+public record GetMetricDetailsQuery(string Key, string? GroupValue = null, int? SourceId = null,
+    string? Search = null, int? MaxRowsOverride = null)
     : IRequest<MetricDetailDto?>;
 
 public class GetMetricDetailsQueryHandler(IApplicationDbContext context, ILogger<GetMetricDetailsQueryHandler> logger)
@@ -19,6 +20,9 @@ public class GetMetricDetailsQueryHandler(IApplicationDbContext context, ILogger
 {
     private static readonly Regex Safe = new("^[A-Za-z_][A-Za-z0-9_$#]*$", RegexOptions.Compiled);
     private const int MaxRows = 500;
+
+    // טווח התקופה בפירוט — כמו בקובייה (ברירת מחדל כשאין סינון ימים מפורש)
+    private const int MaxPeriodDays = 3650;
 
     public async Task<MetricDetailDto?> Handle(GetMetricDetailsQuery request, CancellationToken ct)
     {
@@ -58,25 +62,31 @@ var sumField = fields.FirstOrDefault(f => f.FieldID == metric.SumFieldID)
 
         var connection = await OpenAsync(ct);
 
-        // ערך הנתון — אותו חישוב כמו בכרטיס הקובייה
+        // שדה התאריך של המקור — לסינון תקופה כמו בכרטיס
+        var dateFieldName = fields.FirstOrDefault(f => f.FieldID == source.DateFieldID)?.FieldName;
+        var dateExpr = dateFieldName is not null && Safe.IsMatch(dateFieldName)
+            ? $"[{dateFieldName}]" : null;
+
         dto.DataValue = await CardValueAsync(connection, source, metric, sumField?.FieldName, groupField?.FieldName, ct);
 
-        // ==== חלוקה לפי מערכת: GROUP BY על עמודת המערכת ====
         var groupFieldName = groupField?.FieldName;
         var sumFieldName = sumField?.FieldName;
         var calcType = (metric.CalculationType?.Value ?? "").Trim().ToUpperInvariant();
 
-        dto.Systems = await SystemGroupsAsync(connection, source, groupFieldName, sumFieldName, calcType, ct);
+        dto.Systems = await SystemGroupsAsync(connection, source, groupFieldName, sumFieldName, calcType, dateExpr, ct);
         foreach (var row in dto.Systems)
         {
             dto.TotalRecords += row.Records;
             dto.TotalValue = (dto.TotalValue ?? 0) + (row.TotalValue ?? 0);
         }
 
-        // ==== רשומות הנתון — אותה טבלה, מסוננת לפי הערך שנבחר ====
         dto.Columns = await BuildColumnsAsync(connection, source, fields, metric, ct);
+
+        // מיון דטרמיניסטי — כדי שמנות (עמודים / ייצוא) לא יחפפו זו לזו
+        var order = await OrderBySqlAsync(connection, source, dto.Columns, dateExpr, ct);
+
         dto.Records = await RecordsAsync(connection, source, groupFieldName,
-            request.GroupValue, dto.Columns, ct);
+            request.GroupValue, request.Search, request.MaxRowsOverride ?? MaxRows, dto.Columns, dateExpr, order, ct);
         dto.RecordsInSample = dto.Records.Count;
         return dto;
 
@@ -176,29 +186,34 @@ var sumField = fields.FirstOrDefault(f => f.FieldID == metric.SumFieldID)
         }
 
         var raw = await ScalarAsync(conn, $"SELECT {aggregate} FROM [{source.ObjectName}]", null, ct);
-        return raw is null or DBNull ? "0" : Convert.ToDecimal(raw).ToString("N2", CultureInfo.GetCultureInfo("he-IL"));
+       return raw is null or DBNull ? "0" : Convert.ToDecimal(raw).ToString(
+    calc == "COUNT" ? "N0" : "N2", CultureInfo.GetCultureInfo("he-IL"));
     }
 
     // ---------- שורה אחת בטבלת המערכות ----------
+        // ---------- שורה אחת בטבלת המערכות ----------
     private async Task<List<SystemGroupDto>> SystemGroupsAsync(DbConnection conn, CtrlDataSource source,
-        string? groupFieldName, string? sumFieldName, string calcType, CancellationToken ct)
+        string? groupFieldName, string? sumFieldName, string calcType, string? dateExpr, CancellationToken ct)
     {
         var result = new List<SystemGroupDto>();
         if (!Safe.IsMatch(source.ObjectName) || groupFieldName is null || !Safe.IsMatch(groupFieldName))
         {
-            result.Add(new SystemGroupDto { SourceId = source.SourceID, SourceName = source.SourceName, IsError = true });
-            return result;
+            return result;   // אין שדה קיבוץ — הטבלה לא תוצג
         }
 
         try
         {
-            var sumExpr = sumFieldName is not null && Safe.IsMatch(sumFieldName)
-                ? $"ISNULL(SUM(TRY_CAST([{sumFieldName}] AS decimal(38,4))),0)"
-                : "CAST(NULL AS decimal(38,4))";
+            var isCount = calcType == "COUNT";
+            var valueExpr = isCount
+                ? "CAST(COUNT_BIG(*) AS decimal(38,4))"
+                : sumFieldName is not null && Safe.IsMatch(sumFieldName)
+                    ? $"ISNULL(SUM(TRY_CAST([{sumFieldName}] AS decimal(38,4))),0)"
+                    : "CAST(NULL AS decimal(38,4))";
 
+            var where = PeriodWhere(dateExpr);
             var sql = $@"
-SELECT [{groupFieldName}] AS g, COUNT_BIG(*) AS c, {sumExpr} AS s
-FROM [{source.ObjectName}]
+SELECT [{groupFieldName}] AS g, COUNT_BIG(*) AS c, {valueExpr} AS s
+FROM [{source.ObjectName}]{where}
 GROUP BY [{groupFieldName}]
 ORDER BY COUNT_BIG(*) DESC";
 
@@ -225,28 +240,103 @@ ORDER BY COUNT_BIG(*) DESC";
         return result;
     }
 
+    // ---------- תנאי התקופה — לפי PeriodDays של הנתון ----------
+    private static string PeriodWhere(string? dateExpr)
+    {
+        if (dateExpr is null) return "";
+        return $" WHERE {dateExpr} >= DATEADD(day, -{MaxPeriodDays}, GETDATE())";
+    }
 
     // ---------- רשומות הנתון ----------
     private async Task<List<Dictionary<string, object?>>> RecordsAsync(DbConnection conn, CtrlDataSource source,
-        string? groupField, string? groupValue, List<DetailColumnDto> columns, CancellationToken ct)
+        string? groupField, string? groupValue, string? search, int maxRows, List<DetailColumnDto> columns,
+        string? dateExpr, string? orderBy, CancellationToken ct)
     {
         if (!Safe.IsMatch(source.ObjectName)) return new();
         if (columns.Count == 0) return new();
 
         var cols = string.Join(", ", columns.Select(c => $"[{c.FieldName}]"));
         var parameters = new Dictionary<string, object?>();
-        var where = "";
+        var conditions = new List<string>();
+
+        // התקופה מוחלת גם בפירוט (עד היום)
+        if (dateExpr is not null)
+            conditions.Add($"{dateExpr} >= DATEADD(day, -{MaxPeriodDays}, GETDATE())");
 
         if (groupField is not null && !string.IsNullOrWhiteSpace(groupValue)
             && Safe.IsMatch(groupField) && columns.Any(c => c.FieldName == groupField))
         {
-            where = $" WHERE CAST([{groupField}] AS nvarchar(400)) = @g";
+            conditions.Add($"CAST([{groupField}] AS nvarchar(400)) = @g");
             parameters["@g"] = groupValue;
         }
 
-        var sql = $"SELECT TOP ({MaxRows}) {cols} FROM [{source.ObjectName}]{where}";
+        // חיפוש טקסטואלי על העמודות המותרות להצגה בלבד
+        if (!string.IsNullOrWhiteSpace(search) && search.Trim().Length > 0)
+        {
+            var pattern = "%" + search.Trim().Replace("@", "@@").Replace("[", "[[]")
+                                                  .Replace("%", "@%").Replace("_", "@_") + "%";
+            parameters["@q"] = pattern;
+            var matches = columns.Select(c => $"CAST([{c.FieldName}] AS nvarchar(400)) LIKE @q ESCAPE '@'");
+            conditions.Add("(" + string.Join(" OR ", matches) + ")");
+        }
+
+        var where = conditions.Count > 0 ? " WHERE " + string.Join(" AND ", conditions) : "";
+        var order = orderBy is not null ? $" ORDER BY {orderBy}" : "";
+        var sql = $"SELECT TOP ({maxRows}) {cols} FROM [{source.ObjectName}]{where}{order}";
 
         return await ReadRowsAsync(conn, sql, parameters, columns, ct);
+    }
+
+    // ---------- מיון דטרמיניסטי: תאריך המקור, ומפתח ראשי/עמודה ראשונה כמפתח משני ----------
+    private async Task<string?> OrderBySqlAsync(DbConnection conn, CtrlDataSource source,
+        List<DetailColumnDto> columns, string? dateExpr, CancellationToken ct)
+    {
+        var parts = new List<string>();
+        if (dateExpr is not null) parts.Add($"{dateExpr} DESC");
+
+        var keyCols = await PrimaryKeyColumnsAsync(conn, source.ObjectName, source.SchemaName ?? "dbo", ct);
+        foreach (var k in keyCols)
+            if (columns.Any(c => c.FieldName.Equals(k, StringComparison.OrdinalIgnoreCase)))
+                parts.Add($"[{k}] ASC");
+
+        // אין מפתח ראשי גלוי — עוגן על העמודה הראשונה כדי למנוע חפיפה או דילוג בין מנות
+        if (parts.Count == 0 || (keyCols.Count == 0 && dateExpr is null))
+            parts.Add($"[{columns[0].FieldName}] ASC");
+
+        return parts.Count > 0 ? string.Join(", ", parts) : null;
+    }
+
+    private static readonly Dictionary<string, List<string>> KeyColumnsCache = new();
+
+    private static async Task<List<string>> PrimaryKeyColumnsAsync(DbConnection conn, string objectName,
+        string schema, CancellationToken ct)
+    {
+        var full = $"{schema}.{objectName}";
+        if (KeyColumnsCache.TryGetValue(full, out var cached)) return cached;
+
+        await using var cmd = CreateCommand(conn, @"
+SELECT c.name
+FROM sys.indexes i
+JOIN sys.index_columns ic ON ic.object_id = i.object_id AND ic.index_id = i.index_id
+JOIN sys.columns c ON c.object_id = ic.object_id AND c.column_id = ic.column_id
+JOIN sys.tables t ON t.object_id = i.object_id
+JOIN sys.schemas s ON s.schema_id = t.schema_id
+WHERE i.is_primary_key = 1 AND s.name = @s AND t.name = @t
+ORDER BY ic.key_ordinal",
+            new Dictionary<string, object?> { ["@s"] = schema, ["@t"] = objectName });
+
+        var keys = new List<string>();
+        try
+        {
+            await using var reader = await cmd.ExecuteReaderAsync(ct);
+            while (await reader.ReadAsync(ct)) keys.Add(reader.GetString(0));
+        }
+        catch (Exception)
+        {
+            // אין הרשאה לקטלוג — נמשיך בלי מפתח ראשי
+        }
+        KeyColumnsCache[full] = keys;
+        return keys;
     }
 
     // ---------- תשתית ----------

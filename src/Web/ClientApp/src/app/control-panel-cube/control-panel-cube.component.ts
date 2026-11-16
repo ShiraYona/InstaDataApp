@@ -2,7 +2,7 @@ import { DecimalPipe, NgClass } from '@angular/common';
 import { Component, Input, SimpleChanges, inject, OnChanges, OnInit, output, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { of, Subject } from 'rxjs';
-import { catchError, debounceTime, switchMap } from 'rxjs/operators';
+import { catchError, debounceTime, switchMap, timeout } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlPanel } from '../shared/services/control-panel';
 import { CubeMetric, CubeStatus } from '../shared/models/controlPanel/CubeMetric';
@@ -22,7 +22,7 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
   readonly loading = signal(true);
   readonly error = signal(false);
   @Input() columns = 4;
-  @Input() period: number | null = null;
+  @Input() period: number = 30;
   @Input() searchMetricName = '';
 
   readonly alertRule = output<string>();
@@ -39,13 +39,14 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
         switchMap(f => {
           this.loading.set(true);
           this.error.set(false);
-          return this.controlPanel.getCards(f.metricName, f.days).pipe(
-            catchError(() => {
-              this.error.set(true);
-              this.loading.set(false);
-              return of([]);
-            })
-          );
+      return this.controlPanel.getCards(f.metricName, f.days).pipe(
+  timeout(60000),
+  catchError(() => {
+    this.error.set(true);
+    this.loading.set(false);
+    return of([]);
+  })
+);
         }),
         takeUntilDestroyed()
       )
@@ -62,6 +63,7 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
             hasComparison: row.hasComparison,
             trendPositive: row.trendPositive ?? false,
             status: (row.status ?? 'ok') as CubeStatus,
+            isError: row.isError ?? false,
             updated: row.updated ?? false,
             groupFieldLabel: row.groupFieldLabel ?? undefined,
             groupValue: row.groupValue ?? undefined,
@@ -86,6 +88,10 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
 
   private pushFilters(): void {
     this.filter$.next({ metricName: this.searchMetricName, days: this.period });
+  }
+  /** "נסה שוב" — מפעיל מחדש את החישוב (השליפה שולפת את כל הכרטיסים, כי זו קריאת השרת) */
+  retry(): void {
+    this.pushFilters();
   }
 
 readonly detail = output<string>();
