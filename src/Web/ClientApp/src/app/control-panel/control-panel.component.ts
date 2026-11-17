@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, computed } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { Button } from 'primeng/button';
 import { AddingNewDataEntryComponent } from '../adding-new-data-entry/adding-new-data-entry.component';
@@ -29,9 +29,32 @@ export class ControlPanelComponent {
   /** מספר הכרטיסים בשורה — מגיע מהשרת לפי נתוני המשתמש, ולכן אינו קשיח כאן */
   readonly cardsPerRow = signal<number | null>(null);
 
+  /** טווח התאריכים שמוחל גם על הפירוט — נגזר מהתקופה באותו אופן כמו בקובייה */
+  readonly dateRange = computed(() => ControlPanelComponent.resolveRange(this.period()));
+
   onFiltersChanged(state: FilterState): void {
     this.period.set(state.period);
     this.searchMetricName.set(state.searchMetricName);
+  }
+
+  /**
+   * טווח: [today - period, today].
+   * ערך שלילי ("לפי מסנן הלוח") — ללא טווח, בדיוק כמו בקובייה;
+   * אחרת נוצר טווח הפוך (מחר עד היום) שמסנן את כל הרשומות.
+   */
+  private static resolveRange(period: number | null): { from: string | null; to: string | null } {
+    if (period == null || period < 0) return { from: null, to: null };
+    const to = new Date();
+    const from = new Date();
+    from.setDate(from.getDate() - period);
+    return { from: ControlPanelComponent.toIso(from), to: ControlPanelComponent.toIso(to) };
+  }
+
+  private static toIso(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   }
 
   onCardsPerRowChanged(cardsPerRow: number | null): void {

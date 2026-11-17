@@ -990,7 +990,7 @@ export class MetricsClient {
         return _observableOf(null as any);
     }
 
-    getDetails(key: string, groupValue: string | null | undefined, sourceId: number | null | undefined, search: string | null | undefined): Observable<MetricDetailDto> {
+    getDetails(key: string, groupValue: string | null | undefined, sourceId: number | null | undefined, search: string | null | undefined, fromDate: Date | null | undefined, toDate: Date | null | undefined): Observable<MetricDetailDto> {
         let url_ = this.baseUrl + "/api/Metrics/{key}/details?";
         if (key === undefined || key === null)
             throw new Error("The parameter 'key' must be defined.");
@@ -1001,6 +1001,10 @@ export class MetricsClient {
             url_ += "sourceId=" + encodeURIComponent("" + sourceId) + "&";
         if (search !== undefined && search !== null)
             url_ += "search=" + encodeURIComponent("" + search) + "&";
+        if (fromDate !== undefined && fromDate !== null)
+            url_ += "fromDate=" + encodeURIComponent(fromDate ? "" + fromDate.toISOString() : "") + "&";
+        if (toDate !== undefined && toDate !== null)
+            url_ += "toDate=" + encodeURIComponent(toDate ? "" + toDate.toISOString() : "") + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_ : any = {
@@ -1054,7 +1058,7 @@ export class MetricsClient {
         return _observableOf(null as any);
     }
 
-    exportDetails(key: string, groupValue: string | null | undefined, sourceId: number | null | undefined, search: string | null | undefined): Observable<void> {
+    exportDetails(key: string, groupValue: string | null | undefined, sourceId: number | null | undefined, search: string | null | undefined, fromDate: Date | null | undefined, toDate: Date | null | undefined): Observable<void> {
         let url_ = this.baseUrl + "/api/Metrics/{key}/details/export?";
         if (key === undefined || key === null)
             throw new Error("The parameter 'key' must be defined.");
@@ -1065,6 +1069,10 @@ export class MetricsClient {
             url_ += "sourceId=" + encodeURIComponent("" + sourceId) + "&";
         if (search !== undefined && search !== null)
             url_ += "search=" + encodeURIComponent("" + search) + "&";
+        if (fromDate !== undefined && fromDate !== null)
+            url_ += "fromDate=" + encodeURIComponent(fromDate ? "" + fromDate.toISOString() : "") + "&";
+        if (toDate !== undefined && toDate !== null)
+            url_ += "toDate=" + encodeURIComponent(toDate ? "" + toDate.toISOString() : "") + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_ : any = {

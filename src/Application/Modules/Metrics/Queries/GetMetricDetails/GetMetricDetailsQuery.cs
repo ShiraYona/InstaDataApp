@@ -12,7 +12,8 @@ using System.Text.RegularExpressions;
 namespace InstaDataApp.Application.Modules.Metrics.Queries.GetMetricDetails;
 
 public record GetMetricDetailsQuery(string Key, string? GroupValue = null, int? SourceId = null,
-    string? Search = null, int? MaxRowsOverride = null)
+    string? Search = null, int? MaxRowsOverride = null,
+    DateOnly? FromDate = null, DateOnly? ToDate = null)
     : IRequest<MetricDetailDto?>;
 
 public class GetMetricDetailsQueryHandler(IApplicationDbContext context, ILogger<GetMetricDetailsQueryHandler> logger)
@@ -20,9 +21,6 @@ public class GetMetricDetailsQueryHandler(IApplicationDbContext context, ILogger
 {
     private static readonly Regex Safe = new("^[A-Za-z_][A-Za-z0-9_$#]*$", RegexOptions.Compiled);
     private const int MaxRows = 500;
-
-    // טווח התקופה בפירוט — כמו בקובייה (ברירת מחדל כשאין סינון ימים מפורש)
-    private const int MaxPeriodDays = 3650;
 
     public async Task<MetricDetailDto?> Handle(GetMetricDetailsQuery request, CancellationToken ct)
     {
@@ -41,8 +39,10 @@ public class GetMetricDetailsQueryHandler(IApplicationDbContext context, ILogger
         if (source is null)
             return new MetricDetailDto { Key = request.Key, Title = metric.MetricName, IsStale = true };
 
+        // כל השדות, כולל כאלה שאינם מסומנים פעילים — כדי ששדה התאריך של המקור יימצא גם אז.
+        // הסינון לתצוגה (IsVisible + קיום בטבלה בפועל) נעשה ב-BuildColumnsAsync.
         var fields = await context.CtrlDataSourceFields.AsNoTracking()
-            .Where(f => f.IsActive).ToListAsync(ct);
+            .ToListAsync(ct);
 
         // עמודת המערכת — לפי GroupFieldID במסגרת אותו מקור בלבד
         var groupField = fields.FirstOrDefault(f => f.FieldID == metric.GroupFieldID
@@ -68,26 +68,42 @@ public class GetMetricDetailsQueryHandler(IApplicationDbContext context, ILogger
         // מאומת מול העמודות האמיתיות: רק עמודה קיימת ומטיפוס תאריך
         var sourceColumns = await ActualColumnsAsync(connection, source.ObjectName,
             source.SchemaName ?? "dbo", ct);
-        var dateFieldName = fields.FirstOrDefault(f => f.FieldID == source.DateFieldID
-                                                    && f.SourceID == source.SourceID)?.FieldName;
+        // לא מסתמכים על רשימת השדות הפעילים: שדה התאריך של המקור מפורש ב-CTRL_DataSources
+        var dateFieldName = await context.CtrlDataSourceFields.AsNoTracking()
+            .Where(f => f.SourceID == source.SourceID && f.FieldID == source.DateFieldID)
+            .Select(f => f.FieldName)
+            .FirstOrDefaultAsync(ct);
         var dateExpr = dateFieldName is not null
                        && Safe.IsMatch(dateFieldName)
                        && IsDateColumn(sourceColumns, dateFieldName)
             ? $"[{dateFieldName}]"
             : null;
 
-        dto.DataValue = await CardValueAsync(connection, source, metric, sumField?.FieldName, groupField?.FieldName, ct);
+        // טווח התקופה של הקובייה — מוחל על הקוביות, על טבלת הקבוצות ועל טבלת הרשומות
+        var (periodWhere, periodParams) = PeriodWhere(dateExpr, request.FromDate, request.ToDate);
+
+        logger.LogInformation(
+            "DETAIL PERIOD: metric={Metric} from={From} to={To} dateField={DateField} dateExpr={DateExpr} where={Where}",
+            metricId, request.FromDate, request.ToDate, dateFieldName, dateExpr, periodWhere);
+
+        dto.DataValue = await CardValueAsync(connection, source, metric, sumField?.FieldName, groupField?.FieldName,
+            periodWhere, periodParams, ct);
 
         var groupFieldName = groupField?.FieldName;
         var sumFieldName = sumField?.FieldName;
         var calcType = (metric.CalculationType?.Value ?? "").Trim().ToUpperInvariant();
 
-        dto.Systems = await SystemGroupsAsync(connection, source, groupFieldName, sumFieldName, calcType, dateExpr, ct);
+        dto.Systems = await SystemGroupsAsync(connection, source, groupFieldName, sumFieldName, calcType,
+            periodWhere, periodParams, ct);
         foreach (var row in dto.Systems)
         {
             dto.TotalRecords += row.Records;
             dto.TotalValue = (dto.TotalValue ?? 0) + (row.TotalValue ?? 0);
         }
+
+        // אין שדה קיבוץ — טבלת הקבוצות ריקה, ולכן הסה"כ מחושב ישירות על אותן רשומות מסוננות
+        if (groupFieldName is null || dto.Systems.Count == 0)
+            dto.TotalRecords = await CountAsync(connection, source, periodWhere, periodParams, ct);
 
         dto.Columns = await BuildColumnsAsync(connection, source, fields, metric, ct);
 
@@ -95,7 +111,8 @@ public class GetMetricDetailsQueryHandler(IApplicationDbContext context, ILogger
         var order = await OrderBySqlAsync(connection, source, dto.Columns, dateExpr, ct);
 
         dto.Records = await RecordsAsync(connection, source, groupFieldName,
-            request.GroupValue, request.Search, request.MaxRowsOverride ?? MaxRows, dto.Columns, dateExpr, order, ct);
+            request.GroupValue, request.Search, request.MaxRowsOverride ?? MaxRows, dto.Columns,
+            periodWhere, periodParams, order, ct);
         dto.RecordsInSample = dto.Records.Count;
         return dto;
 
@@ -193,7 +210,8 @@ public class GetMetricDetailsQueryHandler(IApplicationDbContext context, ILogger
 
     // ---------- ערך הכרטיס כמו בקובייה ----------
     private async Task<string> CardValueAsync(DbConnection conn, CtrlDataSource source, CtrlMetric metric,
-        string? sumField, string? groupField, CancellationToken ct)
+        string? sumField, string? groupField, string periodWhere,
+        Dictionary<string, object?> periodParams, CancellationToken ct)
     {
         if (!Safe.IsMatch(source.ObjectName)) return "0";
 
@@ -218,15 +236,17 @@ public class GetMetricDetailsQueryHandler(IApplicationDbContext context, ILogger
             return "0";
         }
 
-               var raw = await ScalarAsync(conn, $"SELECT {aggregate} FROM [{source.ObjectName}]", null, ct);
+               var raw = await ScalarAsync(conn, $"SELECT {aggregate} FROM [{source.ObjectName}]{periodWhere}", periodParams, ct);
         return raw is null or DBNull ? "0" : Convert.ToDecimal(raw).ToString(
             calc == "COUNT" ? "N0" : "0.##", CultureInfo.GetCultureInfo("he-IL"));
+
     }
 
     // ---------- שורה אחת בטבלת המערכות ----------
         // ---------- שורה אחת בטבלת המערכות ----------
     private async Task<List<SystemGroupDto>> SystemGroupsAsync(DbConnection conn, CtrlDataSource source,
-        string? groupFieldName, string? sumFieldName, string calcType, string? dateExpr, CancellationToken ct)
+        string? groupFieldName, string? sumFieldName, string calcType,
+        string periodWhere, Dictionary<string, object?> periodParams, CancellationToken ct)
     {
         var result = new List<SystemGroupDto>();
         if (!Safe.IsMatch(source.ObjectName) || groupFieldName is null || !Safe.IsMatch(groupFieldName))
@@ -243,14 +263,13 @@ public class GetMetricDetailsQueryHandler(IApplicationDbContext context, ILogger
                     ? $"ISNULL(SUM(TRY_CAST([{sumFieldName}] AS decimal(38,4))),0)"
                     : "CAST(NULL AS decimal(38,4))";
 
-            var where = PeriodWhere(dateExpr);
             var sql = $@"
 SELECT [{groupFieldName}] AS g, COUNT_BIG(*) AS c, {valueExpr} AS s
-FROM [{source.ObjectName}]{where}
+FROM [{source.ObjectName}]{periodWhere}
 GROUP BY [{groupFieldName}]
 ORDER BY COUNT_BIG(*) DESC";
 
-            await using var cmd = CreateCommand(conn, sql, null);
+            await using var cmd = CreateCommand(conn, sql, periodParams);
             await using var reader = await cmd.ExecuteReaderAsync(ct);
             while (await reader.ReadAsync(ct))
             {
@@ -273,28 +292,45 @@ ORDER BY COUNT_BIG(*) DESC";
         return result;
     }
 
-    // ---------- תנאי התקופה — לפי PeriodDays של הנתון ----------
-    private static string PeriodWhere(string? dateExpr)
+    // ---------- תנאי התקופה — לפי התאריכים שהתקבלו (אותו טווח של הקובייה) ----------
+    // הטווח נסגר בחצות של יום הסיום, ולכן הסוף הוא "לפני יום המחרת" ולא עד חצות היום עצמו
+    private static (string Where, Dictionary<string, object?> Params) PeriodWhere(
+        string? dateExpr, DateOnly? fromDate, DateOnly? toDate)
     {
-        if (dateExpr is null) return "";
-        return $" WHERE {dateExpr} >= DATEADD(day, -{MaxPeriodDays}, GETDATE())";
+        var parameters = new Dictionary<string, object?>();
+        if (dateExpr is null) return ("", parameters);
+
+        var conditions = new List<string>();
+        if (fromDate is not null)
+        {
+            conditions.Add($"{dateExpr} >= @pFrom");
+            parameters["@pFrom"] = fromDate.Value.ToDateTime(TimeOnly.MinValue);
+        }
+        if (toDate is not null)
+        {
+            conditions.Add($"{dateExpr} < @pTo");
+            parameters["@pTo"] = toDate.Value.AddDays(1).ToDateTime(TimeOnly.MinValue);
+        }
+
+        return (conditions.Count > 0 ? " WHERE " + string.Join(" AND ", conditions) : "", parameters);
     }
 
     // ---------- רשומות הנתון ----------
     private async Task<List<Dictionary<string, object?>>> RecordsAsync(DbConnection conn, CtrlDataSource source,
         string? groupField, string? groupValue, string? search, int maxRows, List<DetailColumnDto> columns,
-        string? dateExpr, string? orderBy, CancellationToken ct)
+        string periodWhere, Dictionary<string, object?> periodParams, string? orderBy, CancellationToken ct)
     {
         if (!Safe.IsMatch(source.ObjectName)) return new();
         if (columns.Count == 0) return new();
 
         var cols = string.Join(", ", columns.Select(c => $"[{c.FieldName}]"));
-        var parameters = new Dictionary<string, object?>();
+        // תנאי התקופה מגיעים מוכנים ועם הפרמטרים שלהם — מתווספים לתנאים של הקיבוץ והחיפוש
+        var parameters = new Dictionary<string, object?>(periodParams);
         var conditions = new List<string>();
 
-        // התקופה מוחלת גם בפירוט (עד היום)
-        if (dateExpr is not null)
-            conditions.Add($"{dateExpr} >= DATEADD(day, -{MaxPeriodDays}, GETDATE())");
+        // התקופה מוחלת גם בפירוט — רשומות מחוץ לטווח לא מוצגות
+        if (!string.IsNullOrEmpty(periodWhere))
+            conditions.Add(periodWhere.Replace(" WHERE ", ""));
 
         if (groupField is not null && !string.IsNullOrWhiteSpace(groupValue)
             && Safe.IsMatch(groupField) && columns.Any(c => c.FieldName == groupField))

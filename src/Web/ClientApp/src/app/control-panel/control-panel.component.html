@@ -21,7 +21,9 @@
   </div>
 </div>
 @if (detailKey() !== null) {
-  <app-detailed-dialogue [metricKey]="detailKey()!" (closed)="closeDetail()" />
+  <app-detailed-dialogue [metricKey]="detailKey()!"
+                         [fromDate]="dateRange().from" [toDate]="dateRange().to"
+                         (closed)="closeDetail()" />
 }
 
 <!-- דיאלוג יצירת נתון חדש — מצב יצירה (metric = null) -->
@@ -38,6 +40,8 @@
 <app-control-panel-cube
   [columns]="cardsPerRow() ?? 4"
   [period]="period() ?? 30"
+  [fromDate]="dateRange().from"
+  [toDate]="dateRange().to"
   [searchMetricName]="searchMetricName()"
   [refreshToken]="refreshToken()"
   (detail)="openDetail($event)">
