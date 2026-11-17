@@ -42,7 +42,7 @@ var calcTypes = await context.CtrlCalculationTypes.AsNoTracking()
         Dictionary<int, List<MetricGroupDto>> groupsByMetric;
         try
         {
-            groupsByMetric = await LoadGroupsAsync(request.MetricName, request.Days, ct);
+            groupsByMetric = await LoadGroupsAsync(request.Days, ct);
         }
         catch (Exception ex)
         {
@@ -105,7 +105,7 @@ if (metrics.Count == 0)
     }
 
     private async Task<Dictionary<int, List<MetricGroupDto>>> LoadGroupsAsync(
-        string? metricName, int? days, CancellationToken ct)
+        int? days, CancellationToken ct)
     {
         var connection = context.Database.GetDbConnection();
         if (connection.State != ConnectionState.Open) await connection.OpenAsync(ct);
@@ -115,8 +115,7 @@ if (metrics.Count == 0)
         cmd.CommandText = "dbo.usp_Metrics_GetActiveMetricsGrouped";
         cmd.CommandTimeout = 120;
 
-        AddParam(cmd, "@MetricName", string.IsNullOrWhiteSpace(metricName) ? null : metricName,
-            DbType.String, 80);
+     
         AddParam(cmd, "@Days", days, DbType.Int32);
 
         var result = new Dictionary<int, List<MetricGroupDto>>();

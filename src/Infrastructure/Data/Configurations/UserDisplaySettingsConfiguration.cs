@@ -24,6 +24,9 @@ public class UserDisplaySettingsConfiguration : IEntityTypeConfiguration<UserDis
             .HasColumnName("CardsPerRow")
             .IsRequired();
 
+        builder.Property(x => x.PeriodCalculation)
+            .HasColumnName("PeriodCalculation");
+
         builder.Property(x => x.UpdatedDate)
             .HasColumnName("UpdatedDate")
             .HasColumnType("datetime2")
