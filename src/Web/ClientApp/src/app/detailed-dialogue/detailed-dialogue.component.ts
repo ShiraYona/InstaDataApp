@@ -163,9 +163,13 @@ readonly summary = computed(() => {
     this.pageIndex.set(i);
   }
 
+ // עשרוניות מוצגות רק כשהערך אינו שלם (3.00 → 3, 1250.5 → 1,250.5)
  formatCurrency(v: number | null | undefined, decimals = 2): string {
-  return v == null ? '—' : '₪' + new Intl.NumberFormat('he-IL',
-    { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(v);
+  if (v == null) return '—';
+  const hasFraction = !Number.isInteger(v);
+  return '₪' + new Intl.NumberFormat('he-IL', hasFraction
+    ? { minimumFractionDigits: Math.min(1, decimals), maximumFractionDigits: decimals }
+    : { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v);
 }
 
   cell(record: Record<string, unknown>, key: string, type = ''): string {
@@ -174,7 +178,8 @@ readonly summary = computed(() => {
     if ((type === 'date' || type === 'datetime') && !isNaN(Date.parse(String(v))))
       return new Date(String(v)).toLocaleDateString('he-IL');
     if (type === 'number' || type === 'decimal' || type === 'int')
-      return new Intl.NumberFormat('he-IL', { maximumFractionDigits: 2 }).format(Number(v));
+      return new Intl.NumberFormat('he-IL',
+        { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(v));
     return String(v);
   }
 

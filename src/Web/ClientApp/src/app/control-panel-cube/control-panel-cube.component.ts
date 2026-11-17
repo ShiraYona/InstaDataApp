@@ -59,17 +59,17 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
     this.filter$
       .pipe(
         debounceTime(300),
-        switchMap(period => {
+        switchMap(f => {
           this.loading.set(true);
           this.error.set(false);
-      return this.controlPanel.getCards(f.period, f.fromDate, f.toDate).pipe(
-  timeout(60000),
-  catchError(() => {
-    this.error.set(true);
-    this.loading.set(false);
-    return of([]);
-  })
-);
+          return this.controlPanel.getCards(f.period, f.fromDate, f.toDate).pipe(
+            timeout(60000),
+            catchError(() => {
+              this.error.set(true);
+              this.loading.set(false);
+              return of([]);
+            })
+          );
         }),
         takeUntilDestroyed()
       )

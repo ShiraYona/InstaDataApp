@@ -218,9 +218,9 @@ public class GetMetricDetailsQueryHandler(IApplicationDbContext context, ILogger
             return "0";
         }
 
-        var raw = await ScalarAsync(conn, $"SELECT {aggregate} FROM [{source.ObjectName}]", null, ct);
-       return raw is null or DBNull ? "0" : Convert.ToDecimal(raw).ToString(
-    calc == "COUNT" ? "N0" : "N2", CultureInfo.GetCultureInfo("he-IL"));
+               var raw = await ScalarAsync(conn, $"SELECT {aggregate} FROM [{source.ObjectName}]", null, ct);
+        return raw is null or DBNull ? "0" : Convert.ToDecimal(raw).ToString(
+            calc == "COUNT" ? "N0" : "0.##", CultureInfo.GetCultureInfo("he-IL"));
     }
 
     // ---------- שורה אחת בטבלת המערכות ----------

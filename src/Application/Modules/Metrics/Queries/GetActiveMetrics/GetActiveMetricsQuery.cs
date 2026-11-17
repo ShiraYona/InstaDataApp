@@ -78,7 +78,7 @@ var calcTypes = await context.CtrlCalculationTypes.AsNoTracking()
         Dictionary<int, List<MetricGroupDto>> groupsByMetric;
         try
         {
-            groupsByMetric = await LoadGroupsAsync(request.Days, request.FromDate, request.ToDate, ct);
+            groupsByMetric = await LoadGroupsAsync(request.MetricName, request.FromDate, request.ToDate, ct);
         }
         catch (Exception ex)
         {
@@ -131,9 +131,7 @@ if (metrics.Count == 0)
                 SignType = calcType?.SignType,
                 // סוג החישוב עצמו כדי שהמסך יזהה COUNT בלי להסתמך על SignType
                 CalcType = calcType?.Value,
-                Value = groups.Sum(x => x.TotalValue ?? 0).ToString(
-                    IsCount(calcType) ? "N0" : "N2",
-                    CultureInfo.GetCultureInfo("he-IL")),
+                Value = FormatValue(groups.Sum(x => x.TotalValue ?? 0), calcType),
                 Groups = groups,
                 Updated = true,
                 IsError = groups.Any(x => x.IsError),
@@ -149,9 +147,11 @@ if (metrics.Count == 0)
     private static bool IsCount(CtrlCalculationType? calc) =>
         string.Equals((calc?.Value ?? "").Trim(), "COUNT", StringComparison.OrdinalIgnoreCase)
         || string.Equals((calc?.SignType ?? "").Trim(), "COUNT", StringComparison.OrdinalIgnoreCase);
-
+    // COUNT — מספר שלם; SUM — עשרוניות רק כשהן קיימות (למשל 1,250.5)
+    private static string FormatValue(decimal value, CtrlCalculationType? calc) =>
+        value.ToString(IsCount(calc) ? "N0" : "0.##", CultureInfo.GetCultureInfo("he-IL"));
     private async Task<Dictionary<int, List<MetricGroupDto>>> LoadGroupsAsync(
-        string? days, DateOnly? fromDate, DateOnly? toDate, CancellationToken ct)
+        string? metricName, DateOnly? fromDate, DateOnly? toDate, CancellationToken ct)
     {
         var connection = context.Database.GetDbConnection();
         if (connection.State != ConnectionState.Open) await connection.OpenAsync(ct);
@@ -165,8 +165,14 @@ if (metrics.Count == 0)
         AddParam(cmd, "@FromDate", fromDate?.ToDateTime(TimeOnly.MinValue), DbType.Date);
         AddParam(cmd, "@ToDate",   toDate?.ToDateTime(TimeOnly.MinValue),   DbType.Date);
 
-     
-        AddParam(cmd, "@Days", days, DbType.Int32);
+        // סינון לפי שם — על שם הנתון ב-CTRL_Metrics
+        var needle = string.IsNullOrWhiteSpace(metricName) ? null : metricName.Trim();
+        var matchingIds = needle is null
+            ? null
+            : await context.CtrlMetrics.AsNoTracking()
+                .Where(m => m.IsActive && m.MetricName.Contains(needle))
+                .Select(m => m.MetricID)
+                .ToListAsync(ct);
 
         var result = new Dictionary<int, List<MetricGroupDto>>();
 
