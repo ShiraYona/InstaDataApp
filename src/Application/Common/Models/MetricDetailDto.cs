@@ -19,6 +19,8 @@ public class MetricDetailDto
     public bool IsStale { get; set; }
     /// <summary>סימן סוג החישוב — COUNT/SUM וכן הלאה</summary>
     public string? SignType { get; set; }
+    /// <summary>סוג החישוב עצמו (CTRL_CalculationTypes.Value) — COUNT/SUM/DIRECT</summary>
+    public string? CalcType { get; set; }
 }
 
 public class SystemGroupDto

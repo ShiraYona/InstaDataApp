@@ -6,6 +6,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { DataCatalogClient } from '../web-api-client';
 import { DisplayLayoutService } from '../shared/services/display-layout.service';
+import { Router } from '@angular/router';
 
 const DEFAULT_CARDS_PER_ROW = 4;
 
@@ -34,10 +35,12 @@ export class ControlPanelFiltersComponent implements OnInit {
   @Output() refreshRequested = new EventEmitter<FilterState>();
 
   @Output() cardsPerRowChanged = new EventEmitter<number | null>();
+  @Output() layoutManagementRequested = new EventEmitter<void>();
 
   private readonly dataCatalogClient = inject(DataCatalogClient);
   private readonly layoutService = inject(DisplayLayoutService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
 
   period: number = 30;
   private savedPeriod: number = 30;

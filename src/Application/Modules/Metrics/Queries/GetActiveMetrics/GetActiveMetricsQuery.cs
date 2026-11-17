@@ -1,5 +1,6 @@
 using InstaDataApp.Application.Common.Interfaces;
 using InstaDataApp.Application.Common.Models;
+using InstaDataApp.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -9,7 +10,11 @@ using System.Globalization;
 
 namespace InstaDataApp.Application.Modules.Metrics.Queries.GetActiveMetrics;
 
-public record GetActiveMetricsQuery(string? MetricName = null, int? Days = null, string? UserId = null)
+public record GetActiveMetricsQuery(
+    string? MetricName = null,
+    DateOnly? FromDate = null,
+    DateOnly? ToDate = null,
+    string? UserId = null)
     : IRequest<List<MetricCardDto>>;
 
 public class GetActiveMetricsQueryHandler(IApplicationDbContext context, ILogger<GetActiveMetricsQueryHandler> logger)
@@ -17,21 +22,52 @@ public class GetActiveMetricsQueryHandler(IApplicationDbContext context, ILogger
 {
     public async Task<List<MetricCardDto>> Handle(GetActiveMetricsQuery request, CancellationToken ct)
     {
+// List<int>? visibleMetricIds = null;
+// if (!string.IsNullOrWhiteSpace(request.UserId))
+// {
+// visibleMetricIds = await context.UserMetricSettings
+//     .AsNoTracking()
+//     .Where(x => x.UserId == request.UserId && x.IsVisible)
+//     .Select(x => x.MetricId)
+//     .ToListAsync(ct);
+// }
+
+// var query = context.CtrlMetrics.AsNoTracking().Where(m => m.IsActive);
+// if (visibleMetricIds is not null)
+//     query = query.Where(m => visibleMetricIds.Contains(m.MetricID));
+
+// var metrics = await query.ToListAsync(ct);
+// שליפת מזהה + סדר אישי של הכרטיסים הגלויים למשתמש
+// שליפת מזהה + סדר אישי של הכרטיסים הגלויים למשתמש
+Dictionary<int, int?>? userOrder = null;
 List<int>? visibleMetricIds = null;
 if (!string.IsNullOrWhiteSpace(request.UserId))
 {
-visibleMetricIds = await context.UserMetricSettings
-    .AsNoTracking()
-    .Where(x => x.UserId == request.UserId && x.IsVisible)
-    .Select(x => x.MetricId)
-    .ToListAsync(ct);
+    var settings = await context.UserMetricSettings
+        .AsNoTracking()
+        .Where(x => x.UserId == request.UserId && x.IsVisible)
+        .Select(x => new { x.MetricId, x.DisplayOrder })
+        .ToListAsync(ct);
+
+    userOrder = settings.ToDictionary(x => x.MetricId, x => x.DisplayOrder);
+    visibleMetricIds = settings.Select(x => x.MetricId).ToList();   // List — EF מתרגם ל-IN
 }
 
 var query = context.CtrlMetrics.AsNoTracking().Where(m => m.IsActive);
 if (visibleMetricIds is not null)
-    query = query.Where(m => visibleMetricIds.Contains(m.MetricID));
+    query = query.Where(m => visibleMetricIds.Contains(m.MetricID));   // List.Contains — נתמך
 
 var metrics = await query.ToListAsync(ct);
+
+// מיון: קודם לפי DisplayOrder של המשתמש, אחר כך מה שלא סודר
+if (userOrder is not null)
+{
+    metrics = metrics
+        .OrderBy(m => userOrder.TryGetValue(m.MetricID, out var o) && o.HasValue ? 0 : 1)
+        .ThenBy(m => userOrder.TryGetValue(m.MetricID, out var o2) ? (o2 ?? int.MaxValue) : int.MaxValue)
+        .ThenBy(m => m.MetricID)
+        .ToList();
+}
 
 var calcTypes = await context.CtrlCalculationTypes.AsNoTracking()
     .ToDictionaryAsync(c => c.ID, ct);
@@ -42,7 +78,7 @@ var calcTypes = await context.CtrlCalculationTypes.AsNoTracking()
         Dictionary<int, List<MetricGroupDto>> groupsByMetric;
         try
         {
-            groupsByMetric = await LoadGroupsAsync(request.Days, ct);
+            groupsByMetric = await LoadGroupsAsync(request.Days, request.FromDate, request.ToDate, ct);
         }
         catch (Exception ex)
         {
@@ -80,6 +116,8 @@ if (metrics.Count == 0)
 
             var groups = groupsByMetric.TryGetValue(metric.MetricID, out var g) ? g : new();
 
+            calcTypes.TryGetValue(metric.CalculationTypeID, out var calcType);
+
             cards.Add(new MetricCardDto
             {
                 Key = metric.MetricID.ToString(),
@@ -90,12 +128,15 @@ if (metrics.Count == 0)
                 GroupField = groupField?.FieldName,
                 GroupFieldLabel = groupField?.DisplayName ?? groupField?.FieldName,
                 DateField = dateFieldName,
-                Value = groups.Sum(x => x.TotalValue ?? 0).ToString("N2", CultureInfo.GetCultureInfo("he-IL")),
+                SignType = calcType?.SignType,
+                // סוג החישוב עצמו כדי שהמסך יזהה COUNT בלי להסתמך על SignType
+                CalcType = calcType?.Value,
+                Value = groups.Sum(x => x.TotalValue ?? 0).ToString(
+                    IsCount(calcType) ? "N0" : "N2",
+                    CultureInfo.GetCultureInfo("he-IL")),
                 Groups = groups,
                 Updated = true,
-                SignType = calcTypes.TryGetValue(metric.CalculationTypeID, out var calcType)
-                    ? calcType.SignType
-                    : null,
+                IsError = groups.Any(x => x.IsError),
                 Icon = metric.IconCode ?? string.Empty,
                 IsStale = false
             });
@@ -104,8 +145,13 @@ if (metrics.Count == 0)
         return cards;
     }
 
+    // סוג החישוב האמיתי נמצא ב-Value; SignType נבדק כגיבוי בלבד
+    private static bool IsCount(CtrlCalculationType? calc) =>
+        string.Equals((calc?.Value ?? "").Trim(), "COUNT", StringComparison.OrdinalIgnoreCase)
+        || string.Equals((calc?.SignType ?? "").Trim(), "COUNT", StringComparison.OrdinalIgnoreCase);
+
     private async Task<Dictionary<int, List<MetricGroupDto>>> LoadGroupsAsync(
-        int? days, CancellationToken ct)
+        string? days, DateOnly? fromDate, DateOnly? toDate, CancellationToken ct)
     {
         var connection = context.Database.GetDbConnection();
         if (connection.State != ConnectionState.Open) await connection.OpenAsync(ct);
@@ -113,7 +159,11 @@ if (metrics.Count == 0)
         await using var cmd = connection.CreateCommand();
         cmd.CommandType = CommandType.StoredProcedure;
         cmd.CommandText = "dbo.usp_Metrics_GetActiveMetricsGrouped";
-        cmd.CommandTimeout = 120;
+        cmd.CommandTimeout = 60;
+
+        // הפרוצדורה מקבלת טווח תאריכים בלבד; סינון לפי שם הנתון נעשה למטה
+        AddParam(cmd, "@FromDate", fromDate?.ToDateTime(TimeOnly.MinValue), DbType.Date);
+        AddParam(cmd, "@ToDate",   toDate?.ToDateTime(TimeOnly.MinValue),   DbType.Date);
 
      
         AddParam(cmd, "@Days", days, DbType.Int32);
@@ -121,22 +171,32 @@ if (metrics.Count == 0)
         var result = new Dictionary<int, List<MetricGroupDto>>();
 
         await using var reader = await cmd.ExecuteReaderAsync(ct);
-        var metricIdOrdinal = reader.GetOrdinal("MetricID");
-        var valueOrdinal    = reader.GetOrdinal("Value");
-        var recordsOrdinal  = reader.GetOrdinal("Records");
-        var totalOrdinal    = reader.GetOrdinal("TotalValue");
-
         while (await reader.ReadAsync(ct))
         {
-            var id = reader.GetInt32(metricIdOrdinal);
-            if (!result.TryGetValue(id, out var list))
-                result[id] = list = new List<MetricGroupDto>();
+            var metricId = reader.GetInt32(0);
+            var value   = reader.IsDBNull(1) ? string.Empty : Convert.ToString(reader.GetValue(1)) ?? string.Empty;
+            var records = reader.IsDBNull(2) ? 0 : Convert.ToInt32(reader.GetValue(2));
+            var total   = reader.IsDBNull(3) ? (decimal?)null : Convert.ToDecimal(reader.GetValue(3));
+
+            // הפרוצדורה מסמנת שגיאה בערך עצמו: "[שגיאה: ...]"
+            var isError = value.StartsWith("[", StringComparison.Ordinal) && value.Contains("שגיאה");
+
+            if (needle is not null)
+            {
+                var byName  = matchingIds!.Contains(metricId);
+                var byValue = value.Contains(needle, StringComparison.OrdinalIgnoreCase);
+                if (!byName && !byValue) continue;
+            }
+
+            if (!result.TryGetValue(metricId, out var list))
+                result[metricId] = list = new List<MetricGroupDto>();
 
             list.Add(new MetricGroupDto
             {
-                Value = reader.IsDBNull(valueOrdinal) ? "" : reader.GetValue(valueOrdinal)?.ToString() ?? "",
-                Records = reader.IsDBNull(recordsOrdinal) ? 0 : (int)Convert.ToInt64(reader.GetValue(recordsOrdinal)),
-                TotalValue = reader.IsDBNull(totalOrdinal) ? null : Convert.ToDecimal(reader.GetValue(totalOrdinal))
+                Value      = value,
+                Records    = records,
+                TotalValue = total,
+                IsError    = isError
             });
         }
 

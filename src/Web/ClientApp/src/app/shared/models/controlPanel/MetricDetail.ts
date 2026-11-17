@@ -30,4 +30,6 @@ export interface MetricDetail {
   records: Record<string, unknown>[];
   isStale: boolean;
   signType?: string | null;
+  /** סוג החישוב עצמו (CTRL_CalculationTypes.Value) — COUNT/SUM/DIRECT */
+  calcType?: string | null;
 }

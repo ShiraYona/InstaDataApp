@@ -7,35 +7,58 @@
 
     <div class="stats">
       @for (item of summary(); track item.key) {
-        <div class="stat"><strong>{{ item.value }}</strong><span>{{ item.label }}</span></div>
+        <!-- ב-COUNT מספר הרשומות זהה לערך המחושב — אין טעם להציגו פעמיים -->
+        @if (!(isCount() && item.key === 'records')) {
+          <div class="stat"><strong>{{ item.value }}</strong><span>{{ item.label }}</span></div>
+        }
       }
     </div>
 
-    <div class="panel">
-      <h2>חלוקה לפי {{ groupName() }}</h2>
-      <div class="tablewrap">
-        <table>
-          <thead>
-            <tr><th>{{ groupName() }}</th><th>מספר רשומות</th><th>סה״כ סכום</th><th class="col-detail">פירוט</th></tr>
-          </thead>
-          <tbody>
-            @for (row of systems(); track row.sourceId) {
-              <tr [class.is-active]="row.sourceId === selectedSourceId()">
-                <td>{{ row.sourceName || '—' }}</td>
-                <td class="col-num">{{ row.records | number }}</td>
-                <td class="col-amount">{{ formatCurrency(row.totalValue) }}</td>
-                <td class="col-detail">
-                  <button type="button" class="btn light sm" (click)="showRecords(row)"
-                          [class.is-active]="row.sourceId === selectedSourceId()">הצגת רשומות</button>
-                </td>
+    @if (groupName()) {
+      <div class="panel">
+        <h2>חלוקה לפי {{ groupName() }}
+          @if (selectedGroup()) {
+            <button type="button" class="btn light sm" (click)="clearGroup()">ניקוי סינון קבוצתי</button>
+          }
+        </h2>
+        <div class="tablewrap">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ groupName() }}</th>
+                <!-- בעמודת "מספר רשומות" ובעמודה המחושבת — אין מה להציג ב-COUNT (שניהם אותו ערך) -->
+                @if (!isCount()) {
+                  <th>מספר רשומות</th>
+                }
+                <th>{{ isCount() ? 'ערך מחושב (Count)' : 'ערך מחושב (Sum)' }}</th>
+                <th class="col-detail">הצגת רשומות</th>
               </tr>
-            } @empty {
-              <tr><td colspan="4" class="empty-cell">לא נמצאו מערכות</td></tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (row of systems(); track $index) {
+                <tr [class.is-active]="row.groupValue === selectedGroup()">
+                  <td>{{ row.sourceName || '—' }}</td>
+                  @if (!isCount()) {
+                    <td class="col-num">{{ row.records | number }}</td>
+                  }
+                  <td class="col-amount">{{ isCount() ? (row.records | number) : formatCurrency(row.totalValue) }}</td>
+                  <td class="col-detail">
+                    @if (row.isError) {
+                      <span class="note err">שגיאה בשליפה</span>
+                    } @else {
+                      <button type="button" class="btn light sm" (click)="showRecords(row)"
+                              [class.is-active]="row.groupValue === selectedGroup()">הצגת רשומות</button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr><td [attr.colspan]="isCount() ? 3 : 4" class="empty-cell">לא נמצאו קבוצות</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    }
 
     <div class="panel">
       <div class="sectionhead">
@@ -43,28 +66,57 @@
         <div class="tools">
           <input type="search" class="records-search" placeholder="סינון רשומות"
                  [value]="search()" (input)="onSearch($any($event.target).value)">
-          <button type="button" class="btn light sm" (click)="exportCsv()">ייצוא CSV</button>
-          <button type="button" class="btn light sm" disabled>פתיחת משימה</button>
+          <button type="button" class="btn light sm" (click)="exportCsv()" [disabled]="exporting() || loading()">
+            {{ exporting() ? 'מייצא…' : 'ייצוא CSV' }}
+          </button>
         </div>
       </div>
+
+      @if (exportError()) {
+        <p class="note err" role="alert">{{ exportError() }}</p>
+      }
 
       @if (loading()) {
         <p class="note">טוען נתונים…</p>
       } @else if (failed()) {
-        <p class="note err">שליפת הנתונים נכשלה.</p>
+        <p class="note err">לא ניתן לטעון את הנתון</p>
+        <button type="button" class="btn light sm" (click)="retry()">נסה שוב</button>
       } @else {
         <div class="tablewrap">
           <table>
-            <thead><tr>@for (column of columns(); track column.key) { <th>{{ column.label }}</th> }</tr></thead>
+            <thead>
+              <tr>
+                @for (column of columns(); track column.key) {
+                  <th class="th-sort" (click)="sortBy(column.key)">
+                    {{ column.label }}
+                    @if (sortKey() === column.key) { <span>{{ sortDirection() === 'asc' ? '▲' : '▼' }}</span> }
+                  </th>
+                }
+              </tr>
+            </thead>
             <tbody>
-              @for (record of filteredRecords(); track $index) {
-                <tr>@for (column of columns(); track column.key) { <td>{{ cell(record, column.key) }}</td> }</tr>
+              @for (record of pageRows(); track $index) {
+                <tr>
+                  @for (column of columns(); track column.key) {
+                    <td [class.col-num]="column.dataType === 'number' || column.dataType === 'decimal' || column.dataType === 'date'">
+                      {{ cell(record, column.key, column.dataType) }}
+                    </td>
+                  }
+                </tr>
               } @empty {
-                <tr><td [attr.colspan]="columns().length || 1" class="empty-cell">לא נמצאו רשומות</td></tr>
+                <tr><td [attr.colspan]="columns().length || 1" class="empty-cell">לא נמצאו רשומות להצגה</td></tr>
               }
             </tbody>
           </table>
         </div>
+
+        @if (totalItems() > pageSize) {
+          <div class="pager">
+            <button type="button" class="btn light sm" (click)="goToPage(pageIndex() - 1)" [disabled]="pageIndex() === 0">הקודם</button>
+            <span>עמוד {{ pageIndex() + 1 }} מתוך {{ totalPages() }} ({{ totalItems() }} רשומות)</span>
+            <button type="button" class="btn light sm" (click)="goToPage(pageIndex() + 1)" [disabled]="pageIndex() >= totalPages() - 1">הבא</button>
+          </div>
+        }
       }
     </div>
   </div>

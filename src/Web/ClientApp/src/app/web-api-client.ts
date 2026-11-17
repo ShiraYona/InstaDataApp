@@ -764,12 +764,14 @@ export class MetricsClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    getActiveMetrics(metricName: string | null | undefined, days: number | null | undefined): Observable<MetricCardDto[]> {
+    getActiveMetrics(metricName: string | null | undefined, fromDate: Date | null | undefined, toDate: Date | null | undefined): Observable<MetricCardDto[]> {
         let url_ = this.baseUrl + "/api/Metrics?";
         if (metricName !== undefined && metricName !== null)
             url_ += "metricName=" + encodeURIComponent("" + metricName) + "&";
-        if (days !== undefined && days !== null)
-            url_ += "days=" + encodeURIComponent("" + days) + "&";
+        if (fromDate !== undefined && fromDate !== null)
+            url_ += "fromDate=" + encodeURIComponent(fromDate ? "" + fromDate.toISOString() : "") + "&";
+        if (toDate !== undefined && toDate !== null)
+            url_ += "toDate=" + encodeURIComponent(toDate ? "" + toDate.toISOString() : "") + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_ : any = {
@@ -988,7 +990,7 @@ export class MetricsClient {
         return _observableOf(null as any);
     }
 
-    getDetails(key: string, groupValue: string | null | undefined, sourceId: number | null | undefined): Observable<MetricDetailDto> {
+    getDetails(key: string, groupValue: string | null | undefined, sourceId: number | null | undefined, search: string | null | undefined): Observable<MetricDetailDto> {
         let url_ = this.baseUrl + "/api/Metrics/{key}/details?";
         if (key === undefined || key === null)
             throw new Error("The parameter 'key' must be defined.");
@@ -997,6 +999,8 @@ export class MetricsClient {
             url_ += "groupValue=" + encodeURIComponent("" + groupValue) + "&";
         if (sourceId !== undefined && sourceId !== null)
             url_ += "sourceId=" + encodeURIComponent("" + sourceId) + "&";
+        if (search !== undefined && search !== null)
+            url_ += "search=" + encodeURIComponent("" + search) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_ : any = {
@@ -1034,6 +1038,66 @@ export class MetricsClient {
             let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
             result200 = MetricDetailDto.fromJS(resultData200);
             return _observableOf(result200);
+            }));
+        } else if (status === 404) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result404: any = null;
+            let resultData404 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result404 = ProblemDetails.fromJS(resultData404);
+            return throwException("A server side error occurred.", status, _responseText, _headers, result404);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    exportDetails(key: string, groupValue: string | null | undefined, sourceId: number | null | undefined, search: string | null | undefined): Observable<void> {
+        let url_ = this.baseUrl + "/api/Metrics/{key}/details/export?";
+        if (key === undefined || key === null)
+            throw new Error("The parameter 'key' must be defined.");
+        url_ = url_.replace("{key}", encodeURIComponent("" + key));
+        if (groupValue !== undefined && groupValue !== null)
+            url_ += "groupValue=" + encodeURIComponent("" + groupValue) + "&";
+        if (sourceId !== undefined && sourceId !== null)
+            url_ += "sourceId=" + encodeURIComponent("" + sourceId) + "&";
+        if (search !== undefined && search !== null)
+            url_ += "search=" + encodeURIComponent("" + search) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processExportDetails(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processExportDetails(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<void>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<void>;
+        }));
+    }
+
+    protected processExportDetails(response: HttpResponseBase): Observable<void> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return _observableOf(null as any);
             }));
         } else if (status === 404) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
@@ -1772,10 +1836,10 @@ export class MetricCardDto implements IMetricCardDto {
     valueField?: string | undefined;
     groupField?: string | undefined;
     groupFieldLabel?: string | undefined;
-    groupValue?: string | undefined;
     groups?: MetricGroupDto[];
     dateField?: string | undefined;
     isStale?: boolean;
+    isError?: boolean;
     trend?: number;
     hasComparison?: boolean | undefined;
     trendPositive?: boolean;
@@ -1783,6 +1847,7 @@ export class MetricCardDto implements IMetricCardDto {
     updated?: boolean;
     targetText?: string | undefined;
     signType?: string | undefined;
+    calcType?: string | undefined;
 
     constructor(data?: IMetricCardDto) {
         if (data) {
@@ -1805,7 +1870,6 @@ export class MetricCardDto implements IMetricCardDto {
             this.valueField = _data["valueField"];
             this.groupField = _data["groupField"];
             this.groupFieldLabel = _data["groupFieldLabel"];
-            this.groupValue = _data["groupValue"];
             if (Array.isArray(_data["groups"])) {
                 this.groups = [] as any;
                 for (let item of _data["groups"])
@@ -1813,6 +1877,7 @@ export class MetricCardDto implements IMetricCardDto {
             }
             this.dateField = _data["dateField"];
             this.isStale = _data["isStale"];
+            this.isError = _data["isError"];
             this.trend = _data["trend"];
             this.hasComparison = _data["hasComparison"];
             this.trendPositive = _data["trendPositive"];
@@ -1820,6 +1885,7 @@ export class MetricCardDto implements IMetricCardDto {
             this.updated = _data["updated"];
             this.targetText = _data["targetText"];
             this.signType = _data["signType"];
+            this.calcType = _data["calcType"];
         }
     }
 
@@ -1842,7 +1908,6 @@ export class MetricCardDto implements IMetricCardDto {
         data["valueField"] = this.valueField;
         data["groupField"] = this.groupField;
         data["groupFieldLabel"] = this.groupFieldLabel;
-        data["groupValue"] = this.groupValue;
         if (Array.isArray(this.groups)) {
             data["groups"] = [];
             for (let item of this.groups)
@@ -1850,6 +1915,7 @@ export class MetricCardDto implements IMetricCardDto {
         }
         data["dateField"] = this.dateField;
         data["isStale"] = this.isStale;
+        data["isError"] = this.isError;
         data["trend"] = this.trend;
         data["hasComparison"] = this.hasComparison;
         data["trendPositive"] = this.trendPositive;
@@ -1857,6 +1923,7 @@ export class MetricCardDto implements IMetricCardDto {
         data["updated"] = this.updated;
         data["targetText"] = this.targetText;
         data["signType"] = this.signType;
+        data["calcType"] = this.calcType;
         return data;
     }
 }
@@ -1872,10 +1939,10 @@ export interface IMetricCardDto {
     valueField?: string | undefined;
     groupField?: string | undefined;
     groupFieldLabel?: string | undefined;
-    groupValue?: string | undefined;
     groups?: MetricGroupDto[];
     dateField?: string | undefined;
     isStale?: boolean;
+    isError?: boolean;
     trend?: number;
     hasComparison?: boolean | undefined;
     trendPositive?: boolean;
@@ -1883,12 +1950,14 @@ export interface IMetricCardDto {
     updated?: boolean;
     targetText?: string | undefined;
     signType?: string | undefined;
+    calcType?: string | undefined;
 }
 
 export class MetricGroupDto implements IMetricGroupDto {
     value?: string;
     records?: number;
     totalValue?: number | undefined;
+    isError?: boolean;
 
     constructor(data?: IMetricGroupDto) {
         if (data) {
@@ -1904,6 +1973,7 @@ export class MetricGroupDto implements IMetricGroupDto {
             this.value = _data["value"];
             this.records = _data["records"];
             this.totalValue = _data["totalValue"];
+            this.isError = _data["isError"];
         }
     }
 
@@ -1919,6 +1989,7 @@ export class MetricGroupDto implements IMetricGroupDto {
         data["value"] = this.value;
         data["records"] = this.records;
         data["totalValue"] = this.totalValue;
+        data["isError"] = this.isError;
         return data;
     }
 }
@@ -1927,6 +1998,7 @@ export interface IMetricGroupDto {
     value?: string;
     records?: number;
     totalValue?: number | undefined;
+    isError?: boolean;
 }
 
 export class PaymentDto implements IPaymentDto {
@@ -2118,6 +2190,7 @@ export class MetricDetailDto implements IMetricDetailDto {
     records?: { [key: string]: any; }[];
     isStale?: boolean;
     signType?: string | undefined;
+    calcType?: string | undefined;
 
     constructor(data?: IMetricDetailDto) {
         if (data) {
@@ -2158,6 +2231,7 @@ export class MetricDetailDto implements IMetricDetailDto {
             }
             this.isStale = _data["isStale"];
             this.signType = _data["signType"];
+            this.calcType = _data["calcType"];
         }
     }
 
@@ -2198,6 +2272,7 @@ export class MetricDetailDto implements IMetricDetailDto {
         }
         data["isStale"] = this.isStale;
         data["signType"] = this.signType;
+        data["calcType"] = this.calcType;
         return data;
     }
 }
@@ -2219,6 +2294,7 @@ export interface IMetricDetailDto {
     records?: { [key: string]: any; }[];
     isStale?: boolean;
     signType?: string | undefined;
+    calcType?: string | undefined;
 }
 
 export class SystemGroupDto implements ISystemGroupDto {

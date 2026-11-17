@@ -19,13 +19,13 @@ public class MetricCardDto
     public string? GroupField { get; set; }
     /// <summary>הכיתוב של שדה הקיבוץ לתצוגה</summary>
     public string? GroupFieldLabel { get; set; }
-    /// <summary>ערך הקבוצה שהכרטיס מייצג — כל החישובים של הכרטיס הם עבור קבוצה זו</summary>
-    public string? GroupValue { get; set; }
         /// <summary>ערכי הקבוצה של הנתון — לפירוט "חלוקה לפי"</summary>
     public List<MetricGroupDto> Groups { get; set; } = new();
     public string? DateField { get; set; }
     /// <summary>הנתון לא נשלף מה-DB (שגיאה/אין חריגה בפועל) — מוצג באפור</summary>
     public bool IsStale { get; set; }
+    /// <summary>חישוב הנתון נכשל — מוצג בכרטיס שגיאה + "נסה שוב"</summary>
+    public bool IsError { get; set; }
     public double Trend { get; set; }
     public bool? HasComparison { get; set; }
     public bool TrendPositive { get; set; } = true;
@@ -33,11 +33,14 @@ public class MetricCardDto
     public bool Updated { get; set; } = true;
     public string? TargetText { get; set; }
     public string? SignType { get; set; }
+    /// <summary>סוג החישוב עצמו (CTRL_CalculationTypes.Value) — COUNT/SUM/DIRECT</summary>
+    public string? CalcType { get; set; }
 }
 public class MetricGroupDto
 {
     public string Value { get; set; } = string.Empty;
     public int Records { get; set; }
     public decimal? TotalValue { get; set; }
+    public bool IsError { get; set; }
 }
 

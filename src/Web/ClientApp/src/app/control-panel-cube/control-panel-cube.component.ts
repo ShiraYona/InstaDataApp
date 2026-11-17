@@ -2,7 +2,7 @@ import { DecimalPipe, NgClass } from '@angular/common';
 import { Component, Input, SimpleChanges, inject, OnChanges, OnInit, output, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { of, Subject } from 'rxjs';
-import { catchError, debounceTime, switchMap } from 'rxjs/operators';
+import { catchError, debounceTime, switchMap, timeout } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlPanel } from '../shared/services/control-panel';
 import { CubeMetric, CubeStatus } from '../shared/models/controlPanel/CubeMetric';
@@ -40,7 +40,9 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
   readonly loading = signal(true);
   readonly error = signal(false);
   @Input() columns = 4;
-  @Input() period: number | null = null;
+  @Input() period: number = 30;
+   @Input() fromDate: string | null = null;
+  @Input() toDate: string | null = null;
   @Input() searchMetricName = '';
 
   /** טריגר לרענון — כל שינוי בערך שולח בקשה חדשה לשרת */
@@ -51,7 +53,7 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
   readonly drill = output<string>();
 
   /** מקור השינויים בפילטרים — debounce + switchMap מונעים בקשות כפולות ותשובות מיושנות */
-  private readonly filter$ = new Subject<number | null>();          // מה שנשלף מהשרת
+  private readonly filter$ = new Subject<{ period: number | null ; fromDate: string | null; toDate: string | null }>();
 
   constructor() {
     this.filter$
@@ -60,13 +62,14 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
         switchMap(period => {
           this.loading.set(true);
           this.error.set(false);
-          return this.controlPanel.getCards(period).pipe(
-            catchError(() => {
-              this.error.set(true);
-              this.loading.set(false);
-              return of([]);
-            })
-          );
+      return this.controlPanel.getCards(f.period, f.fromDate, f.toDate).pipe(
+  timeout(60000),
+  catchError(() => {
+    this.error.set(true);
+    this.loading.set(false);
+    return of([]);
+  })
+);
         }),
         takeUntilDestroyed()
       )
@@ -83,7 +86,7 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['period'] || changes['refreshToken']) {
+    if (changes['period'] || changes['fromDate'] || changes['toDate'] || changes['refreshToken']) {
       this.pushFilters();
     }
     if (changes['searchMetricName']) {
@@ -92,7 +95,34 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
   }
 
   private pushFilters(): void {
-    this.filter$.next(this.period);
+    const { from, to } = this.resolveRange();
+    this.filter$.next({ period: this.period, fromDate: from, toDate: to });
+  }
+
+  /** טווח: בחירה ידנית אם קיימת, אחרת [today - period, today] */
+  private resolveRange(): { from: string | null; to: string | null } {
+    if (this.fromDate && this.toDate) {
+      return { from: this.fromDate, to: this.toDate };
+    }
+    if (this.period == null || this.period < 0) {
+      return { from: null, to: null };
+    }
+    const to = new Date();
+    const from = new Date();
+    from.setDate(from.getDate() - this.period);
+    return { from: this.toIso(from), to: this.toIso(to) };
+  }
+
+  private toIso(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  /** "נסה שוב" — מפעיל מחדש את החישוב (השליפה שולפת את כל הכרטיסים, כי זו קריאת השרת) */
+  retry(): void {
+    this.pushFilters();
   }
 
   readonly detail = output<string>();
