@@ -78,7 +78,7 @@ var calcTypes = await context.CtrlCalculationTypes.AsNoTracking()
         Dictionary<int, List<MetricGroupDto>> groupsByMetric;
         try
         {
-            groupsByMetric = await LoadGroupsAsync(request.MetricName, request.FromDate, request.ToDate, ct);
+            groupsByMetric = await LoadGroupsAsync(request.Days, request.FromDate, request.ToDate, ct);
         }
         catch (Exception ex)
         {
@@ -151,7 +151,7 @@ if (metrics.Count == 0)
         || string.Equals((calc?.SignType ?? "").Trim(), "COUNT", StringComparison.OrdinalIgnoreCase);
 
     private async Task<Dictionary<int, List<MetricGroupDto>>> LoadGroupsAsync(
-        string? metricName, DateOnly? fromDate, DateOnly? toDate, CancellationToken ct)
+        string? days, DateOnly? fromDate, DateOnly? toDate, CancellationToken ct)
     {
         var connection = context.Database.GetDbConnection();
         if (connection.State != ConnectionState.Open) await connection.OpenAsync(ct);
@@ -165,14 +165,8 @@ if (metrics.Count == 0)
         AddParam(cmd, "@FromDate", fromDate?.ToDateTime(TimeOnly.MinValue), DbType.Date);
         AddParam(cmd, "@ToDate",   toDate?.ToDateTime(TimeOnly.MinValue),   DbType.Date);
 
-        // סינון לפי שם — על שם הנתון ב-CTRL_Metrics, או על שם המערכת (Value)
-        var needle = string.IsNullOrWhiteSpace(metricName) ? null : metricName.Trim();
-        var matchingIds = needle is null
-            ? null
-            : await context.CtrlMetrics.AsNoTracking()
-                .Where(m => m.IsActive && m.MetricName.Contains(needle))
-                .Select(m => m.MetricID)
-                .ToListAsync(ct);
+     
+        AddParam(cmd, "@Days", days, DbType.Int32);
 
         var result = new Dictionary<int, List<MetricGroupDto>>();
 

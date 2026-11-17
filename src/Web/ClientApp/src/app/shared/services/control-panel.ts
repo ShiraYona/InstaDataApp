@@ -13,9 +13,9 @@ export class ControlPanel {
   private readonly http = inject(HttpClient);
 
   /** הכרטיסים הפעילים של הקובייה — מסוננים לפי תקופה (ימים) ושם נתון */
-  getCards(metricName?: string | null, fromDate?: string | null, toDate?: string | null): Observable<MetricCard[]> {
+  getCards(days?: number | null, fromDate?: string | null, toDate?: string | null): Observable<MetricCard[]> {
     const p = new URLSearchParams();
-    if (metricName?.trim()) p.set('metricName', metricName.trim());
+    if (days != null) p.set('days', String(days));
     if (fromDate) p.set('fromDate', fromDate);
     if (toDate) p.set('toDate', toDate);
     const q = p.toString();

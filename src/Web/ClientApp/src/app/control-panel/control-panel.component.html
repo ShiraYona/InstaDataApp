@@ -1,15 +1,20 @@
 
 <div class="headline" dir="rtl">
   <div class="headline__text">
+    <br/>
     <div class="eyebrow">מבט רוחבי על פעילות הגבייה</div>
     <h1>מערכת הניהול והבקרה</h1>
   </div>
   <div class="headline__actions">
-    <p-button styleClass="headlineBtn" severity="secondary" [outlined]="true">
+    <p-button
+      styleClass="headlineBtn"
+      severity="secondary"
+      [outlined]="true"
+      routerLink="/display-management">
       <span class="headlineBtn__icon" aria-hidden="true">⚙</span>
       <span>התאמת תצוגה</span>
     </p-button>
-    <p-button styleClass="headlineBtnPrimary">
+    <p-button styleClass="headlineBtnPrimary" (onClick)="openNewData()">
       <span class="headlineBtn__icon" aria-hidden="true">+</span>
       <span>נתון חדש</span>
     </p-button>
@@ -18,6 +23,11 @@
 @if (detailKey() !== null) {
   <app-detailed-dialogue [metricKey]="detailKey()!" (closed)="closeDetail()" />
 }
+
+<!-- דיאלוג יצירת נתון חדש — מצב יצירה (metric = null) -->
+<app-adding-new-data-entry
+  [(visible)]="newDataVisible"
+  (saved)="onNewDataSaved()" />
 
 
 <app-control-panel-filters
@@ -29,5 +39,6 @@
   [columns]="cardsPerRow() ?? 4"
   [period]="period() ?? 30"
   [searchMetricName]="searchMetricName()"
+  [refreshToken]="refreshToken()"
   (detail)="openDetail($event)">
 </app-control-panel-cube>
