@@ -291,7 +291,15 @@ ORDER BY COUNT_BIG(*) DESC";
         }
         return result;
     }
-
+    // ---------- ספירת רשומות מסוננות (בלי קיבוץ) ----------
+    private static async Task<long> CountAsync(DbConnection conn, CtrlDataSource source, string periodWhere,
+        Dictionary<string, object?> periodParams, CancellationToken ct)
+    {
+        if (!Safe.IsMatch(source.ObjectName)) return 0;
+        var raw = await ScalarAsync(conn, $"SELECT COUNT_BIG(*) FROM [{source.ObjectName}]{periodWhere}", periodParams, ct);
+        return raw is null or DBNull ? 0 : Convert.ToInt64(raw);
+    }
+    
     // ---------- תנאי התקופה — לפי התאריכים שהתקבלו (אותו טווח של הקובייה) ----------
     // הטווח נסגר בחצות של יום הסיום, ולכן הסוף הוא "לפני יום המחרת" ולא עד חצות היום עצמו
     private static (string Where, Dictionary<string, object?> Params) PeriodWhere(
