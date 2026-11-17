@@ -25,8 +25,12 @@ public class Metric
     /// <summary>השדה שלפיו יתבצע קיבוץ — null משמעו ללא קיבוץ</summary>
     public int? GroupFieldID { get; set; }
 
-    /// <summary>טקסט התקופה שמוצג למשתמש (CTRL_CalculationDays.Name)</summary>
-    public string DateRangeType { get; set; } = string.Empty;
+    /// <summary>
+    /// מספר הימים לחישוב (Value של CTRL_CalculationDays — 7 / 30 / 90).
+    /// null = "לפי מסנן הלוח": הנתון מקבל את התקופה מהמסך הראשי ולא מהגדרה עצמית.
+    /// העמודה במסד היא INT.
+    /// </summary>
+    public int? DateRangeType { get; set; }
 
     /// <summary>קוד הסמל — CTRL_ICON.Name</summary>
     public string? IconCode { get; set; }

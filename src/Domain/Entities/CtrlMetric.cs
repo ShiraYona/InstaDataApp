@@ -9,7 +9,7 @@ public class CtrlMetric
     public CtrlCalculationType? CalculationType { get; set; }
     public int? SumFieldID { get; set; }
     public int? GroupFieldID { get; set; }
-    public string DateRangeType { get; set; } = string.Empty;
+    public int? DateRangeType { get; set; }
     public string? IconCode { get; set; }
     public bool IsActive { get; set; } = true;
     public string CreatedBy { get; set; } = string.Empty;

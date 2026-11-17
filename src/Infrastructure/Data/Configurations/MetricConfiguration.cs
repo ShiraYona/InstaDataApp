@@ -13,7 +13,7 @@ public class MetricConfiguration : IEntityTypeConfiguration<Metric>
         builder.HasKey(x => x.MetricID);
 
         builder.Property(x => x.MetricName).HasMaxLength(80).IsRequired();
-        builder.Property(x => x.DateRangeType).HasMaxLength(100).IsRequired();
+        builder.Property(x => x.DateRangeType).HasColumnName("DateRangeType");
         builder.Property(x => x.IconCode).HasMaxLength(50);
         builder.Property(x => x.CreatedBy).HasMaxLength(128).IsRequired();
         builder.Property(x => x.UpdatedBy).HasMaxLength(128);
