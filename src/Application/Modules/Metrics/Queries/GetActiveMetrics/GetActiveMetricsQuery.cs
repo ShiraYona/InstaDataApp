@@ -22,21 +22,52 @@ public class GetActiveMetricsQueryHandler(IApplicationDbContext context, ILogger
 {
     public async Task<List<MetricCardDto>> Handle(GetActiveMetricsQuery request, CancellationToken ct)
     {
+// List<int>? visibleMetricIds = null;
+// if (!string.IsNullOrWhiteSpace(request.UserId))
+// {
+// visibleMetricIds = await context.UserMetricSettings
+//     .AsNoTracking()
+//     .Where(x => x.UserId == request.UserId && x.IsVisible)
+//     .Select(x => x.MetricId)
+//     .ToListAsync(ct);
+// }
+
+// var query = context.CtrlMetrics.AsNoTracking().Where(m => m.IsActive);
+// if (visibleMetricIds is not null)
+//     query = query.Where(m => visibleMetricIds.Contains(m.MetricID));
+
+// var metrics = await query.ToListAsync(ct);
+// שליפת מזהה + סדר אישי של הכרטיסים הגלויים למשתמש
+// שליפת מזהה + סדר אישי של הכרטיסים הגלויים למשתמש
+Dictionary<int, int?>? userOrder = null;
 List<int>? visibleMetricIds = null;
 if (!string.IsNullOrWhiteSpace(request.UserId))
 {
-visibleMetricIds = await context.UserMetricSettings
-    .AsNoTracking()
-    .Where(x => x.UserId == request.UserId && x.IsVisible)
-    .Select(x => x.MetricId)
-    .ToListAsync(ct);
+    var settings = await context.UserMetricSettings
+        .AsNoTracking()
+        .Where(x => x.UserId == request.UserId && x.IsVisible)
+        .Select(x => new { x.MetricId, x.DisplayOrder })
+        .ToListAsync(ct);
+
+    userOrder = settings.ToDictionary(x => x.MetricId, x => x.DisplayOrder);
+    visibleMetricIds = settings.Select(x => x.MetricId).ToList();   // List — EF מתרגם ל-IN
 }
 
 var query = context.CtrlMetrics.AsNoTracking().Where(m => m.IsActive);
 if (visibleMetricIds is not null)
-    query = query.Where(m => visibleMetricIds.Contains(m.MetricID));
+    query = query.Where(m => visibleMetricIds.Contains(m.MetricID));   // List.Contains — נתמך
 
 var metrics = await query.ToListAsync(ct);
+
+// מיון: קודם לפי DisplayOrder של המשתמש, אחר כך מה שלא סודר
+if (userOrder is not null)
+{
+    metrics = metrics
+        .OrderBy(m => userOrder.TryGetValue(m.MetricID, out var o) && o.HasValue ? 0 : 1)
+        .ThenBy(m => userOrder.TryGetValue(m.MetricID, out var o2) ? (o2 ?? int.MaxValue) : int.MaxValue)
+        .ThenBy(m => m.MetricID)
+        .ToList();
+}
 
 var calcTypes = await context.CtrlCalculationTypes.AsNoTracking()
     .ToDictionaryAsync(c => c.ID, ct);
