@@ -8,13 +8,13 @@ export interface NavItem {
   routerLink: string;
 }
 @Component({
-  selector: 'app-menue',
+  selector: 'app-menu',
   standalone: true,
   imports: [NgFor, RouterLink, RouterLinkActive],
-  templateUrl: './menue.component.html',
-  styleUrls: ['./menue.component.scss']
+  templateUrl: './menu.component.html',
+  styleUrls: ['./menu.component.scss']
 })
-export class MenueComponent {
+export class MenuComponent {
   mainItems: NavItem[] = [
     { label: 'לוח בקרה',        icon: '▦', routerLink: '/control-panel' },
     { label: 'ניהול נתונים',    icon: '▤', routerLink: '/data-management' },
