@@ -42,7 +42,6 @@ export class NotificationService {
   error(detail: string, summary: string = DEFAULT_SUMMARIES.error): void {
     this.show('error', summary, detail);
   }
-
   /**
    
    * @param error השגיאה שנתפסה ב-catchError

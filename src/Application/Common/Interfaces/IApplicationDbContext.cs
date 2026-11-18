@@ -16,6 +16,11 @@ public interface IApplicationDbContext
     DbSet<CtrlPayment> CtrlPayments { get; }
     DbSet<CtrlFine> CtrlFines { get; }
     DbSet<CtrlClaim> CtrlClaims { get; }
+        DbSet<CtrlTask> CtrlTasks { get; }
+    DbSet<CtrlTaskComment> CtrlTaskComments { get; }
+    DbSet<CtrlTaskHistory> CtrlTaskHistories { get; }
+    DbSet<CtrlTaskView> CtrlTaskViews { get; }
+
     DbSet<CtrlIcon> CtrlIcons { get; }
 
     DbSet<UserDisplaySettings> UserDisplaySettings { get; }

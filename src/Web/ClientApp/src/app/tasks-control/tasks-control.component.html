@@ -1,123 +1,680 @@
-<div class="tasksControl" dir="rtl">
+<div class="content">
   <!-- כותרת המסך -->
-  <header class="screenHeader">
-    <div class="screenHeader__titles">
-      <h1 class="screenHeader__title">משימות ובקרה</h1>
-      <p class="screenHeader__subtitle">
-        המחשה להרחבה תפעולית עתידית: פתיחת משימה, שיוך טיפול ומעקב.
-      </p>
+  <div class="headline">
+    <div>
+      <div class="eyebrow">ניהול טיפול ובקרה תפעולית</div>
+      <h1>משימות ובקרה</h1>
+      <p>משימות פתוחות, מועדי יעד, עומסים והתקדמות הטיפול</p>
     </div>
 
-    <p-button
-      label="+ משימה חדשה"
-      styleClass="createButton"
-      (onClick)="openTask()">
-    </p-button>
-  </header>
+    <div class="flex">
+      <p-select
+        overlayStyleClass="tasks-dd-overlay"
+        (onShow)="sizePanelOverlay()"
+        class="role"
+        appendTo="body"
+        panelStyleClass="tasks-dd"
+        ariaLabel="תצוגת הרשאה"
+        [ngModel]="role()"
+        (ngModelChange)="setRole($event)"
+        [options]="roleSelectOptions()"
+        optionValue="value">
+        <ng-template let-item pTemplate="selectedItem">
+          <span class="selectlike-text">{{ item?.label }}</span>
+        </ng-template>
+        <ng-template let-item pTemplate="item">
+          <span class="dd-label" [class.dd-all]="isAllItem(item)">{{ item.label }}</span>
+        </ng-template>
+      </p-select>
 
-  <!-- באנר הסבר -->
-  <div class="infoBanner">
-    ניהול משימות הוא רכיב הרחבה מוצע, שדורש הגדרת תהליכי עבודה והרשאות לפני מימוש ייצור.
+      <button class="btn light" type="button" (click)="resetDemo()">איפוס נתונים</button>
+      <button class="btn" type="button" (click)="openCreate()">＋ משימה חדשה</button>
+    </div>
   </div>
 
-  <!-- טבלת המשימות -->
+  <!-- תקופת המדדים -->
+  <div class="periodline">
+    <label for="period">תקופת מדדי ההשלמה</label>
+    <p-select
+      overlayStyleClass="tasks-dd-overlay"
+      (onShow)="sizePanelOverlay()"
+      inputId="period"
+      class="period"
+      appendTo="body"
+      panelStyleClass="tasks-dd"
+      ariaLabel="תקופת מדדי ההשלמה"
+      [ngModel]="period()"
+      (ngModelChange)="period.set(+$event); loaded.set(20)"
+      [options]="periodSelectOptions()"
+      optionValue="value">
+      <ng-template let-item pTemplate="selectedItem">
+        <span class="selectlike-text">{{ item?.label }}</span>
+      </ng-template>
+      <ng-template let-item pTemplate="item">
+        <span class="dd-label">{{ item.label }}</span>
+      </ng-template>
+    </p-select>
+  </div>
+
+  <!-- מדדים -->
+  <div class="kpis">
+    <button
+      type="button"
+      class="kpi"
+      *ngFor="let m of kpis()"
+      [class.selected]="metricFocus() === m.key"
+      (click)="toggleMetric(m.key)">
+      <span class="label">{{ m.label }}</span>
+      <div class="num" [class.alert]="m.key === 'late'">{{ m.n }}</div>
+    </button>
+  </div>
+
+  <div class="statnote">
+    ארבעת המדדים הראשונים מציגים מצב נוכחי; שני האחרונים מחושבים לפי התקופה שנבחרה. לחיצה על מדד
+    מסננת את הטבלה.
+  </div>
+
+  <!-- רשימת משימות -->
   <section class="panel">
-    <div class="panel__table">
-      <p-table
-        [value]="tasks"
-        dataKey="id"
-        styleClass="tasksTable tasksControlTable"
-        showGridlines="false"
-        [scrollable]="true">
-
-        <ng-template pTemplate="header">
-          <tr>
-            <th class="colId">מזהה</th>
-            <th>משימה</th>
-            <th>גורם מטפל</th>
-            <th class="colPriority">עדיפות</th>
-            <th class="colStatus">סטטוס</th>
-            <th class="colUpdate">עדכון סטטוס</th>
-          </tr>
-        </ng-template>
-
-        <ng-template pTemplate="body" let-row>
-          <tr>
-            <td class="cellId">#{{ row.id }}</td>
-            <td class="cellTitle"><strong>{{ row.title }}</strong></td>
-            <td>{{ row.owner }}</td>
-            <td class="colPriority">
-              <span class="statusPill" [class.statusPill--red]="row.priority === 'גבוהה'">
-                {{ row.priority }}
-              </span>
-            </td>
-            <td class="colStatus">
-              <span class="statusPill">{{ row.status }}</span>
-            </td>
-            <td class="colUpdate">
-              <p-dropdown
-                [options]="statusOptions"
-                [ngModel]="row.status"
-                (ngModelChange)="setTaskStatus(row, $event)"
-                styleClass="statusDropdown"
-                appendTo="body">
-              </p-dropdown>
-            </td>
-          </tr>
-        </ng-template>
-
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="6" class="emptyMessage">אין משימות להצגה</td>
-          </tr>
-        </ng-template>
-      </p-table>
+    <div class="righttools">
+      <h2>רשימת משימות</h2>
+      <div class="flex">
+        <button class="btn sm light" type="button" (click)="clearFilters()">ניקוי מסננים</button>
+        <button class="btn sm light" type="button" (click)="refresh()">↻ רענון</button>
+      </div>
     </div>
-  </section>
 
-  <!-- חלון פתיחת משימה -->
-  <p-dialog
-    [(visible)]="dialogVisible"
-    header="פתיחת משימה"
-    [modal]="true"
-    [draggable]="false"
-    [resizable]="false"
-    [style]="{ width: 'min(100%, 720px)' }"
-    styleClass="taskDialog">
-    <div class="formgrid">
-      <div class="field full">
-        <label>נושא המשימה</label>
+    <div class="tabs">
+      <button
+        type="button"
+        class="tab"
+        *ngFor="let v of viewTabs"
+        [class.active]="view() === v.key"
+        (click)="setView(v.key)">
+        {{ v.label }}
+      </button>
+    </div>
+
+    <!-- מסננים -->
+    <div class="filters">
+      <div class="field search">
+        <label for="searchBox">חיפוש חופשי (מספר משימה, נושא, תיאור או מזהה מקור)</label>
         <input
-          pInputText
-          [(ngModel)]="draft.title"
-          maxlength="80"
-          placeholder="תיאור קצר" />
+          id="searchBox"
+          type="text"
+          [ngModel]="keyword()"
+          (ngModelChange)="onSearch($event)"
+          placeholder="הקלדת מילת חיפוש..." />
       </div>
-
       <div class="field">
-        <label>גורם מטפל</label>
-        <p-dropdown
-          [options]="ownerOptions"
-          [(ngModel)]="draft.owner"
+        <label>סטטוס</label>
+        <p-select
+          [overlayOptions]="{ styleClass: 'tasks-dd-overlay' }"
+          (onPanelShow)="sizePanelOverlay()"
           appendTo="body"
-          styleClass="statusDropdown">
-        </p-dropdown>
+          panelStyleClass="tasks-dd"
+          placeholder="הכול"
+          ariaLabel="סינון לפי סטטוס"
+          [ngModel]="filters().status"
+          (ngModelChange)="onMultiOptionChange('status', $event)"
+          [options]="statusSelectOptions()"
+          optionValue="value">
+          <ng-template let-item pTemplate="item">
+            <!-- "הכול" נבחר כאשר אין בחירה; הסימון עצמו מחושב לפי filters() -->
+            <p-checkbox
+              [binary]="true"
+              [ngModel]="isOptionChecked(item, filters().status)"
+              [readonly]="true" />
+            <span class="dd-label" [class.dd-all]="isAllItem(item)">{{ item.label }}</span>
+          </ng-template>
+        </p-select>
       </div>
-
+      
       <div class="field">
         <label>עדיפות</label>
-        <p-dropdown
-          [options]="priorityOptions"
-          [(ngModel)]="draft.priority"
+        <p-select
+          [overlayOptions]="{ styleClass: 'tasks-dd-overlay' }"
+          (onPanelShow)="sizePanelOverlay()"
           appendTo="body"
-          styleClass="statusDropdown">
-        </p-dropdown>
+          panelStyleClass="tasks-dd"
+          placeholder="הכול"
+          ariaLabel="סינון לפי עדיפות"
+          [ngModel]="filters().priority"
+          (ngModelChange)="onMultiOptionChange('priority', $event)"
+          [options]="prioritySelectOptions()"
+          optionValue="value">
+          <ng-template let-item pTemplate="item">
+            <!-- "הכול" נבחר כאשר אין בחירה; הסימון עצמו מחושב לפי filters() -->
+            <p-checkbox
+              [binary]="true"
+              [ngModel]="isOptionChecked(item, filters().priority)"
+              [readonly]="true" />
+            <span class="dd-label" [class.dd-all]="isAllItem(item)">{{ item.label }}</span>
+          </ng-template>
+        </p-select>
+      </div>
+      <div class="field">
+        <label>צוות מטפל</label>
+        <p-select
+          overlayStyleClass="tasks-dd-overlay"
+          (onShow)="sizePanelOverlay()"
+          appendTo="body"
+          panelStyleClass="tasks-dd"
+          placeholder="הכול"
+          [ngModel]="filters().team"
+          (ngModelChange)="setFilter('team', $event)"
+          [options]="teamSelectOptions()"
+          optionValue="value"
+          ariaLabel="צוות מטפל">
+          <ng-template let-item pTemplate="selectedItem">
+            <span class="selectlike-text">{{ singleLabel(filters().team, teamSelectOptions()) }}</span>
+          </ng-template>
+          <ng-template let-item pTemplate="item">
+            <p-checkbox
+              [binary]="true"
+              [ngModel]="isSingleChecked(item, filters().team)"
+              [readonly]="true" />
+            <span class="dd-label" [class.dd-all]="isAllItem(item)">{{ item.label }}</span>
+          </ng-template>
+        </p-select>
       </div>
     </div>
 
-    <div class="actionrow">
-      <p-button label="שמירת משימה" styleClass="createButton" (onClick)="saveTask()"></p-button>
-      <p-button label="ביטול" styleClass="cancelButton" (onClick)="dialogVisible = false"></p-button>
+    <div class="filters second">
+      <div class="field">
+        <label>עובד אחראי</label>
+        <p-select
+          overlayStyleClass="tasks-dd-overlay"
+          (onShow)="sizePanelOverlay()"
+          appendTo="body"
+          panelStyleClass="tasks-dd"
+          placeholder="הכול"
+          [ngModel]="filters().worker"
+          (ngModelChange)="setFilter('worker', $event)"
+          [options]="workerSelectOptions()"
+          optionValue="value"
+          ariaLabel="עובד אחראי">
+          <ng-template let-item pTemplate="selectedItem">
+            <span class="selectlike-text">{{ singleLabel(filters().worker, workerSelectOptions()) }}</span>
+          </ng-template>
+          <ng-template let-item pTemplate="item">
+            <p-checkbox
+              [binary]="true"
+              [ngModel]="isSingleChecked(item, filters().worker)"
+              [readonly]="true" />
+            <span class="dd-label" [class.dd-all]="isAllItem(item)">{{ item.label }}</span>
+          </ng-template>
+        </p-select>
+      </div>
+      <div class="field">
+        <label>מקור המשימה</label>
+        <p-select
+          [overlayOptions]="{ styleClass: 'tasks-dd-overlay' }"
+          (onPanelShow)="sizePanelOverlay()"
+          appendTo="body"
+          panelStyleClass="tasks-dd"
+          placeholder="הכול"
+          ariaLabel="סינון לפי מקור"
+          [ngModel]="filters().source"
+          (ngModelChange)="onMultiOptionChange('source', $event)"
+          [options]="sourceSelectOptions()"
+          optionValue="value">
+          <ng-template let-item pTemplate="item">
+            <!-- "הכול" נבחר כאשר אין בחירה; הסימון עצמו מחושב לפי filters() -->
+            <p-checkbox
+              [binary]="true"
+              [ngModel]="isOptionChecked(item, filters().source)"
+              [readonly]="true" />
+            <span class="dd-label" [class.dd-all]="isAllItem(item)">{{ item.label }}</span>
+          </ng-template>
+        </p-select>
+      </div>
+      <div class="field">
+        <label>מצב טיפול</label>
+        <p-select
+          [overlayOptions]="{ styleClass: 'tasks-dd-overlay' }"
+          (onPanelShow)="sizePanelOverlay()"
+          appendTo="body"
+          panelStyleClass="tasks-dd"
+          placeholder="הכול"
+          ariaLabel="סינון לפי מצב טיפול"
+          [ngModel]="filters().state"
+          (ngModelChange)="onMultiOptionChange('state', $event)"
+          [options]="stateSelectOptions()"
+          optionValue="value">
+          <ng-template let-item pTemplate="item">
+            <!-- "הכול" נבחר כאשר אין בחירה; הסימון עצמו מחושב לפי filters() -->
+            <p-checkbox
+              [binary]="true"
+              [ngModel]="isOptionChecked(item, filters().state)"
+              [readonly]="true" />
+            <span class="dd-label" [class.dd-all]="isAllItem(item)">{{ item.label }}</span>
+          </ng-template>
+        </p-select>
+      </div>
+      <div class="field">
+        <label>טווח תאריך יעד</label>
+        <div class="flex" style="gap: 4px">
+          <input
+            aria-label="מתאריך"
+            title="מתאריך"
+            type="date"
+            [ngModel]="filters().dueFrom"
+            (ngModelChange)="setFilter('dueFrom', $event)" />
+          <input
+            aria-label="עד תאריך"
+            title="עד תאריך"
+            type="date"
+            [ngModel]="filters().dueTo"
+            (ngModelChange)="setFilter('dueTo', $event)" />
+        </div>
+      </div>
     </div>
-  </p-dialog>
+
+    <!-- טבלה -->
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="sort" *ngFor="let c of sortColumns" (click)="setSort(c.key)">
+              {{ c.label }}{{ sort() === c.key ? (direction() === 'asc' ? ' ↑' : ' ↓') : '' }}
+            </th>
+            <th>פעולות</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of visibleTasks()">
+            <td>#{{ t.TaskID }}</td>
+            <td>
+              <button class="link" type="button" (click)="openDetails(t.TaskID)">
+                {{ t.TaskTitle }}
+              </button>
+              <span
+                *ngIf="t.IsNewForMe"
+                class="pill new"
+                title="נוצרה או עודכנה מאז הצפייה האחרונה שלך"
+                >חדש</span
+              >
+            </td>
+            <td>{{ sourceLabels[t.SourceType] }}</td>
+            <td>{{ teamName(t.TeamID) }}</td>
+            <td>{{ userName(t.AssignedUserID) }}</td>
+            <td [ngClass]="priorityClass(t.Priority)">{{ priorityLabels[t.Priority] }}</td>
+            <td><span class="pill" [ngClass]="pillClass(t.Status)">{{ statusLabels[t.Status] }}</span></td>
+            <td>{{ dateText(t.CreatedDate) }}</td>
+            <td>
+              {{ dateText(t.DueDate) }}
+              <span
+                *ngIf="deadline(t)"
+                class="pill"
+                [class.late]="deadline(t) === 'late'"
+                [class.soon]="deadline(t) !== 'late'"
+                >{{ deadlineLabel(deadline(t)) }}</span
+              >
+            </td>
+            <td>
+              <button class="btn light sm" type="button" (click)="openDetails(t.TaskID)">לפרטים</button>
+            </td>
+          </tr>
+
+          <tr *ngIf="loading()">
+            <td colspan="10" class="empty">
+              <p-progressSpinner
+                styleClass="table-spinner"
+                strokeWidth="4"
+                animationDuration=".9s"
+                ariaLabel="טוען משימות"></p-progressSpinner>
+              טוען משימות...
+            </td>
+          </tr>
+
+          <tr *ngIf="!loading() && loadError()">
+            <td colspan="10" class="empty">
+              שגיאה בטעינת המשימות מהשרת.
+              <button class="btn light sm" type="button" (click)="retryLoad()">ניסיון חוזר</button>
+            </td>
+          </tr>
+
+          <tr *ngIf="!loading() && !loadError() && !visibleTasks().length">
+            <td colspan="10" class="empty">לא נמצאו משימות התואמות לחיפוש</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="footerbar">
+      <span class="muted">
+        מוצגות {{ formatNumber(visibleTasks().length) }} מתוך
+        {{ formatNumber(totalCount()) }} משימות
+      </span>
+      <button
+        *ngIf="hasMore()"
+        class="btn light"
+        type="button"
+        [disabled]="loadingMore() || loading()"
+        (click)="loadMore()">
+        {{ loadingMore() ? 'טוען...' : 'טען עוד 20 משימות' }}
+      </button>
+    </div>
+  </section>
+</div>
+
+<!-- ================= חלון אישור ביטול שינויים ================= -->
+<p-confirmdialog
+  styleClass="dm-confirm-dialog"
+  [closeOnEscape]="true"
+  [focusTrap]="true">
+</p-confirmdialog>
+
+<!-- ================= ספינר יצירת משימה ================= -->
+<div class="creating-overlay" *ngIf="creating()">
+  <div class="creating-box">
+    <p-progressSpinner
+      styleClass="create-spinner"
+      strokeWidth="4"
+      animationDuration=".9s"
+      [ariaLabel]="'יוצר משימה'">
+    </p-progressSpinner>
+    <div class="creating-text">יוצר את המשימה...</div>
+  </div>
+</div>
+
+<!-- ================= חלונית מודאלית ================= -->
+<div class="modalback" *ngIf="modalTitle() !== null" (click)="onBackdropClick($event)">
+  <div class="modal">
+    <div class="modalhead">
+      <h2>{{ modalTitle() }}</h2>
+      <button class="close" type="button" aria-label="סגירה" (click)="closeModal()">×</button>
+    </div>
+
+    <div class="modalbody">
+      <!-- ===== טופס יצירה / עריכה ===== -->
+      <form *ngIf="form() as f; else detailView" (ngSubmit)="saveTaskForm()">
+        <div class="formgrid">
+          <div class="field full">
+            <label for="fTitle">נושא המשימה *</label>
+            <input
+              id="fTitle"
+              required
+              maxlength="150"
+              [ngModel]="f.title"
+              (ngModelChange)="updateForm('title', $event)"
+              [class.invalid]="formErrors().title"
+              [attr.aria-invalid]="formErrors().title ? 'true' : null"
+              name="fTitle"
+              placeholder="תיאור קצר וברור של המשימה" />
+            <p-message
+              *ngIf="formErrors().title"
+              severity="error"
+              size="small"
+              variant="simple"
+              [text]="formErrors().title!" />
+          </div>
+
+          <div class="field full">
+            <label for="fDescription">תיאור המשימה</label>
+            <textarea
+              id="fDescription"
+              maxlength="2000"
+              [ngModel]="f.description"
+              (ngModelChange)="updateForm('description', $event)"
+              [class.invalid]="formErrors().description"
+              [attr.aria-invalid]="formErrors().description ? 'true' : null"
+              name="fDescription"
+              placeholder="פרטי הטיפול הנדרש"></textarea>
+            <p-message
+              *ngIf="formErrors().description"
+              severity="error"
+              size="small"
+              variant="simple"
+              [text]="formErrors().description!" />
+          </div>
+
+          <div class="field">
+            <label for="fTeam">צוות מטפל *</label>
+            <select
+              id="fTeam"
+              required
+              [ngModel]="f.team"
+              (ngModelChange)="onFormTeamChange($event)"
+              [class.invalid]="formErrors().team"
+              [attr.aria-invalid]="formErrors().team ? 'true' : null"
+              name="fTeam">
+              <option *ngFor="let t of teams" [value]="t.id">{{ t.name }}</option>
+            </select>
+            <p-message
+              *ngIf="formErrors().team"
+              severity="error"
+              size="small"
+              variant="simple"
+              [text]="formErrors().team!" />
+          </div>
+
+          <div class="field">
+            <label for="fWorker">עובד אחראי</label>
+            <select
+              id="fWorker"
+              [ngModel]="f.assigned"
+              (ngModelChange)="updateForm('assigned', $event)"
+              [class.invalid]="formErrors().assigned"
+              [attr.aria-invalid]="formErrors().assigned ? 'true' : null"
+              name="fWorker">
+              <option value="">ללא עובד אחראי</option>
+              <option *ngFor="let w of workerOptionsForTeam(f.team)" [value]="w.value">
+                {{ w.label }}
+              </option>
+            </select>
+            <p-message
+              *ngIf="formErrors().assigned"
+              severity="error"
+              size="small"
+              variant="simple"
+              [text]="formErrors().assigned!" />
+          </div>
+
+          <div class="field">
+            <label for="fPriority">עדיפות *</label>
+            <select
+              id="fPriority"
+              required
+              [ngModel]="f.priority"
+              (ngModelChange)="updateForm('priority', $event)"
+              [class.invalid]="formErrors().priority"
+              [attr.aria-invalid]="formErrors().priority ? 'true' : null"
+              name="fPriority">
+              <option *ngFor="let o of priorityOptions" [value]="o.value">{{ o.label }}</option>
+            </select>
+            <p-message
+              *ngIf="formErrors().priority"
+              severity="error"
+              size="small"
+              variant="simple"
+              [text]="formErrors().priority!" />
+          </div>
+
+          <div class="field">
+            <label for="fDue">תאריך יעד *</label>
+            <input
+              id="fDue"
+              type="date"
+              required
+              [ngModel]="f.due"
+              (ngModelChange)="updateForm('due', $event)"
+              [class.invalid]="formErrors().due"
+              [attr.aria-invalid]="formErrors().due ? 'true' : null"
+              name="fDue" />
+            <p-message
+              *ngIf="formErrors().due"
+              severity="error"
+              size="small"
+              variant="simple"
+              [text]="formErrors().due!" />
+          </div>
+        </div>
+
+        <div
+          class="notice"
+          style="margin-top: 16px"
+          *ngIf="editingTask as t"
+          [hidden]="!t.SourceEntityID">
+          מקור המשימה: {{ t.SourceSystemCode }} · {{ t.SourceEntityType }} #{{ t.SourceEntityID }}
+          (לקריאה בלבד)
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn" type="submit" [disabled]="working() || creating()">שמירה</button>
+          <button class="btn light" type="button" (click)="cancelForm()">ביטול</button>
+        </div>
+      </form>
+
+      <!-- ===== פירוט משימה ===== -->
+      <ng-template #detailView>
+        <ng-container *ngIf="detailTask as t">
+          <div class="subnav">
+            <button
+              type="button"
+              *ngFor="let tab of detailTabs(t)"
+              [class.active]="detailTab() === tab.key"
+              (click)="openDetails(t.TaskID, tab.key)">
+              {{ tab.label }}
+            </button>
+          </div>
+
+          <!-- פרטי משימה -->
+          <ng-container *ngIf="detailTab() === 'info'">
+            <div class="flex" style="justify-content: space-between; margin-bottom: 14px">
+              <div class="flex">
+                <span class="pill" [ngClass]="pillClass(t.Status)">{{ statusLabels[t.Status] }}</span>
+                <span class="pill">עדיפות {{ priorityLabels[t.Priority] }}</span>
+                <span
+                  *ngIf="deadline(t)"
+                  class="pill"
+                  [class.late]="deadline(t) === 'late'"
+                  [class.soon]="deadline(t) !== 'late'"
+                  >{{ detailDeadlineLabel(deadline(t)) }}</span
+                >
+              </div>
+              <div class="flex">
+                <button
+                  class="btn light sm"
+                  type="button"
+                  [disabled]="!isActive(t)"
+                  (click)="openEdit(t.TaskID)">
+                  עריכה
+                </button>
+                <button
+                  *ngFor="let tr of detailTransitions(t)"
+                  type="button"
+                  class="btn sm"
+                  [class.light]="!tr.primary"
+                  [class.danger]="tr.primary"
+                  (click)="changeStatus(t.TaskID, tr.status)">
+                  {{ tr.label }}
+                </button>
+              </div>
+            </div>
+
+            <div class="detailgrid">
+              <div class="detailbox">
+                <small>צוות מטפל</small><strong>{{ teamName(t.TeamID) }}</strong>
+              </div>
+              <div class="detailbox">
+                <small>עובד אחראי</small><strong>{{ userName(t.AssignedUserID) }}</strong>
+              </div>
+              <div class="detailbox">
+                <small>תאריך יעד</small><strong>{{ dateText(t.DueDate) }}</strong>
+              </div>
+              <div class="detailbox">
+                <small>נוצרה</small><strong>{{ dateText(t.CreatedDate) }}</strong>
+              </div>
+              <div class="detailbox">
+                <small>יוצר המשימה</small><strong>{{ userName(t.CreatedBy) }}</strong>
+              </div>
+              <div class="detailbox">
+                <small>מועד השלמה</small><strong>{{ dateText(t.CompletedDate) }}</strong>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+            <b>תיאור המשימה</b>
+            <p style="color: #354d6b">{{ t.TaskDescription || 'לא הוזן תיאור' }}</p>
+
+            <div class="divider"></div>
+            <b>מקור המשימה</b>
+            <p>
+              {{ sourceLabels[t.SourceType] }}
+              <ng-container *ngIf="t.SourceSystemCode"> · {{ t.SourceSystemCode }}</ng-container>
+              <ng-container *ngIf="t.SourceEntityID">
+                · {{ t.SourceEntityType }} {{ t.SourceEntityID }}
+              </ng-container>
+              <ng-container *ngIf="t.MetricID"> · נתון #{{ t.MetricID }}</ng-container>
+            </p>
+            <button
+              *ngIf="sourceUrlOf(t) as srcUrl"
+              class="btn light sm"
+              type="button"
+              (click)="openSource(t)"
+              [title]="srcUrl">
+              מעבר לרשומת המקור ↗
+            </button>
+            <p class="muted" *ngIf="!sourceUrlOf(t)">
+              <ng-container *ngIf="t.SourceEntityID">לא הוגדרה כתובת ישירה לרשומת המקור.</ng-container>
+              <ng-container *ngIf="!t.SourceEntityID">המשימה אינה מקושרת לרשומת מקור.</ng-container>
+            </p>
+          </ng-container>
+
+          <!-- הערות -->
+          <ng-container *ngIf="detailTab() === 'comments'">
+            <form (ngSubmit)="addComment(t)">
+              <div class="field">
+                <label for="newComment">הערת טיפול חדשה</label>
+                <textarea
+                  id="newComment"
+                  name="newComment"
+                  maxlength="2000"
+                  [ngModel]="commentsDraft()"
+                  (ngModelChange)="commentsDraft.set($event)"
+                  placeholder="תיעוד הפעולה שבוצעה או מידע להמשך טיפול"></textarea>
+              </div>
+              <div class="modal-actions">
+                <button class="btn sm" type="submit">הוסף הערה</button>
+              </div>
+            </form>
+
+            <div class="divider"></div>
+
+            <ng-container *ngIf="detailComments(t).length; else noComments">
+              <div class="event" *ngFor="let c of detailComments(t)">
+                <b>{{ userName(c.CreatedBy) }} · {{ dateTimeText(c.CreatedDate) }}</b>
+                <div>{{ c.CommentText }}</div>
+              </div>
+            </ng-container>
+            <ng-template #noComments><p>לא נוספו הערות למשימה</p></ng-template>
+          </ng-container>
+
+          <!-- היסטוריית שינויים -->
+          <ng-container *ngIf="detailTab() === 'history'">
+            <div class="timeline">
+              <div class="event" *ngFor="let h of detailHistoryRows(t)">
+                <b>
+                  {{ historyLabels[h.ActionType]
+                  }}<ng-container *ngIf="h.FieldName">
+                    · {{ historyFieldLabels[h.FieldName] }}</ng-container
+                  >
+                </b>
+                <div class="muted" *ngIf="h.FieldName">
+                  {{ h.OldValue || '—' }} ← {{ h.NewValue || '—' }}
+                </div>
+                <small>{{ userName(h.ChangedBy) }} · {{ dateTimeText(h.ChangedDate) }}</small>
+              </div>
+            </div>
+          </ng-container>
+
+          <div class="modal-actions">
+            <button class="btn light" type="button" (click)="closeModal()">חזרה לרשימה</button>
+          </div>
+        </ng-container>
+      </ng-template>
+    </div>
+  </div>
 </div>
