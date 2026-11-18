@@ -1,172 +1,876 @@
-// מסך משימות ובקרה — העיצוב מועתק מהדמו, מסך "משימות ובקרה".
-:host {
-  display: block;
-  width: 100%;
-  min-height: 100vh;
-  direction: rtl;
-  font-family: Arial, 'Segoe UI', sans-serif;
-  color: #19304d;
-  background: #f3f6fb;
-  box-shadow: 0 0 0 100vmax #f3f6fb;
-  clip-path: inset(0 -100vmax);
-}
+/* ============================================================
+   מסך "משימות ובקרה" — עיצוב זהה לדמו
+   התפריט הצדי והמעטפת מגיעים מ-app.component; כאן רק תוכן המסך.
+   ============================================================ */
 
-.tasksControl {
-  width: 100%;
-  margin: 0;
-  padding: 30px 36px 80px;
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
-/* ---------- כותרת — .headline ---------- */
-.screenHeader {
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid #cdd9e8;
+  border-radius: 9px;
+  background: #fff;
+  color: #243b58;
+  padding: 10px 12px;
+  outline-color: #2676d8;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 92px;
+}
+
+/* ---------- תוכן ---------- */
+.content {
+  max-width: 1550px;
+  margin: auto;
+  padding: 30px 34px 65px;
+  color: #1c314d;
+  font-size: 14px;
+}
+
+h1 {
+  font-size: 29px;
+  margin: 0 0 7px;
+}
+
+h2 {
+  font-size: 18px;
+  margin: 0;
+}
+
+p {
+  color: #6e8197;
+  margin: 6px 0;
+  line-height: 1.6;
+}
+
+.flex {
   display: flex;
+  gap: 10px;
   align-items: center;
-  justify-content: space-between;
-  gap: 15px;
-  margin-bottom: 25px;
   flex-wrap: wrap;
 }
 
-.screenHeader__titles { min-width: 0; }
-
-.screenHeader__title {
-  margin: 0 0 8px;
-  font-size: 30px;
-  font-weight: 700;
-  color: #19304d;
+.role {
+  width: 195px;
+  flex: 0 0 auto;
 }
 
-.screenHeader__subtitle {
-  margin: 6px 0;
-  color: #6e8198;
-  line-height: 1.55;
-}
-
-/* ---------- כפתורים — .btn / .btn.light / .btn.sm ---------- */
-::ng-deep .createButton.p-button {
-  padding: 11px 18px;
-  font: inherit;
-  font-weight: 700;
-  color: #ffffff;
-  background: #1765ce;
-  border: 1px solid #1765ce;
+/* ---------- כפתורים ---------- */
+.btn {
+  background: #1765cb;
+  border: 1px solid #1765cb;
+  color: #fff;
   border-radius: 9px;
-  box-shadow: none;
-}
-::ng-deep .createButton.p-button:not(:disabled):hover {
-  background: #0d54b6;
-  border-color: #0d54b6;
-}
-::ng-deep .createButton.p-button .p-button-label { font-weight: 700; }
-
-::ng-deep .cancelButton.p-button {
-  padding: 11px 18px;
-  font: inherit;
   font-weight: 700;
-  color: #2b4d77;
-  background: #ffffff;
-  border: 1px solid #d7e1ee;
-  border-radius: 9px;
-  box-shadow: none;
-}
-::ng-deep .cancelButton.p-button:not(:disabled):hover {
-  background: #f6f9fc;
-  border-color: #d7e1ee;
-  color: #2b4d77;
-}
-::ng-deep .cancelButton.p-button .p-button-label { font-weight: 700; }
-
-/* ---------- באנר — .banner ---------- */
-.infoBanner {
-  margin-bottom: 18px;
-  padding: 12px 15px;
-  border-radius: 10px;
-  background: #eaf3ff;
-  color: #315c93;
-  font-size: 13px;
-  line-height: 1.55;
+  padding: 10px 16px;
+  white-space: nowrap;
 }
 
-/* ---------- פאנל — .panel ---------- */
-.panel {
-  margin-top: 23px;
-  padding: 22px;
-  background: #ffffff;
-  border: 1px solid #e2eaf4;
-  border-radius: 15px;
-  box-shadow: 0 4px 16px #16334c07;
-  box-sizing: border-box;
+.btn:hover:not(:disabled) {
+  background: #0e55b3;
 }
 
-/* ---------- טבלה ---------- */
-.panel__table {
-  width: 100%;
-  overflow: auto;
+.btn.light {
+  background: #fff;
+  color: #315375;
+  border-color: #d2dfee;
 }
 
-.tasksTable {
-  width: 100%;
-  min-width: 700px;
-  background: #ffffff;
-  border-collapse: collapse;
+.btn.light:hover:not(:disabled) {
+  background: #f1f6fc;
+}
+
+.btn.danger {
+  background: #fff3f1;
+  color: #b13d3d;
+  border-color: #f4d1cd;
+}
+
+.btn.sm {
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.link {
+  border: 0;
+  background: transparent;
+  color: #1264c3;
+  font-weight: 700;
+  text-decoration: none;
+  padding: 3px;
   text-align: right;
 }
 
-.tasksTable ::ng-deep .p-datatable-table-container,
-.tasksTable ::ng-deep .p-datatable-table {
-  border-collapse: collapse;
-}
-
-.colId       { width: 8%;  min-width: 70px; }
-.colPriority { width: 12%; min-width: 90px; white-space: nowrap; }
-.colStatus   { width: 12%; min-width: 90px; white-space: nowrap; }
-.colUpdate   { width: 18%; min-width: 170px; }
-
-.cellId { color: #5f7591; }
-.cellTitle strong { font-weight: 700; }
-
-/* ---------- גלולות — .pill / .pill.red / .pill.gray ---------- */
-.statusPill {
-  display: inline-block;
-  padding: 5px 9px;
-  border-radius: 50px;
-  font-size: 12px;
-  line-height: 1.4;
-  white-space: nowrap;
-  background: #e9f2ff;
-  color: #1a66bd;
-}
-
-.statusPill--red {
-  background: #ffeded;
-  color: #c14246;
-}
-
-/* ---------- סלקט סטטוס בשורה ---------- */
-::ng-deep .statusDropdown.p-dropdown {
-  width: 100%;
-  min-width: 140px;
-  background: #ffffff;
-  border: 1px solid #d4dfeb;
+.close {
+  border: 0;
+  background: #eef2f7;
+  color: #46617e;
   border-radius: 8px;
-  box-shadow: none;
-}
-::ng-deep .statusDropdown.p-dropdown .p-dropdown-label {
-  padding: 8px 10px;
-  font-family: inherit;
-  font-size: 13px;
-  color: #223b5a;
-}
-::ng-deep .statusDropdown.p-dropdown:not(.p-disabled):hover {
-  border-color: #3684e7;
+  font-size: 24px;
+  width: 33px;
+  height: 33px;
+  line-height: 1;
 }
 
-.emptyMessage {
-  padding: 52px;
+/* ---------- כותרת המסך ---------- */
+.headline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+
+.eyebrow {
+  font-size: 12px;
+  color: #6681a3;
+  font-weight: bold;
+  letter-spacing: 0.2px;
+  margin-bottom: 8px;
+}
+
+.notice {
+  background: #eaf3ff;
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #345d89;
+  margin-bottom: 18px;
+  font-size: 12px;
+}
+
+.badgeDot {
+  width: 7px;
+  height: 7px;
+  background: #28b483;
+  display: inline-block;
+  border-radius: 100%;
+  margin-left: 6px;
+}
+
+/* ---------- מדדים ---------- */
+.periodline {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.periodline label {
+  font-size: 12px;
+  color: #758aa2;
+}
+
+.period {
+  width: 140px;
+  flex: 0 0 auto;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.kpi {
+  border: 1px solid #e2eaf5;
+  border-radius: 13px;
+  background: white;
+  padding: 17px 14px;
+  text-align: right;
+  min-height: 104px;
+  box-shadow: 0 3px 12px #1e43640a;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+}
+
+.kpi:hover {
+  border-color: #83b4ee;
+}
+
+.kpi.selected {
+  border: 2px solid #2676d8;
+  padding: 16px 13px;
+}
+
+.kpi .label {
+  color: #667e9c;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.kpi .num {
+  font-size: 28px;
+  font-weight: 800;
+  margin-top: 10px;
+  direction: ltr;
+  text-align: right;
+  color: #203957;
+}
+
+.kpi .num.alert {
+  color: #c45146;
+}
+
+.statnote {
+  margin: -8px 0 18px;
+  color: #8094ab;
+  font-size: 11px;
+}
+
+/* ---------- פאנל ותוכן פנימי ---------- */
+.panel {
+  border: 1px solid #e1e9f3;
+  background: #fff;
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 4px 17px #153b5a09;
+  margin-bottom: 18px;
+}
+
+.righttools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.tabs {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #e2e9f3;
+  margin-bottom: 18px;
+}
+
+.tab {
+  border: 0;
+  background: none;
+  color: #59708c;
+  padding: 11px 14px;
+  border-bottom: 3px solid transparent;
+  font-weight: 600;
+}
+
+.tab.active {
+  border-color: #196bce;
+  color: #165caf;
+}
+
+/* ---------- מסננים ---------- */
+.filters {
+  display: grid;
+  grid-template-columns: 2fr repeat(3, minmax(115px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.filters.second {
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #697f9b;
+}
+
+/* כפתור מסנן שנראה כמו שדה select — החץ בקצה, לא מתחת לטקסט */
+.selectlike {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  height: 40px;
+  padding: 8px 12px;
+  border: 1px solid #cdd9e8;
+  border-radius: 9px;
+  background: #fff;
+  color: #243b58;
+  font-family: inherit;
+  font-size: 14px;
+  text-align: right;
+}
+
+.selectlike:hover {
+  border-color: #83b4ee;
+}
+
+.selectlike.active {
+  border-color: #2676d8;
+  color: #165caf;
+  font-weight: 700;
+}
+
+.selectlike .selectlike-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selectlike .pi {
+  font-size: 10px;
+  color: #7c91ab;
+  flex: 0 0 auto;
+}
+
+/* תיבות בחירה של PrimeNG — אותו גובה, מסגרת וגופן כמו .selectlike */
+.field p-select,
+.field p-multiSelect {
+  display: block;
+  width: 100%;
+}
+
+/* תיבה מרובה: כשלא נבחר דבר מוצג ה-placeholder ("הכול") */
+::ng-deep .field p-multiSelect .p-multiselect {
+  width: 100%;
+  box-shadow: none;
+  height: 40px;
+  border: 1px solid #cdd9e8;
+  border-radius: 9px;
+  background: #fff;
+  color: #243b58;
+  font-family: inherit;
+  font-size: 14px;
+  padding: 0 12px;
+  direction: rtl;
+}
+
+::ng-deep .field p-multiSelect .p-multiselect:not(.p-disabled):hover {
+  border-color: #83b4ee;
+}
+
+::ng-deep .field p-multiSelect .p-multiselect.p-focus {
+  border-color: #2676d8;
+  box-shadow: 0 0 0 2px #2676d822;
+}
+
+::ng-deep .field p-multiSelect .p-multiselect-label {
+  padding: 0;
+  font-size: 14px;
+  color: #243b58;
+}
+
+::ng-deep .field p-multiSelect .p-multiselect-label.p-placeholder {
+  color: #243b58;
+  opacity: 1;
+}
+
+::ng-deep .field p-multiSelect .p-multiselect-dropdown {
+  width: 1.6rem;
+  color: #7c91ab;
+}
+
+::ng-deep .field p-multiSelect .p-multiselect-dropdown .p-icon {
+  width: 10px;
+  height: 10px;
+}
+
+/* השדה "תקופה" — רוחב קבוע כמו קודם, ולא נמתח על כל השורה */
+.periodline p-select.period {
+  display: block;
+  width: 140px;
+  flex: 0 0 auto;
+}
+
+.headline p-select.role {
+  display: block;
+  width: 195px;
+  flex: 0 0 auto;
+}
+
+/* אותה מסגרת וגובה ידניים לשדה — כדי שלא ייראה שונה מ-.selectlike
+   (הגובה של Aura גבוה יותר, ולכן נקבע כאן במפורש) */
+::ng-deep .field p-select .p-select,
+::ng-deep .periodline p-select .p-select,
+::ng-deep .headline p-select.role .p-select {
+  width: 100%;
+  box-shadow: none;
+  height: 40px;
+  border: 1px solid #cdd9e8;
+  border-radius: 9px;
+  background: #fff;
+  color: #243b58;
+  font-family: inherit;
+  font-size: 14px;
+  padding: 0 12px;
+  direction: rtl;
+}
+
+::ng-deep .field p-select .p-select:not(.p-disabled):hover,
+::ng-deep .periodline p-select .p-select:not(.p-disabled):hover,
+::ng-deep .headline p-select.role .p-select:not(.p-disabled):hover {
+  border-color: #83b4ee;
+}
+
+::ng-deep .field p-select .p-select.p-focus,
+::ng-deep .periodline p-select .p-select.p-focus,
+::ng-deep .headline p-select.role .p-select.p-focus {
+  border-color: #2676d8;
+  box-shadow: 0 0 0 2px #2676d822;
+}
+
+::ng-deep .field p-select .p-select-label,
+::ng-deep .periodline p-select .p-select-label,
+::ng-deep .headline p-select.role .p-select-label {
+  padding: 0;
+  font-size: 14px;
+  color: #243b58;
+}
+
+/* ברירת המחדל של תיבה מרובה: כשהמערך ריק PrimeNG מציג placeholder,
+   והוא צריך להיראות כמו טקסט רגיל — "הכול" בתוך הכפתור ולא רמז אפור */
+::ng-deep .field p-select .p-select-label.p-placeholder {
+  color: #243b58;
+  opacity: 1;
+}
+
+::ng-deep .field p-select .p-select-dropdown,
+::ng-deep .periodline p-select .p-select-dropdown,
+::ng-deep .headline p-select.role .p-select-dropdown {
+  width: 1.6rem;
+  color: #7c91ab;
+}
+
+::ng-deep .field p-select .p-select-dropdown .p-icon,
+::ng-deep .periodline p-select .p-select-dropdown .p-icon,
+::ng-deep .headline p-select.role .p-select-dropdown .p-icon {
+  width: 10px;
+  height: 10px;
+}
+
+/* ============================================================
+   רשימת האפשרויות הפתוחה — מראה זהה בכל תיבות הבחירה במסך.
+   הרשימה נפתחת ב-body, ולכן הכללים גלובליים — אך מוגבלים
+   למחלקות .tasks-dd (הרשימה הפנימית) ו-.tasks-dd-overlay (המעטפת).
+   ============================================================ */
+.tasks-dd,
+.tasks-dd-overlay {
+  width: 100%;
+  min-width: 190px;
+  padding: 6px !important;
+  background: #fff !important;
+  border: 1px solid #dbe4ef !important;
+  border-radius: 10px !important;
+  box-shadow: 0 10px 28px #17314c1f !important;
+  direction: rtl;
+  text-align: right;
+  font-family: 'Heebo', Arial, sans-serif;
+}
+
+.tasks-dd-overlay {
+  margin-top: 4px;
+}
+
+/* שורת אפשרות — גובה, ריווח וגופן זהים בכל הרשימות */
+.tasks-dd .p-select-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 9px 10px !important;
+  border-radius: 7px;
+  font-size: 13px !important;
+  color: #243b58 !important;
+  cursor: pointer;
+}
+
+.tasks-dd .p-select-option:hover,
+.tasks-dd .p-select-option.p-focus:not(.p-select-option-selected) {
+  background: #f1f6fc !important;
+  color: #243b58 !important;
+}
+
+.tasks-dd .p-select-option.p-select-option-selected,
+.tasks-dd .p-select-option.p-select-option-selected.p-focus {
+  background: #edf4fe !important;
+  color: #165caf !important;
+  font-weight: 700;
+}
+
+/* תוכן השורה: התווית נחתכת ולא דוחפת את שאר השורה */
+.tasks-dd .p-select-option .p-select-option-label,
+.tasks-dd .p-select-option .dd-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* בתיבה מרובה — תיבת הסימון בקצה הימני של השורה */
+.tasks-dd .p-select-option .p-checkbox {
+  order: -1;
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+}
+
+.tasks-dd .p-select-option .p-checkbox-box {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border-color: #c3d2e4;
+  background: #fff;
+}
+
+.tasks-dd .p-select-option .p-checkbox-checked .p-checkbox-box {
+  background: #2f5d9e !important;
+  border-color: #2f5d9e !important;
+}
+
+.tasks-dd .p-select-list-container,
+.tasks-dd .p-select-list,
+.tasks-dd .p-select-list-wrapper {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-height: 320px;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.tasks-dd .p-select-option + .p-select-option {
+  margin-top: 2px;
+}
+
+/* שורת "הכול" — מופרדת בקו משאר האפשרויות */
+.tasks-dd .dd-all {
+  font-weight: 700;
+}
+
+/* ב-p-multiSelect השורה עצמה היא .p-multiselect-option */
+.tasks-dd .p-select-option:has(.dd-all),
+.tasks-dd .p-multiselect-option:has(.dd-all) {
+  border-bottom: 1px solid #dbe4ef;
+  border-radius: 7px 7px 0 0;
+  margin-bottom: 4px;
+}
+
+/* ---------- רשימת p-multiSelect — אותה מראה בדיוק כמו p-select ---------- */
+.tasks-dd .p-multiselect-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 9px 10px !important;
+  border-radius: 7px;
+  font-size: 13px !important;
+  color: #243b58 !important;
+  cursor: pointer;
+}
+
+.tasks-dd .p-multiselect-option:hover,
+.tasks-dd .p-multiselect-option.p-focus:not(.p-multiselect-option-selected) {
+  background: #f1f6fc !important;
+  color: #243b58 !important;
+}
+
+.tasks-dd .p-multiselect-option.p-multiselect-option-selected,
+.tasks-dd .p-multiselect-option.p-multiselect-option-selected.p-focus {
+  background: #edf4fe !important;
+  color: #165caf !important;
+  font-weight: 700;
+}
+
+.tasks-dd .p-multiselect-option .p-multiselect-option-label,
+.tasks-dd .p-multiselect-option .dd-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* תיבת הסימון שבתבנית שלנו — בקצה הימני של השורה */
+.tasks-dd .p-multiselect-option .p-checkbox {
+  order: -1;
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+}
+
+.tasks-dd .p-multiselect-option .p-checkbox-box {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border-color: #c3d2e4;
+  background: #fff;
+}
+
+.tasks-dd .p-multiselect-option .p-checkbox-checked .p-checkbox-box {
+  background: #2f5d9e !important;
+  border-color: #2f5d9e !important;
+}
+
+.tasks-dd .p-multiselect-list-container,
+.tasks-dd .p-multiselect-list {
+  /* הרשימה עצמה היא הרשימה הנגללת (אין .p-multiselect-items ב-PrimeNG 18) */
+  padding: 0 !important;
+  margin: 0 !important;
+  max-height: 320px;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  list-style: none;
+}
+
+
+/* ---------- טבלה ---------- */
+.tablewrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: right;
+  min-width: 990px;
+}
+
+th {
+  font-size: 12px;
+  background: #f5f8fc;
+  color: #7286a0;
+}
+
+th,
+td {
+  padding: 13px 11px;
+  border-bottom: 1px solid #e9edf4;
+}
+
+td {
+  font-size: 12px;
+}
+
+tbody tr:hover {
+  background: #f8fbff;
+}
+
+th.sort {
+  cursor: pointer;
+}
+
+th.sort:hover {
+  color: #165caf;
+}
+
+.empty {
+  padding: 48px 15px !important;
   text-align: center;
-  color: #7186a0;
-  font-size: 13px;
+  color: #778ca6 !important;
+}
+
+.empty .btn {
+  margin-inline-start: 8px;
+}
+
+/* ספינר בטבלה — שורה דקה, לא תופס את כל המסך */
+::ng-deep .table-spinner {
+  width: 22px;
+  height: 22px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-inline-end: 8px;
+}
+
+/* ---------- גלולות ---------- */
+.pill {
+  font-size: 11px;
+  padding: 5px 9px;
+  border-radius: 30px;
+  display: inline-block;
+  white-space: nowrap;
+  background: #eff3f8;
+  color: #56718d;
+  border: 0;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.pill.open {
+  background: #edf4fe;
+  color: #2c6db5;
+}
+
+.pill.progress {
+  background: #eaf0ff;
+  color: #4f57b1;
+}
+
+.pill.completed {
+  background: #e6f5ec;
+  color: #197b4c;
+}
+
+.pill.cancelled {
+  background: #f1f2f5;
+  color: #727985;
+}
+
+.pill.late {
+  background: #ffeded;
+  color: #bc4040;
+}
+
+.pill.soon {
+  background: #fff0d9;
+  color: #96601f;
+}
+
+/* תג "חדש" — משימה שנוצרה או עודכנה אחרי הצפייה האחרונה של המשתמש */
+.pill.new {
+  background: #fdeaf3;
+  color: #a32a6d;
+  font-weight: 700;
+}
+
+.priority-high {
+  font-weight: 700;
+  color: #a73a33;
+}
+
+.priority-urgent {
+  font-weight: 700;
+  color: #c32e2e;
+}
+
+.muted {
+  color: #8192a7;
+  font-size: 12px;
+}
+
+.footerbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding-top: 16px;
+}
+
+/* ---------- ספינר יצירת משימה ---------- */
+.creating-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50; /* מעל המודאל (z-index: 10) */
+  background: #071c34a6;
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(2px);
+}
+
+.creating-box {
+  background: #fff;
+  border-radius: 17px;
+  padding: 28px 34px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 16px 60px #0c253a70;
+  min-width: 190px;
+}
+
+/* גודל ותצוגה של ספינר PrimeNG */
+::ng-deep .creating-box .create-spinner {
+  width: 64px !important;
+  height: 64px !important;
+}
+
+::ng-deep .creating-box .create-spinner .p-progressspinner-circle {
+  stroke: #1765cb !important;
+}
+
+.creating-text {
+  color: #315375;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* ---------- חלוניות ---------- */
+.modalback {
+  position: fixed;
+  inset: 0;
+  background: #071c34ad;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 17px;
+  width: min(850px, 100%);
+  max-height: 94vh;
+  overflow: auto;
+  box-shadow: 0 16px 60px #0c253a70;
+  color: #1c314d;
+  font-size: 14px;
+  text-align: right;
+  direction: rtl;
+}
+
+.modalhead {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e6edf5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
+}
+
+.modalhead h2 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.modalbody {
+  padding: 22px 24px;
 }
 
 .formgrid {
@@ -175,48 +879,295 @@
   gap: 16px;
 }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
+.full {
+  grid-column: 1 / -1;
 }
 
-.field label {
-  font-size: 13px;
-  font-weight: 700;
-  color: #465e7a;
-}
-
-.full { grid-column: 1 / -1; }
-
-.field input[pInputText] {
-  width: 100%;
-  background: #ffffff;
-  border: 1px solid #d4dfeb;
-  border-radius: 8px;
-  padding: 10px;
-  font-family: inherit;
-  font-size: 13px;
-  color: #223b5a;
-  box-shadow: none;
-}
-.field input[pInputText]:enabled:focus {
-  border-color: #3684e7;
-  outline: 0;
-  box-shadow: 0 0 0 2px #3684e733;
-}
-
-.actionrow {
+.modal-actions {
   display: flex;
   gap: 9px;
+  align-items: center;
   flex-wrap: wrap;
-  margin-top: 22px;
+  margin-top: 20px;
 }
 
-/* ההודעה הקופצת מוגדרת גלובלית ב-src/styles.scss (‎.demoToast) */
+.detailgrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
 
-/* ---------- מסכים צרים ---------- */
-@media (max-width: 760px) {
-  .tasksControl { padding: 20px 13px; }
-  .formgrid { grid-template-columns: 1fr; }
+.detailbox {
+  background: #f5f8fc;
+  border: 1px solid #e5ecf4;
+  padding: 12px;
+  border-radius: 10px;
+  min-width: 0;
+}
+
+.detailbox small {
+  color: #6c809c;
+  display: block;
+  margin-bottom: 7px;
+}
+
+.detailbox strong {
+  word-break: break-word;
+}
+
+.subnav {
+  display: flex;
+  gap: 9px;
+  border-bottom: 1px solid #e2e9f2;
+  margin: 20px 0;
+}
+
+.subnav button {
+  background: none;
+  border: 0;
+  color: #6b819b;
+  border-bottom: 2px solid transparent;
+  padding: 10px;
+}
+
+.subnav button.active {
+  color: #1966bc;
+  border-color: #1966bc;
+  font-weight: 700;
+}
+
+.timeline {
+  border-right: 2px solid #dbe6f2;
+  padding-right: 16px;
+  margin: 12px 4px;
+}
+
+.event {
+  padding: 12px 12px;
+  border-bottom: 1px solid #edf1f6;
+}
+
+.event b {
+  display: block;
+  margin-bottom: 7px;
+}
+
+.event small {
+  color: #71859e;
+}
+
+.divider {
+  height: 1px;
+  background: #e6edf4;
+  margin: 16px 0;
+}
+
+.toast {
+  position: fixed;
+  bottom: 22px;
+  left: 22px;
+  background: #193954;
+  color: #fff;
+  padding: 13px 20px;
+  border-radius: 10px;
+  z-index: 20;
+  box-shadow: 0 5px 18px #17314c44;
+}
+
+/* ---------- רספונסיביות ---------- */
+@media (max-width: 1240px) {
+  .kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .filters,
+  .filters.second {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .content {
+    padding: 20px 12px;
+  }
+
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .filters,
+  .filters.second {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .filters .search {
+    grid-column: 1 / -1;
+  }
+
+  .formgrid,
+  .detailgrid {
+    grid-template-columns: 1fr;
+  }
+
+  .role {
+    width: 145px;
+  }
+
+  .panel {
+    padding: 13px;
+  }
+
+  .modalbody {
+    padding: 16px;
+  }
+
+  .modalhead {
+    padding: 14px;
+  }
+}
+
+/* ---------- חלון אישור ביטול שינויים ----------
+   ה-dialog ממוקם ב-body, ולכן הכללים כאן גלובליים —
+   אך מוגבלים למחלקה .dm-confirm-dialog ולא משפיעים על דיאלוגים אחרים. */
+.dm-confirm-dialog {
+  direction: rtl;
+  width: min(28rem, calc(100vw - 2rem));
+  border-radius: 14px;
+  border: 1px solid #e3e8f0;
+  box-shadow: 0 18px 48px rgba(31, 47, 74, 0.2);
+  font-family: 'Heebo', Arial, sans-serif;
+  overflow: hidden;
+}
+
+.dm-confirm-dialog .p-dialog-header {
+  padding: 1.15rem 1.4rem 0.6rem;
+  gap: 0.8rem;
+  /* אייקון מימין, כותרת משמאל לו */
+  justify-content: flex-start;
+}
+
+.dm-confirm-dialog .p-dialog-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1f2f4a;
+  text-align: right;
+}
+
+.dm-confirm-dialog .p-dialog-header-icon {
+  order: 2;
+  margin-inline-start: auto;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
+  color: #6b7a90;
+}
+
+.dm-confirm-dialog .p-dialog-header-icon:hover {
+  background: #f1f4f9;
+  color: #1f2f4a;
+}
+
+.dm-confirm-dialog .p-dialog-content {
+  padding: 0 1.4rem 1.2rem;
+  color: #4a5a72;
+  font-size: 0.98rem;
+  line-height: 1.7;
+  text-align: right;
+  /* מפריד קווי בין הכותרת לגוף ההודעה */
+  border-top: 1px solid #eef1f6;
+  margin-top: 0.6rem;
+  padding-top: 1.1rem;
+}
+
+/* אייקון האזהרה — עיגול ענבר בהיר */
+.dm-confirm-dialog .p-confirm-dialog-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  background: #fff4e5;
+  color: #c77700;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.dm-confirm-dialog .p-confirm-dialog-message {
+  margin: 0;
+}
+
+.dm-confirm-dialog .p-dialog-footer {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.6rem;
+  padding: 0 1.4rem 1.3rem;
+  border: 0;
+}
+
+/* כפתור האישור — כחול המערכת */
+.dm-confirm-dialog .p-button.dm-confirm__accept {
+  background: #0052d4;
+  border: 1px solid #0052d4;
+  color: #fff;
+  border-radius: 10px;
+  padding: 0.55rem 1.35rem;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0, 82, 212, 0.25);
+}
+
+.dm-confirm-dialog .p-button.dm-confirm__accept:enabled:hover {
+  background: #0046b5;
+  border-color: #0046b5;
+  color: #fff;
+}
+
+.dm-confirm-dialog .p-button.dm-confirm__accept:enabled:active {
+  background: #003c9c;
+  border-color: #003c9c;
+}
+
+/* כפתור הביטול — לבן עם מסגרת */
+.dm-confirm-dialog .p-button.dm-confirm__reject {
+  background: #fff;
+  border: 1px solid #d8e0eb;
+  color: #24344d;
+  border-radius: 10px;
+  padding: 0.55rem 1.35rem;
+  font-weight: 600;
+}
+
+.dm-confirm-dialog .p-button.dm-confirm__reject:enabled:hover {
+  background: #f5f8fc;
+  border-color: #c4d2e3;
+  color: #24344d;
+}
+
+.dm-confirm-dialog .p-button:focus-visible {
+  outline: 2px solid #3f6ba8;
+  outline-offset: 2px;
+}
+/* ---------- שגיאות ולידציה בטופס ---------- */
+input.invalid,
+select.invalid,
+textarea.invalid {
+  border-color: #d64545;
+  background: #fff7f7;
+}
+
+input.invalid:focus,
+select.invalid:focus,
+textarea.invalid:focus {
+  outline-color: #d64545;
+}
+
+.field p-message {
+  display: block;
+  margin-top: 2px;
+}
+.field__label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 600;
 }
