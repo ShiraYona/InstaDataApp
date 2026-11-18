@@ -46,7 +46,7 @@ export class DetailedDialogueComponent implements OnInit, OnChanges {
             timeout(60000),
             catchError(() => {
               this.failed.set(true);
-              this.loading.set(false);
+              this.endLoading();
               return of(null);
             })
           )
@@ -57,7 +57,7 @@ export class DetailedDialogueComponent implements OnInit, OnChanges {
         // d === null — הבקשה נכשלה: משאירים את הפירוט הקודם במקומו
         if (d === null) return;
         this.detail.set(d);
-        this.loading.set(false);
+        this.endLoading();
       });
   }
 
@@ -88,6 +88,8 @@ export class DetailedDialogueComponent implements OnInit, OnChanges {
 
   readonly detail = signal<MetricDetail | null>(null);
   readonly loading = signal(false);
+  /** טעינת רשומות בלבד (בחירת קבוצה / חיפוש) — הטבלה נשארת במקומה ומעומעמת, במקום להתחלף ב"טוען" */
+  readonly recordsLoading = signal(false);
   readonly failed = signal(false);
   readonly search = signal('');
   readonly selectedGroup = signal<string | null>(null);
@@ -106,12 +108,25 @@ export class DetailedDialogueComponent implements OnInit, OnChanges {
   /** הטווח של הבקשה האחרונה — מונע בקשה כפולה על אותו טווח */
   private lastLoadedRange: string | null = null;
 
-  private load(key: string, groupValue: string | null = null, resetGroup = true): void {
-    this.loading.set(true);
-    this.failed.set(false);
+  /**
+   * rowsOnly — מעבר בין קבוצות / חיפוש: רק תוכן טבלת הרשומות מוחלף.
+   * שאר הדיאלוג (סיכום, טבלת הקבוצות) נשאר קפוא, כדי שלא ייראה כמו טעינה מחדש של כל החלון.
+   */
+  private load(key: string, groupValue: string | null = null, resetGroup = true, rowsOnly = false): void {
+    if (rowsOnly) {
+      this.recordsLoading.set(true);
+    } else {
+      this.loading.set(true);
+      this.failed.set(false);
+    }
     if (resetGroup) this.selectedGroup.set(groupValue);
     this.pageIndex.set(0);
     this.loadRequest$.next({ key, groupValue });
+  }
+
+  private endLoading(): void {
+    this.loading.set(false);
+    this.recordsLoading.set(false);
   }
 
   readonly systems = computed<SystemGroup[]>(() => {
@@ -127,9 +142,18 @@ export class DetailedDialogueComponent implements OnInit, OnChanges {
     }));
   });
 
- readonly groupName = computed(() =>
-  this.detail()?.groupFieldLabel || this.card?.groupFieldLabel || ''
-);
+ // שם שדה הקיבוץ לתצוגה. ריק = אין שדה קיבוץ.
+ // ה-label לבדו אינו מספיק: השרת מחזיר תווית ברירת מחדל ("מערכת") גם בלי קיבוץ,
+ // ולכן הקביעה היא לפי groupFieldName; הכרטיס יוצר גיבוי רק כשהוא עצמו מקובץ
+ readonly groupName = computed(() => {
+  const d = this.detail();
+  if (d?.groupFieldName) return d.groupFieldLabel || d.groupFieldName;
+  if (!d && this.card?.groupField) return this.card.groupFieldLabel || this.card.groupField;
+  return '';
+});
+
+ // טבלת הקבוצות מוצגת רק כשיש שדה קיבוץ — בהיעדרו אינה מוצגת כלל
+ readonly hasGrouping = computed(() => this.groupName() !== '');
   readonly columns = computed(() =>
     (this.detail()?.columns ?? []).map(c => ({ key: c.fieldName, label: c.label, dataType: c.dataType }))
   );
@@ -186,19 +210,19 @@ readonly summary = computed(() => {
 
   showRecords(row: SystemGroup): void {
     this.selectedGroup.set(row.groupValue ?? null);
-    this.load(this._metricKey(), row.groupValue ?? null, false);
+    this.load(this._metricKey(), row.groupValue ?? null, false, true);
   }
 
   clearGroup(): void {
     this.selectedGroup.set(null);
-    this.load(this._metricKey(), null, false);
+    this.load(this._metricKey(), null, false, true);
   }
 
   onSearch(v: string): void {
     this.search.set(v);
     this.pageIndex.set(0);
     clearTimeout(this.searchTimer);
-    this.searchTimer = setTimeout(() => this.load(this._metricKey(), this.selectedGroup(), false), 350);
+    this.searchTimer = setTimeout(() => this.load(this._metricKey(), this.selectedGroup(), false, true), 350);
   }
 
   sortBy(key: string): void {
@@ -238,7 +262,12 @@ readonly summary = computed(() => {
 
   close(): void { this.closed.emit(); }
 
-  retry(): void { if (this._metricKey()) this.load(this._metricKey(), this.selectedGroup(), false); }
+  retry(): void {
+    if (!this._metricKey()) return;
+    // כשיש כבר פירוט — הכשל היה בטעינת הרשומות, ולכן מרעננים אותן בלבד
+    const rowsOnly = this.detail() !== null;
+    this.load(this._metricKey(), this.selectedGroup(), false, rowsOnly);
+  }
 
   /** ייצוא בצד השרת — לפי הסינון הפעיל; כשל מציג שגיאה בלי לסגור את החלון */
   exportCsv(): void {

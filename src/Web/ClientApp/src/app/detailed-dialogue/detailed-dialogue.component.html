@@ -14,7 +14,7 @@
       }
     </div>
 
-    @if (groupName()) {
+    @if (hasGrouping()) {
       <div class="panel">
         <h2>חלוקה לפי {{ groupName() }}
           @if (selectedGroup()) {
@@ -82,7 +82,8 @@
         <p class="note err">לא ניתן לטעון את הנתון</p>
         <button type="button" class="btn light sm" (click)="retry()">נסה שוב</button>
       } @else {
-        <div class="tablewrap">
+        <!-- בטעינת רשומות (קבוצה/חיפוש) הטבלה נשארת במקומה ומעומעמת — לא מתחלפת ב"טוען" -->
+        <div class="tablewrap" [class.is-refreshing]="recordsLoading()">
           <table>
             <thead>
               <tr>
