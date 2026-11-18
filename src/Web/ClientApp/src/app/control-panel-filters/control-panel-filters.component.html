@@ -46,22 +46,13 @@
       styleClass="refreshButton"
       severity="secondary"
       [outlined]="true"
+      [disabled]="refreshing"
+      [loading]="refreshing"
       (onClick)="refresh()"
       ariaLabel="רענון">
       <span class="refreshButton__icon" aria-hidden="true">↻</span>
-      <span class="refreshButton__label">רענון</span>
+      <span class="refreshButton__label">רענון הנתונים</span>
     </p-button>
-  </div>  <!-- ניהול תצוגה -->
-  <div class="filter filter--action">
-    <p-button
-      styleClass="refreshButton"
-      severity="secondary"
-      [outlined]="true"
-      (onClick)="layoutManagementRequested.emit()"
-      ariaLabel="ניהול תצוגה">
-      <span class="refreshButton__icon" aria-hidden="true">⚙</span>
-      <span class="refreshButton__label">התאמת תצוגה</span>
-    </p-button>
-  </div>
+  </div> 
 
 </div>

@@ -62,28 +62,35 @@ public static class MetricCatalogCheck
     }
 
     /// <summary>
-    /// תקופת החישוב — הערך שנשמר הוא הטקסט שמוצג למשתמש (CTRL_CalculationDays.Name),
-    /// וערך מספרי מתאים ל-Value (מספר הימים).
+    /// תקופת החישוב — נשמרת ב-CTRL_Metrics.DateRangeType כטקסט (nvarchar(20)):
+    /// ה-Name של CTRL_CalculationDays (למשל "30 ימים") או BOARD_FILTER.
+    /// הפונקציה מקבלת את ה-Value שהטופס שולח ("30") או את ה-Name, ומחזירה תמיד את ה-Name.
     /// </summary>
     /// <exception cref="ValidationException">הערך אינו מתוך הקטלוג</exception>
-    public static async Task<string> ResolveDateRangeAsync(
+    public static async Task<string?> ResolveDateRangeAsync(
         IApplicationDbContext context,
-        string requested,
+        string? requested,
         CancellationToken cancellationToken)
     {
-        if (requested == MetricConstants.DateRangeBoardFilter)
+        if (string.IsNullOrWhiteSpace(requested))
         {
             return MetricConstants.DateRangeBoardFilter;
         }
 
-        var periods = await context.CalculationDays
-            .Select(period => new PeriodCode(period.Name, period.Value.ToString()))
-            .ToListAsync(cancellationToken);
+        var wanted = requested.Trim();
 
-        // קודם לפי ה-Value: ב-Value של "לפי מסנן הלוח" יכול להיות גם "1",
-        // והערך שמגיע מהטופס ("1") חייב להיבחר לפי ה-Value ולא לפי ה-Name של תקופה אחרת.
-        var match = periods.FirstOrDefault(period => period.Value == requested.Trim())
-            ?? periods.FirstOrDefault(period => period.Name == requested);
+        if (string.Equals(wanted, MetricConstants.DateRangeBoardFilter, StringComparison.OrdinalIgnoreCase))
+        {
+            return MetricConstants.DateRangeBoardFilter;
+        }
+
+        var wantedValue = int.TryParse(wanted, out var parsed) ? parsed : (int?)null;
+
+        // ה-Value הוא מספר הימים שהטופס שולח; ה-Name ("30 ימים") מתקבל לתאימות לאחור
+        var match = await context.CalculationDays
+            .FirstOrDefaultAsync(
+                period => (wantedValue != null && period.Value == wantedValue) || period.Name == wanted,
+                cancellationToken);
 
         return match?.Name
             ?? throw Fail(nameof(MetricDraftDto.DateRangeType), "תקופת החישוב שנבחרה אינה מוכרת.");
@@ -201,7 +208,7 @@ public static class MetricDraftCheck
 /// <summary>הערכים הקנוניים של המפתחות הזרים/המחרוזתיים של המדד</summary>
 public sealed record MetricCanonicalValues(
     CalculationTypeDefinition CalculationType,
-    string DateRangeType,
+    string? DateRangeType,
     string? IconCode)
 {
     /// <summary>הקוד הקנוני (COUNT / SUM / DIRECT)</summary>

@@ -9,7 +9,11 @@ public class CtrlMetric
     public CtrlCalculationType? CalculationType { get; set; }
     public int? SumFieldID { get; set; }
     public int? GroupFieldID { get; set; }
-    public string DateRangeType { get; set; } = string.Empty;
+    /// <summary>
+    /// תקופת החישוב — העמודה במסד היא nvarchar(20) ושומרת את הטקסט (למשל "30 ימים")
+    /// או את הערך הקבוע BOARD_FILTER. לא מספר — אל תשנו ל-int.
+    /// </summary>
+    public string? DateRangeType { get; set; }
     public string? IconCode { get; set; }
     public bool IsActive { get; set; } = true;
     public string CreatedBy { get; set; } = string.Empty;

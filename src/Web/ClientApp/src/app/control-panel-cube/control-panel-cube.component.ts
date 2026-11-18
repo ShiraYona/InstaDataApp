@@ -2,7 +2,7 @@ import { DecimalPipe, NgClass } from '@angular/common';
 import { Component, Input, SimpleChanges, inject, OnChanges, OnInit, output, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { of, Subject } from 'rxjs';
-import { catchError, debounceTime, switchMap, timeout } from 'rxjs/operators';
+import { catchError, debounceTime, finalize, switchMap, timeout } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlPanel } from '../shared/services/control-panel';
 import { CubeMetric, CubeStatus } from '../shared/models/controlPanel/CubeMetric';
@@ -16,7 +16,7 @@ function normalizeSearch(text: string | null | undefined): string {
 @Component({
   selector: 'app-control-panel-cube',
   standalone: true,
-  imports: [DecimalPipe,NgClass],
+  imports: [DecimalPipe, NgClass],
   templateUrl: './control-panel-cube.component.html',
   styleUrl: './control-panel-cube.component.scss'
 })
@@ -39,47 +39,79 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
 
   readonly loading = signal(true);
   readonly error = signal(false);
+  /** רענון כשיש כבר כרטיסים — התוכן נשאר, רק מושהה */
+  readonly refreshing = signal(false);
+
   @Input() columns = 4;
   @Input() period: number = 30;
-   @Input() fromDate: string | null = null;
+  @Input() fromDate: string | null = null;
   @Input() toDate: string | null = null;
   @Input() searchMetricName = '';
 
   /** טריגר לרענון — כל שינוי בערך שולח בקשה חדשה לשרת */
   @Input() refreshToken = 0;
 
+  /** הסתיים החישוב של כל הכרטיסים — ההורה משחרר את כפתור הריענון */
+  readonly refreshFinished = output<void>();
+
   readonly alertRule = output<string>();
   readonly target = output<string>();
   readonly drill = output<string>();
 
+  /** כרטיס הפירוט — מוחזר כ-DTO המקורי כדי שהדיאלוג יוכל להציג גיבוי אם הפירוט נכשל */
+  readonly detail = output<MetricCard>();
+
+  /** הכרטיסים המקוריים מהשרת לפי key — לשליפת הכרטיס שנבחר לפירוט */
+  private readonly rawByKey = signal<Map<string, MetricCard>>(new Map());
+
+  /** הכרטיס המקורי של הפירוט הנוכחי */
+  cardByKey(key: string): MetricCard | null {
+    return this.rawByKey().get(key) ?? null;
+  }
+
   /** מקור השינויים בפילטרים — debounce + switchMap מונעים בקשות כפולות ותשובות מיושנות */
-  private readonly filter$ = new Subject<{ period: number | null ; fromDate: string | null; toDate: string | null }>();
+  private readonly filter$ = new Subject<{ period: number | null; fromDate: string | null; toDate: string | null }>();
 
   constructor() {
     this.filter$
       .pipe(
         debounceTime(300),
-        switchMap(period => {
-          this.loading.set(true);
+        switchMap(f => {
+          // טעינה ראשונית — אין מה להציג, מציגים "טוען"
+          // רענון — הכרטיסים הקיימים נשארים על המסך
+          if (this.allMetrics().length === 0) {
+            this.loading.set(true);
+          } else {
+            this.refreshing.set(true);
+          }
           this.error.set(false);
-      return this.controlPanel.getCards(f.period, f.fromDate, f.toDate).pipe(
-  timeout(60000),
-  catchError(() => {
-    this.error.set(true);
-    this.loading.set(false);
-    return of([]);
-  })
-);
+
+          // שליפה אחת מהשרת של כל הכרטיסים — כל כרטיס מחושב בשרת באופן עצמאי,
+          // כך כשל של כרטיס אחד אינו מפיל את הקריאה ואינו עוצר את יתר הכרטיסים
+          return this.controlPanel.getCards(f.period, f.fromDate, f.toDate).pipe(
+            timeout(60000),
+            catchError(() => {
+              // כשל כללי: מסמנים שגיאה רק כשאין כרטיסים להציג — אחרת לא מוחקים את הקיימים
+              this.error.set(this.allMetrics().length === 0);
+              return of(null);
+            }),
+            finalize(() => {
+              this.loading.set(false);
+              this.refreshing.set(false);
+              this.refreshFinished.emit();
+            })
+          );
         }),
         takeUntilDestroyed()
       )
       .subscribe(rows => {
-        this.allMetrics.set(rows.map(row => this.toCubeMetric(row)));  // כל הכרטיסים
-        this.loading.set(false);
+        // rows === null — הבקשה נכשלה: שומרים את הכרטיסים הקודמים במקומם
+        if (rows === null) return;
+        this.rawByKey.set(new Map(rows.map(row => [row.key ?? '', row])));
+        this.allMetrics.set(rows.map(row => this.toCubeMetric(row)));
+        this.error.set(false);
       });
   }
-
-  
 
   ngOnInit(): void {
     this.pushFilters();
@@ -125,19 +157,16 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
     this.pushFilters();
   }
 
-  readonly detail = output<string>();
-
-
-
   openDetails(key: string): void {
-    this.detail.emit(key);
+    const card = this.cardByKey(key);
+    if (card) this.detail.emit(card);
   }
 
-  goToDetail(id: number) { 
-    this.router.navigate(['/detailed-dialogue', id]); 
+  goToDetail(id: number) {
+    this.router.navigate(['/detailed-dialogue', id]);
   }
 
-    /** מיפוי DTO מהשרת למודל התצוגה של הקובייה */
+  /** מיפוי DTO מהשרת למודל התצוגה של הקובייה */
   private toCubeMetric(row: MetricCard): CubeMetric {
     return {
       key: row.key ?? '',
@@ -158,5 +187,4 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
       targetText: row.targetText ?? undefined
     };
   }
-
 }

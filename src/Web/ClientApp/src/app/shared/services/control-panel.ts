@@ -38,21 +38,27 @@ export class ControlPanel {
     return this.http.get<Claim[]>('/api/Metrics/claims');
   }
 
-  /** פירוט נתון — חלוקה לפי מערכת + רשומות */
-  getDetails(key: string, sourceId?: number | null, groupValue?: string | null, search?: string | null): Observable<MetricDetail> {
+  /** פירוט נתון — חלוקה לפי מערכת + רשומות; הטווח (fromDate/toDate) מגביל את הכול כמו בקובייה */
+  getDetails(key: string, sourceId?: number | null, groupValue?: string | null, search?: string | null,
+             fromDate?: string | null, toDate?: string | null): Observable<MetricDetail> {
     const p = new URLSearchParams();
     if (sourceId != null) p.set('sourceId', String(sourceId));
     if (groupValue != null) p.set('groupValue', groupValue);
     if (search?.trim()) p.set('search', search.trim());
+    if (fromDate) p.set('fromDate', fromDate);
+    if (toDate) p.set('toDate', toDate);
     const q = p.toString();
     return this.http.get<MetricDetail>(`/api/Metrics/${key}/details${q ? '?' + q : ''}`);
   }
 
-  /** ייצוא רשומות הפירוט ל-CSV — נוצר בצד השרת, לפי אותו סינון */
-  exportDetailsCsv(key: string, groupValue?: string | null, search?: string | null): Observable<HttpResponse<Blob>> {
+  /** ייצוא רשומות הפירוט ל-CSV — נוצר בצד השרת, לפי אותו סינון ואותו טווח תאריכים */
+  exportDetailsCsv(key: string, groupValue?: string | null, search?: string | null,
+                   fromDate?: string | null, toDate?: string | null): Observable<HttpResponse<Blob>> {
     const p = new URLSearchParams();
     if (groupValue != null) p.set('groupValue', groupValue);
     if (search?.trim()) p.set('search', search.trim());
+    if (fromDate) p.set('fromDate', fromDate);
+    if (toDate) p.set('toDate', toDate);
     const q = p.toString();
     return this.http.get(`/api/Metrics/${key}/details/export${q ? '?' + q : ''}`, {
       observe: 'response',

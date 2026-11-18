@@ -1,9 +1,11 @@
-import { Component, inject, signal, computed, Input, output } from '@angular/core';
+import { Component, inject, signal, computed, Input, output, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MetricDetail, SystemGroup } from '../shared/models/controlPanel/MetricDetail';
 import { ControlPanel } from '../shared/services/control-panel';
-import { timeout } from 'rxjs/operators';
+import { of, Subject } from 'rxjs';
+import { catchError, switchMap, timeout } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MetricCard } from '../shared/models/controlPanel/MetricCard';
 
 @Component({
@@ -13,7 +15,7 @@ import { MetricCard } from '../shared/models/controlPanel/MetricCard';
   templateUrl: './detailed-dialogue.component.html',
   styleUrl: './detailed-dialogue.component.scss'
 })
-export class DetailedDialogueComponent {
+export class DetailedDialogueComponent implements OnInit, OnChanges {
   private readonly api = inject(ControlPanel);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -24,15 +26,70 @@ export class DetailedDialogueComponent {
   @Input({ required: true })
   set metricKey(v: string) {
     this._metricKey.set(v);
-    if (v) this.load(v);
+    // הטעינה מתבצעת ב-ngOnInit: בזמן ה-setter שאר הקלטים (טווח התאריכים) עדיין לא הוזנו
   }
 /** הכרטיס מהמסך הראשי — משמש כגיבוי כשהפירוט נכשל */
 @Input() card: MetricCard | null = null;
+
+/** טווח התאריכים מהמסך הראשי — אותו טווח שחל על הקוביות, חל גם על הפירוט */
+@Input() fromDate: string | null = null;
+@Input() toDate: string | null = null;
+
+  /** מקור בקשות הפירוט — switchMap מבטל בקשה קודמת, כך שתשובה איטית של בחירה ישנה לא תדרוס את החדשה */
+  private readonly loadRequest$ = new Subject<{ key: string; groupValue: string | null }>();
+
+  constructor() {
+    this.loadRequest$
+      .pipe(
+        switchMap(({ key, groupValue }) =>
+          this.api.getDetails(key, null, groupValue, this.search(), this.fromDate, this.toDate).pipe(
+            timeout(60000),
+            catchError(() => {
+              this.failed.set(true);
+              this.endLoading();
+              return of(null);
+            })
+          )
+        ),
+        takeUntilDestroyed()
+      )
+      .subscribe(d => {
+        // d === null — הבקשה נכשלה: משאירים את הפירוט הקודם במקומו
+        if (d === null) return;
+        this.detail.set(d);
+        this.endLoading();
+      });
+  }
+
+  ngOnInit(): void {
+    const key = this._metricKey();
+    if (key) this.load(key);
+    // הטווח המחושב ב-ngOnInit — ngOnChanges הראשון אחריו נחשב לטעינה הראשונה ולא לרענון
+    this.lastLoadedRange = `${this.fromDate}|${this.toDate}`;
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    const key = this._metricKey();
+    if (!key) return;
+    const from = changes['fromDate'];
+    const to = changes['toDate'];
+    // טעינה ראשונה מתבצעת ב-ngOnInit. אחריה — כל שינוי טווח מרענן,
+    // ובפרט מעבר מ-null לערך אמיתי כשהתקופה נטענת מהשרת אחרי פתיחת החלון
+    if (from?.firstChange || to?.firstChange) return;
+    if (!from && !to) return;
+    // אותו טווח שכבר נטען (למשל כפל ngOnChanges/ngOnInit) — לא שולחים בקשה כפולה
+    const range = `${this.fromDate}|${this.toDate}`;
+    if (range === this.lastLoadedRange) return;
+    this.lastLoadedRange = range;
+    this.load(key);
+  }
 
   readonly closed = output<void>();
 
   readonly detail = signal<MetricDetail | null>(null);
   readonly loading = signal(false);
+  /** טעינת רשומות בלבד (בחירת קבוצה / חיפוש) — הטבלה נשארת במקומה ומעומעמת, במקום להתחלף ב"טוען" */
+  readonly recordsLoading = signal(false);
   readonly failed = signal(false);
   readonly search = signal('');
   readonly selectedGroup = signal<string | null>(null);
@@ -48,17 +105,28 @@ export class DetailedDialogueComponent {
   readonly pageIndex = signal(0);
   readonly pageSize = 25;
 
-  private load(key: string, groupValue: string | null = null, resetGroup = true): void {
-    this.loading.set(true);
-    this.failed.set(false);
+  /** הטווח של הבקשה האחרונה — מונע בקשה כפולה על אותו טווח */
+  private lastLoadedRange: string | null = null;
+
+  /**
+   * rowsOnly — מעבר בין קבוצות / חיפוש: רק תוכן טבלת הרשומות מוחלף.
+   * שאר הדיאלוג (סיכום, טבלת הקבוצות) נשאר קפוא, כדי שלא ייראה כמו טעינה מחדש של כל החלון.
+   */
+  private load(key: string, groupValue: string | null = null, resetGroup = true, rowsOnly = false): void {
+    if (rowsOnly) {
+      this.recordsLoading.set(true);
+    } else {
+      this.loading.set(true);
+      this.failed.set(false);
+    }
     if (resetGroup) this.selectedGroup.set(groupValue);
     this.pageIndex.set(0);
-    this.api.getDetails(key, null, groupValue, this.search())
-      .pipe(timeout(60000))
-      .subscribe({
-        next: d => { this.detail.set(d); this.loading.set(false); },
-        error: () => { this.failed.set(true); this.loading.set(false); }
-      });
+    this.loadRequest$.next({ key, groupValue });
+  }
+
+  private endLoading(): void {
+    this.loading.set(false);
+    this.recordsLoading.set(false);
   }
 
   readonly systems = computed<SystemGroup[]>(() => {
@@ -74,9 +142,18 @@ export class DetailedDialogueComponent {
     }));
   });
 
- readonly groupName = computed(() =>
-  this.detail()?.groupFieldLabel || this.card?.groupFieldLabel || ''
-);
+ // שם שדה הקיבוץ לתצוגה. ריק = אין שדה קיבוץ.
+ // ה-label לבדו אינו מספיק: השרת מחזיר תווית ברירת מחדל ("מערכת") גם בלי קיבוץ,
+ // ולכן הקביעה היא לפי groupFieldName; הכרטיס יוצר גיבוי רק כשהוא עצמו מקובץ
+ readonly groupName = computed(() => {
+  const d = this.detail();
+  if (d?.groupFieldName) return d.groupFieldLabel || d.groupFieldName;
+  if (!d && this.card?.groupField) return this.card.groupFieldLabel || this.card.groupField;
+  return '';
+});
+
+ // טבלת הקבוצות מוצגת רק כשיש שדה קיבוץ — בהיעדרו אינה מוצגת כלל
+ readonly hasGrouping = computed(() => this.groupName() !== '');
   readonly columns = computed(() =>
     (this.detail()?.columns ?? []).map(c => ({ key: c.fieldName, label: c.label, dataType: c.dataType }))
   );
@@ -133,19 +210,19 @@ readonly summary = computed(() => {
 
   showRecords(row: SystemGroup): void {
     this.selectedGroup.set(row.groupValue ?? null);
-    this.load(this._metricKey(), row.groupValue ?? null, false);
+    this.load(this._metricKey(), row.groupValue ?? null, false, true);
   }
 
   clearGroup(): void {
     this.selectedGroup.set(null);
-    this.load(this._metricKey(), null, false);
+    this.load(this._metricKey(), null, false, true);
   }
 
   onSearch(v: string): void {
     this.search.set(v);
     this.pageIndex.set(0);
     clearTimeout(this.searchTimer);
-    this.searchTimer = setTimeout(() => this.load(this._metricKey(), this.selectedGroup(), false), 350);
+    this.searchTimer = setTimeout(() => this.load(this._metricKey(), this.selectedGroup(), false, true), 350);
   }
 
   sortBy(key: string): void {
@@ -163,9 +240,13 @@ readonly summary = computed(() => {
     this.pageIndex.set(i);
   }
 
+ // עשרוניות מוצגות רק כשהערך אינו שלם (3.00 → 3, 1250.5 → 1,250.5)
  formatCurrency(v: number | null | undefined, decimals = 2): string {
-  return v == null ? '—' : '₪' + new Intl.NumberFormat('he-IL',
-    { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(v);
+  if (v == null) return '—';
+  const hasFraction = !Number.isInteger(v);
+  return '₪' + new Intl.NumberFormat('he-IL', hasFraction
+    ? { minimumFractionDigits: Math.min(1, decimals), maximumFractionDigits: decimals }
+    : { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v);
 }
 
   cell(record: Record<string, unknown>, key: string, type = ''): string {
@@ -174,13 +255,19 @@ readonly summary = computed(() => {
     if ((type === 'date' || type === 'datetime') && !isNaN(Date.parse(String(v))))
       return new Date(String(v)).toLocaleDateString('he-IL');
     if (type === 'number' || type === 'decimal' || type === 'int')
-      return new Intl.NumberFormat('he-IL', { maximumFractionDigits: 2 }).format(Number(v));
+      return new Intl.NumberFormat('he-IL',
+        { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(v));
     return String(v);
   }
 
   close(): void { this.closed.emit(); }
 
-  retry(): void { if (this._metricKey()) this.load(this._metricKey(), this.selectedGroup(), false); }
+  retry(): void {
+    if (!this._metricKey()) return;
+    // כשיש כבר פירוט — הכשל היה בטעינת הרשומות, ולכן מרעננים אותן בלבד
+    const rowsOnly = this.detail() !== null;
+    this.load(this._metricKey(), this.selectedGroup(), false, rowsOnly);
+  }
 
   /** ייצוא בצד השרת — לפי הסינון הפעיל; כשל מציג שגיאה בלי לסגור את החלון */
   exportCsv(): void {
@@ -188,7 +275,7 @@ readonly summary = computed(() => {
     this.exporting.set(true);
     this.exportError.set(null);
 
-    this.api.exportDetailsCsv(this._metricKey(), this.selectedGroup(), this.search())
+    this.api.exportDetailsCsv(this._metricKey(), this.selectedGroup(), this.search(), this.fromDate, this.toDate)
       .pipe(timeout(120000))
       .subscribe({
         next: res => {

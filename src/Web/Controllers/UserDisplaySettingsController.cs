@@ -25,6 +25,14 @@ public class UserDisplaySettingsController(IMediator mediator, IUser currentUser
         return Ok(await mediator.Send(new GetUserDisplaySettingsQuery(userId), ct));
     }
 
+    [HttpGet("me")]
+    public ActionResult<UserIdDto> Me()
+    {
+        return string.IsNullOrWhiteSpace(currentUser.Id)
+            ? Unauthorized()
+            : Ok(new UserIdDto(currentUser.Id));
+    }
+
     [HttpGet("period")]
     public async Task<ActionResult<UserDisplayPeriodDto>> GetPeriod(CancellationToken ct)
     {
@@ -120,6 +128,8 @@ public class UserDisplaySettingsController(IMediator mediator, IUser currentUser
 }
 
 public record SaveDisplaySettingsRequest(int CardsPerRow);
+
+public record UserIdDto(string Id);
 
 public record UserDisplayPeriodDto(int PeriodDays);
 

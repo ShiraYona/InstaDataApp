@@ -104,9 +104,11 @@ public Task<List<MetricCardDto>> GetActiveMetrics(
     [AllowAnonymous]
     public async Task<ActionResult<MetricDetailDto>> GetDetails(
         string key, [FromQuery] string? groupValue, [FromQuery] int? sourceId,
-        [FromQuery] string? search, CancellationToken ct)
+        [FromQuery] string? search, [FromQuery] DateOnly? fromDate, [FromQuery] DateOnly? toDate,
+        CancellationToken ct)
     {
-        var dto = await sender.Send(new GetMetricDetailsQuery(key, groupValue, sourceId, search), ct);
+        var dto = await sender.Send(new GetMetricDetailsQuery(key, groupValue, sourceId, search,
+            FromDate: fromDate, ToDate: toDate), ct);
         return dto is null ? NotFound() : Ok(dto);
     }
 
@@ -120,10 +122,12 @@ public Task<List<MetricCardDto>> GetActiveMetrics(
     [AllowAnonymous]
     public async Task<IActionResult> ExportDetails(
         string key, [FromQuery] string? groupValue, [FromQuery] int? sourceId,
-        [FromQuery] string? search, CancellationToken ct)
+        [FromQuery] string? search, [FromQuery] DateOnly? fromDate, [FromQuery] DateOnly? toDate,
+        CancellationToken ct)
     {
         var dto = await sender.Send(
-            new GetMetricDetailsQuery(key, groupValue, sourceId, search, MaxExportRows), ct);
+            new GetMetricDetailsQuery(key, groupValue, sourceId, search, MaxExportRows,
+                FromDate: fromDate, ToDate: toDate), ct);
         if (dto is null) return NotFound(new { message = "הנתון לא נמצא" });
 
         var bytes = DetailCsvBuilder.Build(dto);

@@ -31,8 +31,9 @@ public class GetCardIconsQueryHandler : IRequestHandler<GetCardIconsQuery, List<
 
 /// <summary>
 /// מספר הימים לחישוב — נקראים מ-CTRL_CalculationDays.
-/// ה-Name הוא הטקסט שמוצג ("30 ימים"), וה-Value הוא מספר הימים (INT) —
-/// הוא הערך שנשמר ב-CTRL_Metrics.DateRangeType, ולכן מוחזר כמחרוזת בטופס.
+/// ה-Name הוא הטקסט שמוצג ("30 ימים"), וה-Value הוא מספר הימים (INT).
+/// הטופס עובד עם ה-Value, ואילו ב-CTRL_Metrics.DateRangeType נשמר ה-Name —
+/// ההמרה בין השניים נעשית ב-ResolveDateRangeAsync.
 /// "לפי מסנן הלוח" אינו שורה בטבלה (אין לו מספר ימים) — הוא מתווסף כאן בקוד
 /// בראש הרשימה, והוא ברירת המחדל בטופס.
 /// </summary>
