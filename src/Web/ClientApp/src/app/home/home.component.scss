@@ -1,24 +1,13 @@
-.home-container {
-  direction: rtl;
-  padding: 1rem;
+
+.app-content {
+  flex: 1 1 auto;
+  min-width: 0;  
+  padding: 0;
+   overflow-x: clip;
 }
 
-.content {
-  padding: 1rem 0;
-}
-
-.content-head {
+.app-shell {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-
-  h1 {
-    margin: 0 0 0.5rem;
-  }
-
-  p {
-    margin: 0;
-  }
+  direction: rtl;
+  min-height: 100vh;
 }
