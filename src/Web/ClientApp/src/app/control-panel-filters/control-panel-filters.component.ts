@@ -1,4 +1,4 @@
-import { Component, DestroyRef, EventEmitter, inject, OnInit, Output } from '@angular/core';
+import { Component, DestroyRef, EventEmitter, inject, Input, OnInit, Output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -32,7 +32,11 @@ export class ControlPanelFiltersComponent implements OnInit {
   /** שינוי סינון — ההורה מסנן מחדש את התצוגה */
   @Output() filtersChanged = new EventEmitter<FilterState>();
 
-  @Output() refreshRequested = new EventEmitter<FilterState>();
+  /** בקשת ריענון — ההורה מפעיל שליפה מחדש מהשרת של כל הכרטיסים */
+  @Output() refreshRequested = new EventEmitter<void>();
+
+  /** החישוב ברקע — בזמן הזה כפתור הריענון מוצג disabled (סעיף 6.2.5.6) */
+  @Input() refreshing = false;
 
   @Output() cardsPerRowChanged = new EventEmitter<number | null>();
   @Output() layoutManagementRequested = new EventEmitter<void>();
@@ -104,15 +108,9 @@ export class ControlPanelFiltersComponent implements OnInit {
   }
 
   refresh(): void {
-    this.searchMetricName = '';
-    this.period = this.savedPeriod;
-
-    if (this.savedCardsPerRow !== null) {
-      this.cardsPerRow = this.savedCardsPerRow;
-    }
-
-    this.onFilterChange();
-    this.refreshRequested.emit(this.currentState());
+    // ריענון אינו משנה הגדרות תצוגה, תקופה או טקסט חיפוש — רק מפעיל שליפה מחדש מהשרת
+    if (this.refreshing) return;
+    this.refreshRequested.emit();
   }
 
   private currentState(): FilterState {

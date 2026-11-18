@@ -33,11 +33,14 @@
 
 
 <app-control-panel-filters
+  [refreshing]="refreshing()"
   (filtersChanged)="onFiltersChanged($event)"
-  (cardsPerRowChanged)="onCardsPerRowChanged($event)">
+  (cardsPerRowChanged)="onCardsPerRowChanged($event)"
+  (refreshRequested)="onRefreshRequested()">
 </app-control-panel-filters>
 
 <app-control-panel-cube
+  #cube
   [columns]="cardsPerRow() ?? 4"
   [period]="period() ?? 30"
   [fromDate]="dateRange().from"

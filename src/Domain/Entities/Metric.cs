@@ -26,11 +26,10 @@ public class Metric
     public int? GroupFieldID { get; set; }
 
     /// <summary>
-    /// מספר הימים לחישוב (Value של CTRL_CalculationDays — 7 / 30 / 90).
-    /// null = "לפי מסנן הלוח": הנתון מקבל את התקופה מהמסך הראשי ולא מהגדרה עצמית.
-    /// העמודה במסד היא INT.
+    /// תקופת החישוב. העמודה במסד היא nvarchar(20) — נשמר הטקסט של התקופה
+    /// (למשל "30 ימים", ה-Name של CTRL_CalculationDays) או BOARD_FILTER.
     /// </summary>
-    public int? DateRangeType { get; set; }
+    public string? DateRangeType { get; set; }
 
     /// <summary>קוד הסמל — CTRL_ICON.Name</summary>
     public string? IconCode { get; set; }

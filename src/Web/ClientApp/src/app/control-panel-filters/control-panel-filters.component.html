@@ -46,10 +46,12 @@
       styleClass="refreshButton"
       severity="secondary"
       [outlined]="true"
+      [disabled]="refreshing"
+      [loading]="refreshing"
       (onClick)="refresh()"
       ariaLabel="רענון">
       <span class="refreshButton__icon" aria-hidden="true">↻</span>
-      <span class="refreshButton__label">רענון</span>
+      <span class="refreshButton__label">רענון הנתונים</span>
     </p-button>
   </div> 
 

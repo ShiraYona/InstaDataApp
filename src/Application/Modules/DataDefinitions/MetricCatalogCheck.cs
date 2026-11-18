@@ -62,31 +62,37 @@ public static class MetricCatalogCheck
     }
 
     /// <summary>
-    /// תקופת החישוב — נשמרת ב-CTRL_Metrics.DateRangeType כמספר הימים (INT).
-    /// "לפי מסנן הלוח" נשמר כ-NULL, וכל השאר מפוענח מול CTRL_CalculationDays.Value.
+    /// תקופת החישוב — נשמרת ב-CTRL_Metrics.DateRangeType כטקסט (nvarchar(20)):
+    /// ה-Name של CTRL_CalculationDays (למשל "30 ימים") או BOARD_FILTER.
+    /// הפונקציה מקבלת את ה-Value שהטופס שולח ("30") או את ה-Name, ומחזירה תמיד את ה-Name.
     /// </summary>
     /// <exception cref="ValidationException">הערך אינו מתוך הקטלוג</exception>
-    public static async Task<int?> ResolveDateRangeAsync(
+    public static async Task<string?> ResolveDateRangeAsync(
         IApplicationDbContext context,
         string? requested,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(requested)
-            || requested == MetricConstants.DateRangeBoardFilter)
+        if (string.IsNullOrWhiteSpace(requested))
         {
-            return null;
+            return MetricConstants.DateRangeBoardFilter;
         }
 
         var wanted = requested.Trim();
+
+        if (string.Equals(wanted, MetricConstants.DateRangeBoardFilter, StringComparison.OrdinalIgnoreCase))
+        {
+            return MetricConstants.DateRangeBoardFilter;
+        }
+
         var wantedValue = int.TryParse(wanted, out var parsed) ? parsed : (int?)null;
 
-        // ה-Value הוא מספר הימים שממנו נגזר הטווח; ה-Name ("30 ימים") מתקבל לתאימות לאחור
+        // ה-Value הוא מספר הימים שהטופס שולח; ה-Name ("30 ימים") מתקבל לתאימות לאחור
         var match = await context.CalculationDays
             .FirstOrDefaultAsync(
                 period => (wantedValue != null && period.Value == wantedValue) || period.Name == wanted,
                 cancellationToken);
 
-        return match?.Value
+        return match?.Name
             ?? throw Fail(nameof(MetricDraftDto.DateRangeType), "תקופת החישוב שנבחרה אינה מוכרת.");
     }
 
@@ -202,7 +208,7 @@ public static class MetricDraftCheck
 /// <summary>הערכים הקנוניים של המפתחות הזרים/המחרוזתיים של המדד</summary>
 public sealed record MetricCanonicalValues(
     CalculationTypeDefinition CalculationType,
-    int? DateRangeType,
+    string? DateRangeType,
     string? IconCode)
 {
     /// <summary>הקוד הקנוני (COUNT / SUM / DIRECT)</summary>

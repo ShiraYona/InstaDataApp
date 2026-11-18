@@ -1,4 +1,4 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, viewChild } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { Button } from 'primeng/button';
 import { AddingNewDataEntryComponent } from '../adding-new-data-entry/adding-new-data-entry.component';
@@ -14,13 +14,18 @@ import { DetailedDialogueComponent } from '../detailed-dialogue/detailed-dialogu
   styleUrl: './control-panel.component.scss'
 })
 export class ControlPanelComponent {
+  private readonly cube = viewChild(ControlPanelCubeComponent);
+
   readonly detailKey = signal<string | null>(null);
 
   /** מצב פתיחת דיאלוג "נתון חדש" */
   readonly newDataVisible = signal<boolean>(false);
 
-  /** טריגר לרענון הקובייה — עולה ב-1 אחרי כל שמירה בדיאלוג */
+  /** טריגר לרענון הקובייה — עולה ב-1 בכל בקשת ריענון (כפתור הריענון או שמירה בדיאלוג) */
   readonly refreshToken = signal<number>(0);
+
+  /** האם הקובייה מחשבת כעת — בזמן הזה כפתור הריענון disabled */
+  readonly refreshing = computed(() => this.cube()?.refreshing() ?? false);
 
   /** ערכי הסינון — cardsPerRow אינו נשמר כאן: הוא עובר ישירות מהפילטרים לקובייה */
   readonly period = signal<number | null>(null);
@@ -72,6 +77,11 @@ export class ControlPanelComponent {
   /** פתיחת הדיאלוג ליצירת נתון חדש */
   openNewData(): void {
     this.newDataVisible.set(true);
+  }
+
+  /** לחיצה על "ריענון" — שליפה מחדש מהשרת של כל הכרטיסים, בלי לשנות תצוגה */
+  onRefreshRequested(): void {
+    this.refreshToken.update(value => value + 1);
   }
 
   /** אחרי שמירה מוצלחת — הקובייה מרעננת את הנתונים שלה */

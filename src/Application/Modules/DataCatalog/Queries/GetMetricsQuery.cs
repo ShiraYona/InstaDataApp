@@ -1,4 +1,3 @@
-using System.Globalization;
 using InstaDataApp.Application.Common.Interfaces;
 using InstaDataApp.Application.Modules.DataDefinitions;
 using InstaDataApp.Domain.Entities;
@@ -86,11 +85,14 @@ public class GetMetricsQueryHandler : IRequestHandler<GetMetricsQuery, List<Metr
     }
 
     /// <summary>
-    /// הטופס עובד עם ה-Value של התקופה ("30" / "7" / "90"). null במסד הוא
-    /// "לפי מסנן הלוח", והערך שמוחזר עבורו הוא הקבוע שהטופס מכיר.
+    /// הטופס עובד עם ה-Value של התקופה ("30" / "7" / "90"). במסד נשמר ה-Name
+    /// ("30 ימים") או BOARD_FILTER, ולכן ממירים חזרה ל-Value.
+    /// ערך ריק או null פירושו "לפי מסנן הלוח"; ערך מספרי ישן מוחזר כמו שהוא.
     /// </summary>
-    private static string ToDateRangeValue(int? stored) =>
-        stored is { } days
-            ? days.ToString(CultureInfo.InvariantCulture)
-            : MetricConstants.DateRangeBoardFilter;
+    private static string ToDateRangeValue(string? stored)
+    {
+        return string.IsNullOrWhiteSpace(stored)
+            ? MetricConstants.DateRangeBoardFilter
+            : stored.Trim();
+    }
 }
