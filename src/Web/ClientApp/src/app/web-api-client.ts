@@ -1240,6 +1240,54 @@ export class UserDisplaySettingsClient {
         return _observableOf(null as any);
     }
 
+    me(): Observable<UserIdDto> {
+        let url_ = this.baseUrl + "/api/user-display-settings/me";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processMe(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processMe(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<UserIdDto>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<UserIdDto>;
+        }));
+    }
+
+    protected processMe(response: HttpResponseBase): Observable<UserIdDto> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            result200 = UserIdDto.fromJS(resultData200);
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
     getPeriod(): Observable<UserDisplayPeriodDto> {
         let url_ = this.baseUrl + "/api/user-display-settings/period";
         url_ = url_.replace(/[?&]$/, "");
@@ -2607,6 +2655,42 @@ export class DisplaySettingsDto implements IDisplaySettingsDto {
 
 export interface IDisplaySettingsDto {
     cardsPerRow?: number;
+}
+
+export class UserIdDto implements IUserIdDto {
+    id?: string;
+
+    constructor(data?: IUserIdDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.id = _data["id"];
+        }
+    }
+
+    static fromJS(data: any): UserIdDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new UserIdDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["id"] = this.id;
+        return data;
+    }
+}
+
+export interface IUserIdDto {
+    id?: string;
 }
 
 export class UserDisplayPeriodDto implements IUserDisplayPeriodDto {

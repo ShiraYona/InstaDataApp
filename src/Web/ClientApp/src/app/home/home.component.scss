@@ -1,13 +1,51 @@
 
 .app-content {
   flex: 1 1 auto;
-  min-width: 0;  
+  min-width: 0;
   padding: 0;
-   overflow-x: clip;
+  height: 100vh;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .app-shell {
   display: flex;
   direction: rtl;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* הסרגל העליון קבוע בראש (flex-shrink: 0), ורק התוכן שלמטה גולל */
+app-top-bar {
+  flex: 0 0 auto;
+}
+
+.page-contect {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: clip;
+  scrollbar-width: none;      /* Firefox */
+  -ms-overflow-style: none;   /* Edge ישן / IE */
+}
+
+/* הסתרת פס הגלילה של אזור התוכן (Chrome / Edge / Safari) */
+.page-contect::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  /* במסכים צרים ניתן מקום לגלילה של כל העמוד */
+  .app-shell,
+  .app-content {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .page-contect {
+    overflow: visible;
+  }
 }
