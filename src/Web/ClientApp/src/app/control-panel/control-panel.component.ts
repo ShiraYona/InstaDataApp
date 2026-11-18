@@ -4,11 +4,19 @@ import { Button } from 'primeng/button';
 import { ControlPanelCubeComponent } from '../control-panel-cube/control-panel-cube.component';
 import { ControlPanelFiltersComponent, FilterState } from '../control-panel-filters/control-panel-filters.component';
 import { DetailedDialogueComponent } from '../detailed-dialogue/detailed-dialogue.component';
+import { AddingNewDataEntryComponent } from '../adding-new-data-entry/adding-new-data-entry.component';
 
 @Component({
   selector: 'app-control-panel',
   standalone: true,
-  imports: [Button, RouterModule, DetailedDialogueComponent, ControlPanelCubeComponent, ControlPanelFiltersComponent],
+  imports: [
+    Button,
+    RouterModule,
+    DetailedDialogueComponent,
+    ControlPanelCubeComponent,
+    ControlPanelFiltersComponent,
+    AddingNewDataEntryComponent
+  ],
   templateUrl: './control-panel.component.html',
   styleUrl: './control-panel.component.scss'
 })
@@ -37,5 +45,15 @@ export class ControlPanelComponent {
 
   closeDetail(): void {
     this.detailKey.set(null);
+  }
+
+  newDataVisible = false;
+
+  openNewDataDialog(): void {
+    this.newDataVisible = true;
+  }
+
+  onDataSaved(_id: number): void {
+    this.newDataVisible = false;
   }
 }

@@ -229,11 +229,8 @@ body {
 
 
 
-/* ---------- כותרות העמודות בטבלת "ניהול נתונים" ----------
-   כמו th בדמו: רקע #f7f9fc, גופן 13px מודגש, צבע #71839b,
-   ריפוד 13px 14px וקו תחתון 1px #e9eef5.
-   כאן ולא ב-SCSS של הרכיב, כי ה-theme של PrimeNG מוזרק בזמן ריצה
-   אחרי סגנונות הרכיב וגובר עליהם. */
+/* ---------- כותרות העמודות בטבלת "ניהול נתונים" ----------*/
+  
 .catalogTable .p-datatable-thead > tr > th {
   padding: 13px 14px;
   background: #f7f9fc;
@@ -275,13 +272,7 @@ body {
   vertical-align: middle;
 }
 
-/* ---------- כפתורי פעולות בטבלת "ניהול נתונים" ----------
-   נדרש כאן (ולא ב-SCSS של הרכיב) משני טעמים:
-   1. סדר ה-CSS: ה-theme של PrimeNG מוזרק בזמן ריצה אחרי סגנונות הרכיב,
-      ולכן רק גיליון גלובלי (טעון ב-head) בטוח לגבור עליו.
-   2. p-button מוסיף את ה-styleClass (למשל actionButton--delete) רק
-      ב-Angular-18-תואם-לאחר-Init, כלומר בפועל אחרי הצביעה הראשונית.
-   שלושת הכפתורים — מידה זהה (12px / ריפוד 7px 11px כמו .btn.sm בדמו). */
+/* ---------- כפתורי פעולות בטבלת "ניהול נתונים" ----------*/
 
 p-button.actionButton {
   display: inline-flex;
@@ -309,8 +300,7 @@ p-button.actionButton {
   transition: none;
 }
 
-/* כל מעבר-עכבר/מיקוד על כפתורי הפעולה — ללא שינוי עיצובי כלשהו.
-   ה-theme של PrimeNG מוזרק בזמן ריצה אחרי הקובץ הזה, ולכן נדרש גם
+/* theme של PrimeNG נדרש גם
    ה-scope שלו (.p-button) כאן, אחרת כללי ה-hover שלו גוברים. */
 .catalogTable .actionButton.p-button:not(:disabled):hover,
 .catalogTable .actionButton.p-button:not(:disabled):active,
@@ -375,59 +365,7 @@ p-button.actionButton {
   color: #bb4338;
 }
 
-// .demoToast.p-toast {
-//   top: auto;
-//   right: auto;
-//   bottom: 23px;
-//   left: 25px;
-//   width: auto;
-//   max-width: min(420px, calc(100vw - 50px));
-//   white-space: pre-line;
-//   word-break: normal;
-//   direction: rtl;
-//   text-align: right;
-// }
 
-// .demoToast.p-toast .p-toast-message {
-//   margin: 0;
-//   background: #1c3d60;
-//   color: #ffffff;
-//   padding: 13px 19px;
-//   border: 0;
-//   border-radius: 10px;
-//   box-shadow: 0 5px 22px #162b4388;
-//   transform: none;
-//   opacity: 1;
-// }
-
-// .demoToast.p-toast .p-toast-message-content {
-//   padding: 0;
-//   gap: 0;
-//   align-items: center;
-// }
-
-// .demoToast.p-toast .p-toast-message-text {
-//   margin: 0;
-//   gap: 0;
-// }
-
-// .demoToast.p-toast .p-toast-summary,
-// .demoToast.p-toast .p-toast-detail {
-//   margin: 0;
-//   padding: 0;
-//   font-family: inherit;
-//   font-size: 13px;
-//   font-weight: 400;
-//   line-height: 1.4;
-//   color: #ffffff;
-//   text-align: right;
-// }
-
-// .demoToast.p-toast .p-toast-icon-close,
-// .demoToast.p-toast .p-toast-message-icon,
-// .demoToast.p-toast .p-toast-close-button {
-//   display: none;
-// }
 
 .tasksControlTable.p-datatable {
   width: 100%;
@@ -453,8 +391,7 @@ p-button.actionButton {
   background: transparent;
 }
 
-/* כותרות העמודות — רקע זהה לרקע העמוד (#f3f6fb). ה-!important נדרש כי
-   ה-thead של PrimeNG מגדיר את הרקע דרך משתנה CSS ברמת התא */
+/* כותרות העמודות — רקע זהה לרקע העמוד (#f3f6fb). ה-!important נדרש כי*/
 .tasksControlTable .p-datatable-thead > tr > th {
   padding: 13px 14px;
   background: #f3f6fb !important;
@@ -514,4 +451,58 @@ p-button.actionButton {
   padding: 52px;
   text-align: center;
   color: #7186a0;
+}
+
+/* ---------- לוח השנה (p-datepicker) בדיאלוג "נתון חדש" ----------*/
+.demo-select-panel.p-datepicker {
+  direction: rtl;
+  border: 1px solid #e2e7ef;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 12px 32px #06102c1f;
+  padding: 8px;
+  font-family: inherit;
+}
+
+.demo-select-panel.p-datepicker .p-datepicker-header {
+  padding: 4px 4px 8px;
+  border-bottom: 1px solid #eef2f8;
+  background: #fff;
+  color: #19304d;
+  font-weight: 700;
+}
+
+.demo-select-panel.p-datepicker .p-datepicker-title button,
+.demo-select-panel.p-datepicker .p-datepicker-prev,
+.demo-select-panel.p-datepicker .p-datepicker-next {
+  color: #48617f;
+}
+
+.demo-select-panel.p-datepicker table {
+  font-size: 13px;
+}
+
+.demo-select-panel.p-datepicker td > span {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  color: #223b5a;
+}
+
+/* היום הנוכחי — הבחנה עדינה, לא רקע כהה */
+.demo-select-panel.p-datepicker td.p-datepicker-today > span {
+  background: #eef4fc;
+  color: #2f5d9e;
+  font-weight: 700;
+}
+
+.demo-select-panel.p-datepicker td > span.p-highlight {
+  background: #1765ce;
+  color: #fff;
+}
+
+/* תאריכים חסומים (maxDate / minDate) */
+.demo-select-panel.p-datepicker td > span.p-disabled {
+  background: transparent;
+  color: #b4bcc7;
 }

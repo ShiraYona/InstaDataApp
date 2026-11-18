@@ -10,7 +10,7 @@
       <span class="headlineBtn__icon" aria-hidden="true">⚙</span>
       <span>התאמת תצוגה</span>
     </p-button>
-    <p-button styleClass="headlineBtnPrimary">
+    <p-button styleClass="headlineBtnPrimary" (onClick)="openNewDataDialog()">
       <span class="headlineBtn__icon" aria-hidden="true">+</span>
       <span>נתון חדש</span>
     </p-button>
@@ -32,3 +32,7 @@
   [searchMetricName]="searchMetricName()"
   (detail)="openDetail($event)">
 </app-control-panel-cube>
+
+<app-adding-new-data-entry
+  [(visible)]="newDataVisible"
+  (saved)="onDataSaved($event)" />

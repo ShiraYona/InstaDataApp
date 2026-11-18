@@ -10,9 +10,9 @@ public class CtrlDataSourceParameterConfiguration : IEntityTypeConfiguration<Ctr
     {
         b.ToTable("CTRL_DataSourceParameters");
         b.HasKey(x => x.ParameterID);
-        b.Property(x => x.ParameterID).ValueGeneratedNever();
+        b.Property(x => x.ParameterID).ValueGeneratedOnAdd();
         b.Property(x => x.ParameterName).HasMaxLength(128).IsRequired();
-        b.Property(x => x.ParameterType).HasMaxLength(50).IsRequired();
-        b.Property(x => x.ParameterValue).HasMaxLength(4000);
+        b.Property(x => x.ParameterType).HasMaxLength(30).IsRequired();
+        b.Property(x => x.ParameterValue).HasMaxLength(1000);
     }
 }

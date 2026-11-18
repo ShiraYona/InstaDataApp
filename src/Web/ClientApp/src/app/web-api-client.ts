@@ -83,7 +83,7 @@ export class DataCatalogClient {
         return _observableOf(null as any);
     }
 
-    update(id: number, draft: MetricDraftDto): Observable<FileResponse> {
+    update(id: number, rowVersion: string | null | undefined, draft: MetricDraftDto): Observable<FileResponse> {
         let url_ = this.baseUrl + "/api/DataCatalog/{id}";
         if (id === undefined || id === null)
             throw new Error("The parameter 'id' must be defined.");
@@ -97,6 +97,7 @@ export class DataCatalogClient {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
+                "If-Match": rowVersion !== undefined && rowVersion !== null ? "" + rowVersion : "",
                 "Content-Type": "application/json",
                 "Accept": "application/octet-stream"
             })
@@ -582,6 +583,61 @@ export class DataDefinitionsClient {
                 result200 = [] as any;
                 for (let item of resultData200)
                     result200!.push(LookupOptionDto.fromJS(item));
+            }
+            else {
+                result200 = <any>null;
+            }
+            return _observableOf(result200);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            }));
+        }
+        return _observableOf(null as any);
+    }
+
+    getFilterOperators(): Observable<FilterOperatorDto[]> {
+        let url_ = this.baseUrl + "/api/data-definitions/filter-operators";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_ : any = {
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
+            return this.processGetFilterOperators(response_);
+        })).pipe(_observableCatch((response_: any) => {
+            if (response_ instanceof HttpResponseBase) {
+                try {
+                    return this.processGetFilterOperators(response_ as any);
+                } catch (e) {
+                    return _observableThrow(e) as any as Observable<FilterOperatorDto[]>;
+                }
+            } else
+                return _observableThrow(response_) as any as Observable<FilterOperatorDto[]>;
+        }));
+    }
+
+    protected processGetFilterOperators(response: HttpResponseBase): Observable<FilterOperatorDto[]> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            let result200: any = null;
+            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            if (Array.isArray(resultData200)) {
+                result200 = [] as any;
+                for (let item of resultData200)
+                    result200!.push(FilterOperatorDto.fromJS(item));
             }
             else {
                 result200 = <any>null;
@@ -1286,6 +1342,8 @@ export class MetricListItemDto implements IMetricListItemDto {
     isActive?: boolean;
     detailFieldIds?: number[];
     dateRangeValue?: string | undefined;
+    rowVersion?: string | undefined;
+    filtersJson?: string | undefined;
 
     constructor(data?: IMetricListItemDto) {
         if (data) {
@@ -1314,6 +1372,8 @@ export class MetricListItemDto implements IMetricListItemDto {
                     this.detailFieldIds!.push(item);
             }
             this.dateRangeValue = _data["dateRangeValue"];
+            this.rowVersion = _data["rowVersion"];
+            this.filtersJson = _data["filtersJson"];
         }
     }
 
@@ -1342,6 +1402,8 @@ export class MetricListItemDto implements IMetricListItemDto {
                 data["detailFieldIds"].push(item);
         }
         data["dateRangeValue"] = this.dateRangeValue;
+        data["rowVersion"] = this.rowVersion;
+        data["filtersJson"] = this.filtersJson;
         return data;
     }
 }
@@ -1359,6 +1421,8 @@ export interface IMetricListItemDto {
     isActive?: boolean;
     detailFieldIds?: number[];
     dateRangeValue?: string | undefined;
+    rowVersion?: string | undefined;
+    filtersJson?: string | undefined;
 }
 
 export class MetricDraftDto implements IMetricDraftDto {
@@ -1367,10 +1431,13 @@ export class MetricDraftDto implements IMetricDraftDto {
     calculationTypeId?: number;
     sumFieldId?: number | undefined;
     groupFieldId?: number | undefined;
-    dateRangeType?: string;
+    dateRangeType?: string | undefined;
+    dateFromFieldId?: number | undefined;
+    dateToFieldId?: number | undefined;
     iconCode?: string | undefined;
     detailFieldIds?: number[];
     displayInDashboard?: boolean;
+    filtersJson?: string | undefined;
 
     constructor(data?: IMetricDraftDto) {
         if (data) {
@@ -1389,6 +1456,8 @@ export class MetricDraftDto implements IMetricDraftDto {
             this.sumFieldId = _data["sumFieldId"];
             this.groupFieldId = _data["groupFieldId"];
             this.dateRangeType = _data["dateRangeType"];
+            this.dateFromFieldId = _data["dateFromFieldId"];
+            this.dateToFieldId = _data["dateToFieldId"];
             this.iconCode = _data["iconCode"];
             if (Array.isArray(_data["detailFieldIds"])) {
                 this.detailFieldIds = [] as any;
@@ -1396,6 +1465,7 @@ export class MetricDraftDto implements IMetricDraftDto {
                     this.detailFieldIds!.push(item);
             }
             this.displayInDashboard = _data["displayInDashboard"];
+            this.filtersJson = _data["filtersJson"];
         }
     }
 
@@ -1414,6 +1484,8 @@ export class MetricDraftDto implements IMetricDraftDto {
         data["sumFieldId"] = this.sumFieldId;
         data["groupFieldId"] = this.groupFieldId;
         data["dateRangeType"] = this.dateRangeType;
+        data["dateFromFieldId"] = this.dateFromFieldId;
+        data["dateToFieldId"] = this.dateToFieldId;
         data["iconCode"] = this.iconCode;
         if (Array.isArray(this.detailFieldIds)) {
             data["detailFieldIds"] = [];
@@ -1421,6 +1493,7 @@ export class MetricDraftDto implements IMetricDraftDto {
                 data["detailFieldIds"].push(item);
         }
         data["displayInDashboard"] = this.displayInDashboard;
+        data["filtersJson"] = this.filtersJson;
         return data;
     }
 }
@@ -1431,10 +1504,13 @@ export interface IMetricDraftDto {
     calculationTypeId?: number;
     sumFieldId?: number | undefined;
     groupFieldId?: number | undefined;
-    dateRangeType?: string;
+    dateRangeType?: string | undefined;
+    dateFromFieldId?: number | undefined;
+    dateToFieldId?: number | undefined;
     iconCode?: string | undefined;
     detailFieldIds?: number[];
     displayInDashboard?: boolean;
+    filtersJson?: string | undefined;
 }
 
 export class SetMetricActiveRequest implements ISetMetricActiveRequest {
@@ -1521,6 +1597,8 @@ export class LookupOptionDto implements ILookupOptionDto {
     value?: string;
     label?: string;
     icon?: string | undefined;
+    code?: string | undefined;
+    requiresSumField?: boolean;
 
     constructor(data?: ILookupOptionDto) {
         if (data) {
@@ -1536,6 +1614,8 @@ export class LookupOptionDto implements ILookupOptionDto {
             this.value = _data["value"];
             this.label = _data["label"];
             this.icon = _data["icon"];
+            this.code = _data["code"];
+            this.requiresSumField = _data["requiresSumField"];
         }
     }
 
@@ -1551,6 +1631,8 @@ export class LookupOptionDto implements ILookupOptionDto {
         data["value"] = this.value;
         data["label"] = this.label;
         data["icon"] = this.icon;
+        data["code"] = this.code;
+        data["requiresSumField"] = this.requiresSumField;
         return data;
     }
 }
@@ -1559,12 +1641,17 @@ export interface ILookupOptionDto {
     value?: string;
     label?: string;
     icon?: string | undefined;
+    code?: string | undefined;
+    requiresSumField?: boolean;
 }
 
 export class DataSourceDto implements IDataSourceDto {
     sourceId?: number;
     label?: string;
+    sourceType?: string;
+    outputType?: string;
     dateFieldId?: number | undefined;
+    hasDateParameters?: boolean;
     fields?: DataSourceFieldDto[];
 
     constructor(data?: IDataSourceDto) {
@@ -1580,7 +1667,10 @@ export class DataSourceDto implements IDataSourceDto {
         if (_data) {
             this.sourceId = _data["sourceId"];
             this.label = _data["label"];
+            this.sourceType = _data["sourceType"];
+            this.outputType = _data["outputType"];
             this.dateFieldId = _data["dateFieldId"];
+            this.hasDateParameters = _data["hasDateParameters"];
             if (Array.isArray(_data["fields"])) {
                 this.fields = [] as any;
                 for (let item of _data["fields"])
@@ -1600,7 +1690,10 @@ export class DataSourceDto implements IDataSourceDto {
         data = typeof data === 'object' ? data : {};
         data["sourceId"] = this.sourceId;
         data["label"] = this.label;
+        data["sourceType"] = this.sourceType;
+        data["outputType"] = this.outputType;
         data["dateFieldId"] = this.dateFieldId;
+        data["hasDateParameters"] = this.hasDateParameters;
         if (Array.isArray(this.fields)) {
             data["fields"] = [];
             for (let item of this.fields)
@@ -1613,16 +1706,24 @@ export class DataSourceDto implements IDataSourceDto {
 export interface IDataSourceDto {
     sourceId?: number;
     label?: string;
+    sourceType?: string;
+    outputType?: string;
     dateFieldId?: number | undefined;
+    hasDateParameters?: boolean;
     fields?: DataSourceFieldDto[];
 }
 
 export class DataSourceFieldDto implements IDataSourceFieldDto {
     fieldId?: number;
     label?: string;
+    fieldName?: string;
     dataType?: string;
     isSummable?: boolean;
     isGroupable?: boolean;
+    isFilterable?: boolean;
+    filterInputType?: string | undefined;
+    valueSource?: string | undefined;
+    isNullable?: boolean | undefined;
 
     constructor(data?: IDataSourceFieldDto) {
         if (data) {
@@ -1637,9 +1738,14 @@ export class DataSourceFieldDto implements IDataSourceFieldDto {
         if (_data) {
             this.fieldId = _data["fieldId"];
             this.label = _data["label"];
+            this.fieldName = _data["fieldName"];
             this.dataType = _data["dataType"];
             this.isSummable = _data["isSummable"];
             this.isGroupable = _data["isGroupable"];
+            this.isFilterable = _data["isFilterable"];
+            this.filterInputType = _data["filterInputType"];
+            this.valueSource = _data["valueSource"];
+            this.isNullable = _data["isNullable"];
         }
     }
 
@@ -1654,9 +1760,14 @@ export class DataSourceFieldDto implements IDataSourceFieldDto {
         data = typeof data === 'object' ? data : {};
         data["fieldId"] = this.fieldId;
         data["label"] = this.label;
+        data["fieldName"] = this.fieldName;
         data["dataType"] = this.dataType;
         data["isSummable"] = this.isSummable;
         data["isGroupable"] = this.isGroupable;
+        data["isFilterable"] = this.isFilterable;
+        data["filterInputType"] = this.filterInputType;
+        data["valueSource"] = this.valueSource;
+        data["isNullable"] = this.isNullable;
         return data;
     }
 }
@@ -1664,9 +1775,62 @@ export class DataSourceFieldDto implements IDataSourceFieldDto {
 export interface IDataSourceFieldDto {
     fieldId?: number;
     label?: string;
+    fieldName?: string;
     dataType?: string;
     isSummable?: boolean;
     isGroupable?: boolean;
+    isFilterable?: boolean;
+    filterInputType?: string | undefined;
+    valueSource?: string | undefined;
+    isNullable?: boolean | undefined;
+}
+
+export class FilterOperatorDto implements IFilterOperatorDto {
+    code?: string;
+    label?: string;
+    needsValue?: boolean;
+    isMultiValue?: boolean;
+
+    constructor(data?: IFilterOperatorDto) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (<any>this)[property] = (<any>data)[property];
+            }
+        }
+    }
+
+    init(_data?: any) {
+        if (_data) {
+            this.code = _data["code"];
+            this.label = _data["label"];
+            this.needsValue = _data["needsValue"];
+            this.isMultiValue = _data["isMultiValue"];
+        }
+    }
+
+    static fromJS(data: any): FilterOperatorDto {
+        data = typeof data === 'object' ? data : {};
+        let result = new FilterOperatorDto();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["code"] = this.code;
+        data["label"] = this.label;
+        data["needsValue"] = this.needsValue;
+        data["isMultiValue"] = this.isMultiValue;
+        return data;
+    }
+}
+
+export interface IFilterOperatorDto {
+    code?: string;
+    label?: string;
+    needsValue?: boolean;
+    isMultiValue?: boolean;
 }
 
 export class PreviewResultDto implements IPreviewResultDto {
