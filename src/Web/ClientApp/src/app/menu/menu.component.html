@@ -10,10 +10,13 @@
     *ngFor="let item of mainItems"
     class="nav"
     [routerLink]="item.routerLink"
-    routerLinkActive="active">
+    routerLinkActive="active"
+    [pTooltip]="item.label"
+    tooltipPosition="right"
+    tooltipStyleClass="sideTooltip"
+    [tooltipDisabled]="!isCompact">
     <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
     <span class="nav-label">{{ item.label }}</span>
-    <span class="nav-tooltip" role="tooltip">{{ item.label }}</span>
   </button>
 
   <button
@@ -22,10 +25,13 @@
     class="nav"
     [class.divider-nav]="isFirst"
     [routerLink]="item.routerLink"
-    routerLinkActive="active">
+    routerLinkActive="active"
+    [pTooltip]="item.label"
+    tooltipPosition="right"
+    tooltipStyleClass="sideTooltip"
+    [tooltipDisabled]="!isCompact">
     <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
     <span class="nav-label">{{ item.label }}</span>
-    <span class="nav-tooltip" role="tooltip">{{ item.label }}</span>
   </button>
 
 </aside>

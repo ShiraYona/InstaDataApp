@@ -87,26 +87,7 @@
   text-overflow: ellipsis;
 }
 
-/* tooltip — מוצג רק במצב סמל בלבד, ומתחתיו הסבר לנגישות ולמקלדת */
-.nav-tooltip {
-  display: none;
-  position: absolute;
-  top: 50%;
-  right: calc(100% + 10px);
-  z-index: 10;
-  transform: translateY(-50%);
-  padding: 6px 10px;
-  border-radius: 7px;
-  background: #0b1729;
-  color: #e8f1ff;
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 1.2;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.12s ease;
-}
+/* ה-tooltip של PrimeNG מרונדר ב-body (מחוץ לרכיב) — עיצובו ב-styles.scss */
 
 .nav.divider-nav {
   margin-top: 15px;
@@ -149,6 +130,11 @@
   .nav-icon {
     width: auto;
     font-size: 19px;
+  }
+
+  /* במצב סמל בלבד — הטקסט מוסתר, נשאר רק הסמל; ההסבר מוצג כ־tooltip של PrimeNG */
+  .nav-label {
+    display: none;
   }
 
   .nav.divider-nav {
