@@ -19,6 +19,8 @@ export interface CubeMetric {
   groups?: ControlPanelCubeGroup[];
   targetText?: string;
   signType?: string;
+    /** חישוב הכרטיס נכשל */
+  isError?: boolean;
 }
 export interface ControlPanelCubeGroup {
   value: string;

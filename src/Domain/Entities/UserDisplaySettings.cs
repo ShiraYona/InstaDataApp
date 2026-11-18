@@ -7,6 +7,9 @@ public class UserDisplaySettings
 
     public string UserId { get; set; } = string.Empty;
     public int CardsPerRow { get; set; } = DefaultCardsPerRow;
+
+    public int? PeriodCalculation { get; set; }
+
     public DateTime UpdatedDate { get; set; }
 
     public static bool IsValidCardsPerRow(int value) => AllowedCardsPerRow.Contains(value);

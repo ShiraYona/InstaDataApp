@@ -94,7 +94,7 @@ body {
   padding: 22px;
   box-shadow: 0 4px 16px rgba(22, 51, 76, 0.03);
 }
-.panel + .panel { margin-top: 23px; }
+// .panel + .panel { margin-top: 23px; }
 
 .sectionhead {
   display: flex;
@@ -453,10 +453,11 @@ p-button.actionButton {
   background: transparent;
 }
 
-/* כותרות העמודות */
+/* כותרות העמודות — רקע זהה לרקע העמוד (#f3f6fb). ה-!important נדרש כי
+   ה-thead של PrimeNG מגדיר את הרקע דרך משתנה CSS ברמת התא */
 .tasksControlTable .p-datatable-thead > tr > th {
   padding: 13px 14px;
-  background: #f7f9fc;
+  background: #f3f6fb !important;
   color: #71839b;
   font-family: inherit;
   font-size: 13px;
@@ -513,4 +514,25 @@ p-button.actionButton {
   padding: 52px;
   text-align: center;
   color: #7186a0;
+}
+
+/* ---------- tooltip של PrimeNG בתפריט הצד ----------
+   ה-tooltip מרונדר ב-body (מחוץ לרכיב), ולכן העיצוב חייב להיות גלובלי.
+   עיצוב עדין: רקע לבן, מסגרת דקה, צל רך וגופן 12px. */
+.sideTooltip.p-tooltip .p-tooltip-text {
+  padding: 5px 9px;
+  border: 1px solid #e2eaf4;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #315c93;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.3;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(22, 51, 76, 0.08);
+}
+
+.sideTooltip.p-tooltip .p-tooltip-arrow {
+  display: none;
 }

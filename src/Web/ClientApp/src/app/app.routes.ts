@@ -14,12 +14,7 @@ export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    loadComponent: () => import('./home/home.component').then(m => m.HomeComponent)
-  },
-  {
-    path: 'home',
-    pathMatch: 'full',
-    loadComponent: () => import('./home/home.component').then(m => m.HomeComponent)
+    redirectTo: 'control-panel'
   },
   {
     path: 'new-data-entry',
@@ -30,18 +25,21 @@ export const routes: Routes = [
   },
   {
     path: 'data-management',
-    loadComponent: () => import('./DataManagementScreen/DataManagementScreen').then(m => m.DataManagementScreen)
+    loadComponent: () => import('./DataManagementScreen/DataManagementScreen').then(m => m.DataManagementScreen),
+    data: { crumb: 'ניהול נתונים', title: 'קטלוג נתונים דינמי' }
   },
   {
     path: 'display-management',
     loadComponent: () =>
       import('./display-management/display-management.component').then(
         m => m.DisplayManagementComponent
-      )
+      ),
+    data: { crumb: 'ניהול תצוגה', title: 'פריסת כרטיסים' }
   },
     {
     path: 'tasks',
-    loadComponent: () => import('./tasks-control/tasks-control.component').then(m => m.TasksControlComponent)
+    loadComponent: () => import('./tasks-control/tasks-control.component').then(m => m.TasksControlComponent),
+    data: { crumb: 'משימות ובקרה', title: 'ניהול טיפול' }
   },
   { path: '**', redirectTo: '' } 
 ];

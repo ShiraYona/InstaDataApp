@@ -1,6 +1,8 @@
 using InstaDataApp.Application.Common.Interfaces;
 using InstaDataApp.Application.Common.Models;
 using InstaDataApp.Application.Modules.Metrics.Queries.GetActiveMetrics;
+using InstaDataApp.Application.Modules.Metrics.Queries.GetMetricDetails;
+using InstaDataApp.Web.Services;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,10 +23,10 @@ public class MetricsController(
     [ProducesResponseType(typeof(List<MetricCardDto>), StatusCodes.Status200OK)]
     [AllowAnonymous]
 public Task<List<MetricCardDto>> GetActiveMetrics(
-    [FromQuery] string? metricName, [FromQuery] int? days, CancellationToken cancellationToken)
+    [FromQuery] string? metricName, [FromQuery] DateOnly? fromDate, [FromQuery] DateOnly? toDate, CancellationToken cancellationToken)
 {
     return sender.Send(
-        new GetActiveMetricsQuery(metricName, days, currentUser.Id),
+        new GetActiveMetricsQuery(metricName, fromDate, toDate, currentUser.Id),
         cancellationToken);
 }
 
@@ -101,12 +103,37 @@ public Task<List<MetricCardDto>> GetActiveMetrics(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [AllowAnonymous]
     public async Task<ActionResult<MetricDetailDto>> GetDetails(
-        string key, [FromQuery] string? groupValue, [FromQuery] int? sourceId, CancellationToken ct)
+        string key, [FromQuery] string? groupValue, [FromQuery] int? sourceId,
+        [FromQuery] string? search, [FromQuery] DateOnly? fromDate, [FromQuery] DateOnly? toDate,
+        CancellationToken ct)
     {
-        var dto = await sender.Send(
-            new InstaDataApp.Application.Modules.Metrics.Queries.GetMetricDetails.GetMetricDetailsQuery(key, groupValue, sourceId), ct);
+        var dto = await sender.Send(new GetMetricDetailsQuery(key, groupValue, sourceId, search,
+            FromDate: fromDate, ToDate: toDate), ct);
         return dto is null ? NotFound() : Ok(dto);
     }
 
+    /// <summary>
+    /// ייצוא רשומות הפירוט ל-CSV לפי הסינון הפעיל (קיבוץ + חיפוש).
+    /// הקובץ נוצר בצד השרת, עם העמודות המותרות להצגה בלבד, UTF-8 עם BOM.
+    /// </summary>
+    [HttpGet("{key}/details/export")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [AllowAnonymous]
+    public async Task<IActionResult> ExportDetails(
+        string key, [FromQuery] string? groupValue, [FromQuery] int? sourceId,
+        [FromQuery] string? search, [FromQuery] DateOnly? fromDate, [FromQuery] DateOnly? toDate,
+        CancellationToken ct)
+    {
+        var dto = await sender.Send(
+            new GetMetricDetailsQuery(key, groupValue, sourceId, search, MaxExportRows,
+                FromDate: fromDate, ToDate: toDate), ct);
+        if (dto is null) return NotFound(new { message = "הנתון לא נמצא" });
 
+        var bytes = DetailCsvBuilder.Build(dto);
+        var fileName = DetailCsvBuilder.FileName(dto, key);
+        return File(bytes, "text/csv; charset=utf-8", fileName);
+    }
+
+    private const int MaxExportRows = 100_000;
 }

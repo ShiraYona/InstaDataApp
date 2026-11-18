@@ -1,5 +1,5 @@
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, LOCALE_ID, provideZoneChangeDetection } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { definePreset } from '@primeng/themes';
@@ -10,6 +10,10 @@ import { AuthorizeInterceptor } from '../api-authorization/authorize.interceptor
 import { environment } from '../environments/environment';
 import { routes } from './app.routes';
 import { API_BASE_URL } from './web-api-client';
+import { registerLocaleData } from '@angular/common';
+import localeHe from '@angular/common/locales/he';
+
+registerLocaleData(localeHe);
 
 export const MyPreset = definePreset(Aura, {
   semantic: {
@@ -51,8 +55,11 @@ export const MyPreset = definePreset(Aura, {
 });
 
 export const appConfig: ApplicationConfig = {
+  
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
+        provideZoneChangeDetection({ eventCoalescing: true }),
+    { provide: LOCALE_ID, useValue: 'he-IL' },
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(withInterceptorsFromDi()),
     // כתובת ה-API של הלקוח שנוצר ע"י NSwag (DataCatalogClient וכו')
