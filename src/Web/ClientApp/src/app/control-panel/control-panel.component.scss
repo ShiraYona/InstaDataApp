@@ -30,7 +30,6 @@
   line-height: 1.55;
 }
 
-/* .eyebrow מתוך הדמו */
 .eyebrow {
   margin-bottom: 8px;
   color: #6981a3;
@@ -52,7 +51,6 @@
   line-height: 1;
 }
 
-/* .btn.light — כפתור לבן עם מסגרת */
 ::ng-deep .headlineBtn.p-button {
   padding: 11px 18px;
   border: 1px solid #d7e1ee;
@@ -70,7 +68,6 @@
   color: #2b4d77;
 }
 
-/* .btn — כפתור כחול */
 ::ng-deep .headlineBtnPrimary.p-button {
   padding: 11px 18px;
   border: 1px solid #1765ce;
@@ -88,7 +85,6 @@
   color: #ffffff;
 }
 
-/* התאמות רוחב כמו בדמו */
 @media (max-width: 48rem) {
   .headline__actions {
     width: 100%;
