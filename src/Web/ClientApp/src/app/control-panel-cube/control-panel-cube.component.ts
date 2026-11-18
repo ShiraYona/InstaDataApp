@@ -57,7 +57,17 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
   readonly alertRule = output<string>();
   readonly target = output<string>();
   readonly drill = output<string>();
-  readonly detail = output<string>();
+
+  /** כרטיס הפירוט — מוחזר כ-DTO המקורי כדי שהדיאלוג יוכל להציג גיבוי אם הפירוט נכשל */
+  readonly detail = output<MetricCard>();
+
+  /** הכרטיסים המקוריים מהשרת לפי key — לשליפת הכרטיס שנבחר לפירוט */
+  private readonly rawByKey = signal<Map<string, MetricCard>>(new Map());
+
+  /** הכרטיס המקורי של הפירוט הנוכחי */
+  cardByKey(key: string): MetricCard | null {
+    return this.rawByKey().get(key) ?? null;
+  }
 
   /** מקור השינויים בפילטרים — debounce + switchMap מונעים בקשות כפולות ותשובות מיושנות */
   private readonly filter$ = new Subject<{ period: number | null; fromDate: string | null; toDate: string | null }>();
@@ -97,6 +107,7 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
       .subscribe(rows => {
         // rows === null — הבקשה נכשלה: שומרים את הכרטיסים הקודמים במקומם
         if (rows === null) return;
+        this.rawByKey.set(new Map(rows.map(row => [row.key ?? '', row])));
         this.allMetrics.set(rows.map(row => this.toCubeMetric(row)));
         this.error.set(false);
       });
@@ -147,7 +158,8 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
   }
 
   openDetails(key: string): void {
-    this.detail.emit(key);
+    const card = this.cardByKey(key);
+    if (card) this.detail.emit(card);
   }
 
   goToDetail(id: number) {

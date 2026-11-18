@@ -3,7 +3,9 @@ import { DecimalPipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MetricDetail, SystemGroup } from '../shared/models/controlPanel/MetricDetail';
 import { ControlPanel } from '../shared/services/control-panel';
-import { timeout } from 'rxjs/operators';
+import { of, Subject } from 'rxjs';
+import { catchError, switchMap, timeout } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MetricCard } from '../shared/models/controlPanel/MetricCard';
 
 @Component({
@@ -33,9 +35,37 @@ export class DetailedDialogueComponent implements OnInit, OnChanges {
 @Input() fromDate: string | null = null;
 @Input() toDate: string | null = null;
 
+  /** מקור בקשות הפירוט — switchMap מבטל בקשה קודמת, כך שתשובה איטית של בחירה ישנה לא תדרוס את החדשה */
+  private readonly loadRequest$ = new Subject<{ key: string; groupValue: string | null }>();
+
+  constructor() {
+    this.loadRequest$
+      .pipe(
+        switchMap(({ key, groupValue }) =>
+          this.api.getDetails(key, null, groupValue, this.search(), this.fromDate, this.toDate).pipe(
+            timeout(60000),
+            catchError(() => {
+              this.failed.set(true);
+              this.loading.set(false);
+              return of(null);
+            })
+          )
+        ),
+        takeUntilDestroyed()
+      )
+      .subscribe(d => {
+        // d === null — הבקשה נכשלה: משאירים את הפירוט הקודם במקומו
+        if (d === null) return;
+        this.detail.set(d);
+        this.loading.set(false);
+      });
+  }
+
   ngOnInit(): void {
     const key = this._metricKey();
     if (key) this.load(key);
+    // הטווח המחושב ב-ngOnInit — ngOnChanges הראשון אחריו נחשב לטעינה הראשונה ולא לרענון
+    this.lastLoadedRange = `${this.fromDate}|${this.toDate}`;
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -46,7 +76,12 @@ export class DetailedDialogueComponent implements OnInit, OnChanges {
     // טעינה ראשונה מתבצעת ב-ngOnInit. אחריה — כל שינוי טווח מרענן,
     // ובפרט מעבר מ-null לערך אמיתי כשהתקופה נטענת מהשרת אחרי פתיחת החלון
     if (from?.firstChange || to?.firstChange) return;
-    if (from || to) this.load(key);
+    if (!from && !to) return;
+    // אותו טווח שכבר נטען (למשל כפל ngOnChanges/ngOnInit) — לא שולחים בקשה כפולה
+    const range = `${this.fromDate}|${this.toDate}`;
+    if (range === this.lastLoadedRange) return;
+    this.lastLoadedRange = range;
+    this.load(key);
   }
 
   readonly closed = output<void>();
@@ -68,17 +103,15 @@ export class DetailedDialogueComponent implements OnInit, OnChanges {
   readonly pageIndex = signal(0);
   readonly pageSize = 25;
 
+  /** הטווח של הבקשה האחרונה — מונע בקשה כפולה על אותו טווח */
+  private lastLoadedRange: string | null = null;
+
   private load(key: string, groupValue: string | null = null, resetGroup = true): void {
     this.loading.set(true);
     this.failed.set(false);
     if (resetGroup) this.selectedGroup.set(groupValue);
     this.pageIndex.set(0);
-    this.api.getDetails(key, null, groupValue, this.search(), this.fromDate, this.toDate)
-      .pipe(timeout(60000))
-      .subscribe({
-        next: d => { this.detail.set(d); this.loading.set(false); },
-        error: () => { this.failed.set(true); this.loading.set(false); }
-      });
+    this.loadRequest$.next({ key, groupValue });
   }
 
   readonly systems = computed<SystemGroup[]>(() => {

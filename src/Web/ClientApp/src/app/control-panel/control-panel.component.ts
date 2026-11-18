@@ -5,6 +5,7 @@ import { AddingNewDataEntryComponent } from '../adding-new-data-entry/adding-new
 import { ControlPanelCubeComponent } from '../control-panel-cube/control-panel-cube.component';
 import { ControlPanelFiltersComponent, FilterState } from '../control-panel-filters/control-panel-filters.component';
 import { DetailedDialogueComponent } from '../detailed-dialogue/detailed-dialogue.component';
+import { MetricCard } from '../shared/models/controlPanel/MetricCard';
 
 @Component({
   selector: 'app-control-panel',
@@ -17,6 +18,9 @@ export class ControlPanelComponent {
   private readonly cube = viewChild(ControlPanelCubeComponent);
 
   readonly detailKey = signal<string | null>(null);
+
+  /** הכרטיס שנבחר לפתיחת הפירוט — גיבוי לתצוגה אם הקריאה לשרת נכשלת */
+  readonly detailCard = signal<MetricCard | null>(null);
 
   /** מצב פתיחת דיאלוג "נתון חדש" */
   readonly newDataVisible = signal<boolean>(false);
@@ -66,12 +70,14 @@ export class ControlPanelComponent {
     this.cardsPerRow.set(cardsPerRow);
   }
 
-  openDetail(key: string): void {
-    this.detailKey.set(key);
+  openDetail(card: MetricCard): void {
+    this.detailCard.set(card);
+    this.detailKey.set(card.key ?? null);
   }
 
   closeDetail(): void {
     this.detailKey.set(null);
+    this.detailCard.set(null);
   }
 
   /** פתיחת הדיאלוג ליצירת נתון חדש */
