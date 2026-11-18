@@ -1,12 +1,13 @@
 import { Component } from '@angular/core';
 import {  RouterOutlet } from '@angular/router';
 import { MenuComponent } from '../menu/menu.component';
+import { TopBarComponent } from '../top-bar/top-bar.component';
 
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [ RouterOutlet, MenuComponent],
+  imports: [ RouterOutlet, MenuComponent, TopBarComponent],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss']
 })

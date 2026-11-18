@@ -10,6 +10,10 @@ interface DisplayPeriodDto {
   periodDays: number;
 }
 
+interface UserIdDto {
+  id: string | null;
+}
+
 const DEFAULT_PERIOD_DAYS = 30;
 
 export interface MetricSettingItem {
@@ -42,6 +46,14 @@ export class DisplayLayoutService {
         }
       }),
       catchError(() => of(this.serverCardsPerRow))
+    );
+  }
+
+  /** מזהה המשתמש המחובר — מוצג כאות בעיגול הכותרת העליונה */
+  loadUserId(): Observable<string | null> {
+    return this.http.get<UserIdDto>(`${this.apiUrl}/me`).pipe(
+      map(dto => dto?.id ?? null),
+      catchError(() => of(null))
     );
   }
 
