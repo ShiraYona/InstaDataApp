@@ -22,4 +22,8 @@ export interface MetricCard {
   updated?: boolean;
   targetText?: string;
   signType?: string;
+  /** סוג החישוב עצמו (CTRL_CalculationTypes.Value) — COUNT/SUM/DIRECT */
+  calcType?: string | null;
+  /** חישוב הכרטיס נכשל */
+  isError?: boolean;
 }

@@ -130,6 +130,13 @@ h2 {
 /* ---- טבלאות ---- */
 .tablewrap {
   overflow: auto;
+
+  /* החלפת תוכן הרשומות — הטבלה נשארת במקומה, רק מעומעמת עד שהנתונים החדשים מגיעים */
+  &.is-refreshing {
+    opacity: 0.5;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+  }
 }
 
 table {
@@ -155,20 +162,22 @@ th {
 
 td {
   font-size: 13px;
+  /* כל תוכן התאים — גם מספרים ותאריכים — מיושר לימין */
+  text-align: right;
 }
 
 tbody tr.is-active td {
   background: #eef3fb;
 }
 
+/* ערך בודד שאינו עברית (מספר, תאריך לועזי) נשאר בכיווניותו הפנימית,
+   אך ממוקם בקצה הימני של התא כמו שאר התאים */
 .col-table {
   font-family: ui-monospace, "Consolas", monospace;
   font-size: 12px;
   color: #4a6285;
   white-space: nowrap;
-  direction: ltr;
   text-align: right;
-  unicode-bidi: embed;
 }
 
 .col-amount {
@@ -402,3 +411,8 @@ background: #00000065;   /* ~22% אטימות – רואים את הקומפונ
     padding: 18px 16px;
   }
 }
+.th-sort { cursor: pointer; user-select: none; white-space: nowrap; }
+.pager { display: flex; align-items: center; justify-content: center; gap: .75rem; padding: .75rem 0; }
+/* עמודות מספריות — הספרות נשארות בכיווניות LTR, אך מיושרות לימין */
+.col-num { text-align: right; direction: ltr; unicode-bidi: embed; }
+is-active { background: #f0f4ff; }

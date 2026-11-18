@@ -17,15 +17,11 @@ public class CtrlMetric
 
     /// <summary>השדה שלפיו יתבצע קיבוץ — null משמעו ללא קיבוץ</summary>
     public int? GroupFieldID { get; set; }
-
     /// <summary>
-    /// תקופת החישוב: <c>DASHBOARD</c> ("לפי מסנן הלוח") או ה-Value של התקופה
-    /// מ-CTRL_CalculationDays (מספר הימים, למשל "30"). null = נבחר טווח תאריכים.
-    /// ערכים היסטוריים (MONTH / QUARTER / YEAR) עדיין קיימים בשורות ישנות.
+    /// תקופת החישוב — העמודה במסד היא nvarchar(20) ושומרת את הטקסט (למשל "30 ימים")
+    /// או את הערך הקבוע BOARD_FILTER. לא מספר — אל תשנו ל-int.
     /// </summary>
     public string? DateRangeType { get; set; }
-
-    /// <summary>קוד הסמל — CTRL_ICON.Name</summary>
     public string? IconCode { get; set; }
 
     public bool IsActive { get; set; } = true;

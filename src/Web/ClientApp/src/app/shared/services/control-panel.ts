@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 import { MetricCard } from '../models/controlPanel/MetricCard';
@@ -13,13 +13,15 @@ export class ControlPanel {
   private readonly http = inject(HttpClient);
 
   /** הכרטיסים הפעילים של הקובייה — מסוננים לפי תקופה (ימים) ושם נתון */
-  getCards(metricName?: string | null, days?: number | null): Observable<MetricCard[]> {
+  getCards(days?: number | null, fromDate?: string | null, toDate?: string | null): Observable<MetricCard[]> {
     const p = new URLSearchParams();
-    if (metricName?.trim()) p.set('metricName', metricName.trim());
     if (days != null) p.set('days', String(days));
+    if (fromDate) p.set('fromDate', fromDate);
+    if (toDate) p.set('toDate', toDate);
     const q = p.toString();
     return this.http.get<MetricCard[]>(`/api/Metrics${q ? '?' + q : ''}`);
   }
+
 
   /** טבלת התשלומים */
   getTablePayments(): Observable<Payment[]> {
@@ -36,13 +38,32 @@ export class ControlPanel {
     return this.http.get<Claim[]>('/api/Metrics/claims');
   }
 
-  /** פירוט נתון — חלוקה לפי מערכת + רשומות */
-  getDetails(key: string, sourceId?: number | null, groupValue?: string | null): Observable<MetricDetail> {
+  /** פירוט נתון — חלוקה לפי מערכת + רשומות; הטווח (fromDate/toDate) מגביל את הכול כמו בקובייה */
+  getDetails(key: string, sourceId?: number | null, groupValue?: string | null, search?: string | null,
+             fromDate?: string | null, toDate?: string | null): Observable<MetricDetail> {
     const p = new URLSearchParams();
     if (sourceId != null) p.set('sourceId', String(sourceId));
     if (groupValue != null) p.set('groupValue', groupValue);
+    if (search?.trim()) p.set('search', search.trim());
+    if (fromDate) p.set('fromDate', fromDate);
+    if (toDate) p.set('toDate', toDate);
     const q = p.toString();
     return this.http.get<MetricDetail>(`/api/Metrics/${key}/details${q ? '?' + q : ''}`);
+  }
+
+  /** ייצוא רשומות הפירוט ל-CSV — נוצר בצד השרת, לפי אותו סינון ואותו טווח תאריכים */
+  exportDetailsCsv(key: string, groupValue?: string | null, search?: string | null,
+                   fromDate?: string | null, toDate?: string | null): Observable<HttpResponse<Blob>> {
+    const p = new URLSearchParams();
+    if (groupValue != null) p.set('groupValue', groupValue);
+    if (search?.trim()) p.set('search', search.trim());
+    if (fromDate) p.set('fromDate', fromDate);
+    if (toDate) p.set('toDate', toDate);
+    const q = p.toString();
+    return this.http.get(`/api/Metrics/${key}/details/export${q ? '?' + q : ''}`, {
+      observe: 'response',
+      responseType: 'blob'
+    });
   }
 
 getMetricDetail(id: number): Promise<MetricDetail> {

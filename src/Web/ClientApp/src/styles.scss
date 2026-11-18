@@ -453,6 +453,27 @@ p-button.actionButton {
   color: #7186a0;
 }
 
+/* ---------- tooltip של PrimeNG בתפריט הצד ----------
+   ה-tooltip מרונדר ב-body (מחוץ לרכיב), ולכן העיצוב חייב להיות גלובלי.
+   עיצוב עדין: רקע לבן, מסגרת דקה, צל רך וגופן 12px. */
+.sideTooltip.p-tooltip .p-tooltip-text {
+  padding: 5px 9px;
+  border: 1px solid #e2eaf4;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #315c93;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.3;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(22, 51, 76, 0.08);
+}
+
+.sideTooltip.p-tooltip .p-tooltip-arrow {
+  display: none;
+}
+
 /* ---------- לוח השנה (p-datepicker) בדיאלוג "נתון חדש" ----------*/
 .demo-select-panel.p-datepicker {
   direction: rtl;

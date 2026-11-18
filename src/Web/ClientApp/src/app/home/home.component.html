@@ -1,31 +1,10 @@
-<div class="home-container">
-  <div class="content">
-    <div class="content-head">
-      <div>
-        <h1>{{ title }}</h1>
-        <p>{{ description }}</p>
-      </div>
-      <p-button
-        label="הוספת נתון חדש"
-        icon="pi pi-plus"
-        (onClick)="openNewDataDialog()" />
-     <p-button
-        label="ניהול נתונים"
-        routerLink="/data-management"
-        />
-    </div>
-    <p-button
-        label="קוביות לוח הבקרה"
-        routerLink="/control-panel" />
-    <p-button
-        label="ניהול נתונים"
-        routerLink="/data-management"
-        />
-  </div>
-  <button class="btn" routerLink="/display-management">ניהול תצוגה</button>
-</div>
+<div class="app-shell">
 
-<!-- הדיאלוג מוטמע במסך שממנו הוא נפתח — הרקע שמאחוריו נשאר גלוי ומטושטש -->
-<app-adding-new-data-entry
-    [(visible)]="newDataVisible"
-    (saved)="onNewDataSaved()" />
+<app-menu></app-menu>
+  <main class="app-content">
+    <app-top-bar></app-top-bar>
+    <div class="page-contect">
+    <router-outlet></router-outlet>
+  </div>
+  </main>
+</div>

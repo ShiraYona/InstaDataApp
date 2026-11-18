@@ -25,6 +25,54 @@ public class UserDisplaySettingsController(IMediator mediator, IUser currentUser
         return Ok(await mediator.Send(new GetUserDisplaySettingsQuery(userId), ct));
     }
 
+    [HttpGet("me")]
+    public ActionResult<UserIdDto> Me()
+    {
+        return string.IsNullOrWhiteSpace(currentUser.Id)
+            ? Unauthorized()
+            : Ok(new UserIdDto(currentUser.Id));
+    }
+
+    [HttpGet("period")]
+    public async Task<ActionResult<UserDisplayPeriodDto>> GetPeriod(CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(currentUser.Id))
+        {
+            return Unauthorized();
+        }
+
+        var days = await mediator.Send(new GetUserDisplayPeriodQuery(currentUser.Id!), ct);
+        return Ok(new UserDisplayPeriodDto(days));
+    }
+
+    [HttpPut("period")]
+    public async Task<IActionResult> PutPeriod(
+        [FromBody] SaveDisplayPeriodRequest request,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(currentUser.Id))
+        {
+            return Unauthorized();
+        }
+
+        if (request.Days <= 0)
+        {
+            ModelState.AddModelError(nameof(request.Days), "מספר הימים חייב להיות חיובי.");
+            return ValidationProblem(ModelState);
+        }
+
+        var saved = await mediator.Send(
+            new UpdateUserDisplayPeriodCommand(currentUser.Id!, request.Days), ct);
+
+        if (!saved)
+        {
+            ModelState.AddModelError(nameof(request.Days), "תקופת החישוב לא נמצאה.");
+            return ValidationProblem(ModelState);
+        }
+
+        return NoContent();
+    }
+
     [HttpGet("metrics")]
     public async Task<ActionResult<MetricSettingsDto>> GetMetrics(CancellationToken ct)
     {
@@ -80,5 +128,11 @@ public class UserDisplaySettingsController(IMediator mediator, IUser currentUser
 }
 
 public record SaveDisplaySettingsRequest(int CardsPerRow);
+
+public record UserIdDto(string Id);
+
+public record UserDisplayPeriodDto(int PeriodDays);
+
+public record SaveDisplayPeriodRequest(int Days);
 
 public record SaveMetricSettingsRequest(IReadOnlyList<MetricSettingsItemDto> Items);

@@ -3,7 +3,7 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeng/themes/aura';
 
-import { ControlPanelFiltersComponent, FilterState } from './control-panel-filters.component';
+import { ControlPanelFiltersComponent } from './control-panel-filters.component';
 
 describe('ControlPanelFiltersComponent', () => {
   let component: ControlPanelFiltersComponent;
@@ -69,26 +69,42 @@ describe('ControlPanelFiltersComponent', () => {
     expect(component.periodOptions.map((o) => o.value)).toContain(component.period);
   });
 
-  it('should emit the current state on refresh, trimming the search text', () => {
+  it('should emit a refresh request without changing period or search text', () => {
     spyOn(component.refreshRequested, 'emit');
 
-    component.period = 'month';
-    component.cardsPerRow = '3';
-    component.searchText = '  טקסט לדוגמה  ';
+    component.period = 7;
+    component.searchMetricName = '  טקסט לדוגמה  ';
 
     component.refresh();
 
-    expect(component.refreshRequested.emit).toHaveBeenCalledWith({
-      period: 'month',
-      cardsPerRow: '3',
-      searchText: 'טקסט לדוגמה'
-    } as FilterState);
+    expect(component.refreshRequested.emit).toHaveBeenCalledTimes(1);
+    expect(component.period).toBe(7);
+    expect(component.searchMetricName).toBe('  טקסט לדוגמה  ');
+  });
+
+  it('should ignore refresh clicks while a refresh is running', () => {
+    spyOn(component.refreshRequested, 'emit');
+
+    component.refreshing = true;
+    component.refresh();
+
+    expect(component.refreshRequested.emit).not.toHaveBeenCalled();
+  });
+
+  it('should disable the refresh button while refreshing', () => {
+    component.refreshing = true;
+    fixture.detectChanges();
+
+    const button: HTMLButtonElement | null =
+      fixture.nativeElement.querySelector('.refreshButton button');
+
+    expect(button?.disabled).toBe(true);
   });
 
   it('should emit filtersChanged when a filter changes', () => {
     spyOn(component.filtersChanged, 'emit');
 
-    component.cardsPerRow = '2';
+    component.cardsPerRow = 2;
     component.onFilterChange();
 
     expect(component.filtersChanged.emit).toHaveBeenCalledTimes(1);

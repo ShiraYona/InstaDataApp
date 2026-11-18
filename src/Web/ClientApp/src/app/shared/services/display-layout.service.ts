@@ -6,6 +6,16 @@ interface DisplaySettingsDto {
   cardsPerRow: number;
 }
 
+interface DisplayPeriodDto {
+  periodDays: number;
+}
+
+interface UserIdDto {
+  id: string | null;
+}
+
+const DEFAULT_PERIOD_DAYS = 30;
+
 export interface MetricSettingItem {
   metricId: number;
   metricName: string;
@@ -39,9 +49,30 @@ export class DisplayLayoutService {
     );
   }
 
+  /** מזהה המשתמש המחובר — מוצג כאות בעיגול הכותרת העליונה */
+  loadUserId(): Observable<string | null> {
+    return this.http.get<UserIdDto>(`${this.apiUrl}/me`).pipe(
+      map(dto => dto?.id ?? null),
+      catchError(() => of(null))
+    );
+  }
+
   saveCardsPerRow(cardsPerRow: number): Observable<void> {
     this.serverCardsPerRow = cardsPerRow;
     return this.http.put<void>(this.apiUrl, { cardsPerRow });
+  }
+
+  /** מספר הימים של "תקופת נתונים"; ברירת מחדל 30 כשאין הגדרה */
+  loadPeriod(): Observable<number> {
+    return this.http.get<DisplayPeriodDto>(`${this.apiUrl}/period`).pipe(
+      map(dto => dto?.periodDays ?? DEFAULT_PERIOD_DAYS),
+      catchError(() => of(DEFAULT_PERIOD_DAYS))
+    );
+  }
+
+  /** שמירת "תקופת נתונים" לפי מספר ימים */
+  savePeriod(days: number): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/period`, { days });
   }
 
   loadMetricSettings(): Observable<MetricSettingsResponse> {
