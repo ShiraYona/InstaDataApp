@@ -23,11 +23,15 @@
       <!-- כותרת: שם הנתון + סמל -->
       <div class="mh">
         <div class="mname">{{ metric.title }}</div>
-                <div class="micon">
+                <!-- <div class="micon">
           @if (metric.icon) {
             <i class="pi" [ngClass]="metric.icon"></i>
           }
+        </div> -->
+                <div class="micon">
+          <i [ngClass]="metric.icon || 'pi pi-chart-line'"></i>
         </div>
+
       </div>
 
       <!-- ערך קבוצה — הכרטיס מייצג את כל מה ששייך לקבוצה -->
