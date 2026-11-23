@@ -258,29 +258,18 @@
 
         </form>
 
-        <div id="preview">
-            @if (previewResult; as result) {
-                <div class="panel">
-                    <strong>תצוגה מקדימה</strong>
-                    <p>
-                        {{ draftName || 'ללא שם' }}
-                        · סה"כ {{ result.total }}
-                        · מקור: {{ selectedSource?.label ?? 'ללא' }}
-                    </p>
-                    @if (result.rows.length > 0) {
-                        <ul class="panel__rows">
-                            @for (row of result.rows; track row.key) {
-                                <li>
-                                    <span>{{ row.label }}</span>
-                                    <span>{{ row.value }}</span>
-                                </li>
-                            }
-                        </ul>
-                    } @else {
-                        <p class="hint">אין שדות פירוט להצגה — יש לבחור שדות להצגה בפירוט</p>
-                    }
-                </div>
-            }
-        </div>
+<div id="preview">
+  @if (previewResult; as result) {
+    <div class="panel">
+      <strong>תצוגה מקדימה</strong>
+      <p>
+        {{ draftName || 'ללא שם' }}
+        · סה"כ {{ result.total }}
+        · מקור: {{ selectedSource?.label ?? 'ללא' }}
+      </p>
+      <app-preview-cube [card]="previewCard" [columns]="1" />
+    </div>
+  }
+</div>
     </div>
 </p-dialog>

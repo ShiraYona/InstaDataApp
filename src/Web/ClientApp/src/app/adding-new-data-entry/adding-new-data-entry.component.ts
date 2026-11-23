@@ -9,6 +9,8 @@ import { CALCULATION_TYPE_OPTIONS, CalculationType, CalculationTypeId, DataDefin
 import { CALCULATION_PERIOD_OPTIONS, CARD_ICON_OPTIONS, DataDefinitionService } from '../shared/services/data-definition.service';
 import { NotificationService } from '../shared/services/notification.service';
 import { MetricListItemDto } from '../web-api-client';
+import { PreviewCubeComponent } from '../preview-cube/preview-cube.component';
+import { MetricCard } from '../shared/models/controlPanel/MetricCard';
 
 
 const DEFAULT_CALCULATION_TYPE: CalculationType = 'COUNT';
@@ -75,7 +77,8 @@ type FormFieldName =
     DialogModule,
     ButtonModule,
     InputTextModule,
-    SelectModule
+    SelectModule,
+    PreviewCubeComponent        
   ],
   templateUrl: './adding-new-data-entry.component.html',
   styleUrl: './adding-new-data-entry.component.scss'
@@ -213,6 +216,20 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
   get draftName(): string {
     return this.form.controls.name.value.trim();
   }
+/** כרטיס התצוגה המקדימה — בנוי מערכי הטופס */
+get previewCard(): MetricCard {
+  const icon = this.cardIcons.find(o => o.value === this.form.controls.cardSourceId.value)?.icon ?? '';
+  return {
+    key: 'preview',
+    title: this.draftName || 'ללא שם',
+    icon,
+    value: String(this.previewResult?.total ?? 0),
+    source: this.selectedSource?.label ?? '',
+    hasComparison: false,
+    status: 'ok',
+    updated: true
+  };
+}
 
   /** תווית עברית לשורה שנבחרה ברשימה נפתחת (הערך עצמו נשמר כמו שהוא) */
   labelOf(options: LookupOption[], code: string | null): string {
