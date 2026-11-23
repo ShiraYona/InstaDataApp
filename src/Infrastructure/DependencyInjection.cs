@@ -26,7 +26,14 @@ public static class DependencyInjection
             .AddDefaultTokenProviders();
 
         services.AddScoped<IIdentityService, IdentityService>();
-        services.AddSingleton(TimeProvider.System);
+
+        // "היום" של המערכת נקבע לפי התאריך בישראל, ולא לפי אזור הזמן של השרת —
+        // תקופות החישוב הן ימים קלנדריים מקומיים. אם אזור הזמן אינו מוכר במערכת,
+        // נשארים על שעון המכונה.
+        var israelTimeZone = InstaDataApp.Application.Common.ZonedTimeProvider.TryFindIsraelTimeZone();
+        services.AddSingleton<TimeProvider>(israelTimeZone is null
+            ? TimeProvider.System
+            : new InstaDataApp.Application.Common.ZonedTimeProvider(israelTimeZone));
 
         services.AddAuthorizationBuilder()
             .AddPolicy(InstaDataApp.Domain.Constants.Policies.CanPurge, policy => policy.RequireRole(InstaDataApp.Domain.Constants.Roles.Administrator));

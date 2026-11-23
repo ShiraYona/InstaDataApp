@@ -1,19 +1,30 @@
 import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, inject } from '@angular/core';
 import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
+import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { SelectModule } from 'primeng/select';
+import { TooltipModule } from 'primeng/tooltip';
 import { Subscription } from 'rxjs';
-import { CALCULATION_TYPE_OPTIONS, CalculationType, CalculationTypeId, DataDefinitionDraft, DataSource, LookupOption, MetricDraft, PreviewResult } from '../shared/models/data-definition.model';
-import { CALCULATION_PERIOD_OPTIONS, CARD_ICON_OPTIONS, DataDefinitionService } from '../shared/services/data-definition.service';
+import {
+  CalculationTypeId,
+  DataSource,
+  DataSourceField,
+  FilterCondition,
+  FilterGroup,
+  FilterLogic,
+  FilterNode,
+  FilterOperator,
+  LookupOption,
+  MetricDraft
+} from '../shared/models/data-definition.model';
+import { DataDefinitionService } from '../shared/services/data-definition.service';
 import { NotificationService } from '../shared/services/notification.service';
 import { MetricListItemDto } from '../web-api-client';
 import { PreviewCubeComponent } from '../preview-cube/preview-cube.component';
 import { MetricCard } from '../shared/models/controlPanel/MetricCard';
-
-
-const DEFAULT_CALCULATION_TYPE: CalculationType = 'COUNT';
 
 const DEFAULT_DETAIL_FIELD_COUNT = 3;
 
@@ -21,10 +32,11 @@ const INCOMPLETE_FORM_MESSAGE = 'יש למלא את כל שדות החובה ה�
 
 const DETAIL_FIELDS_REQUIRED_MESSAGE = 'יש לבחור לפחות שדה אחד להצגה בפירוט';
 
+const DATE_RANGE_REQUIRED_MESSAGE = 'יש לבחור שני שדות תאריך שונים עבור טווח התקופה';
+
 /**
- * "שדות להצגה בפירוט" חייבים להכיל לפחות שדה אחד —
- * נתון בלי שדות פירוט אינו יכול להישמר.
- */
+ * "שדות להצגה בפירוט" חייבים להכיל לפחות שדה אחד */
+ 
 function atLeastOneItemValidator(control: AbstractControl): ValidationErrors | null {
   const value: unknown = control.value;
   return Array.isArray(value) && value.length > 0 ? null : { required: true };
@@ -32,16 +44,15 @@ function atLeastOneItemValidator(control: AbstractControl): ValidationErrors | n
 
 const NO_GROUPING = 0;
 
-const BOARD_FILTER = 'BOARD_FILTER';
+/** "לפי מסנן הלוח" — הערך שנשמר ב-CTRL_Metrics.DateRangeType */
+/** "לפי מסנן הלוח" — הערך ההיסטורי של התקופה; אינו מוצע בטופס */
+const DASHBOARD = 'DASHBOARD';
 
-/** תווית הסכימה נגזרת משורת הקטלוג (ראה GetCalculationTypesQueryHandler) */
-const SUM_LABEL_MARKER = '(SUM)';
+/** קודי סוגי החישוב כפי שנשלחים מהקטלוג (LookupOption.code) */
+const CALCULATION_DIRECT = 'DIRECT';
+const CALCULATION_SUM = 'SUM';
+const CALCULATION_COUNT = 'COUNT';
 
-/**
- * האם הבחירה היא סוג החישוב "סכימה".
- * הערך שנבחר הוא ה-ID מ-CTRL_CalculationTypes; נקרא לו "SUM" לפי התווית,
- * שמוחזרת כ"<Name> (<Value>)" — למשל "סכימת ערכי שדה (SUM)".
- */
 function isSumCalculationType(calculationTypeId: CalculationTypeId | null, options: LookupOption[]): boolean {
   if (calculationTypeId === null) {
     return false;
@@ -49,6 +60,8 @@ function isSumCalculationType(calculationTypeId: CalculationTypeId | null, optio
   return options.find(option => Number(option.value) === calculationTypeId)?.isSum ?? false;
 }
 
+/** אופן הגדרת התקופה בטופס */
+export type DateRangeMode = 'period' | 'range';
 
 
 const LEGACY_LOOKUP_LABELS: Record<string, string> = {
@@ -57,12 +70,27 @@ const LEGACY_LOOKUP_LABELS: Record<string, string> = {
   YEAR: 'שנה נוכחית'
 };
 
+
+/** מספר הרמות המרבי של קבוצות — שורש (1), תת-קבוצה (2), תת-קבוצה (3) */
+const MAX_FILTER_DEPTH = 3;
+
+/** תנאי עם אופרטור זה מחייב לפחות ערך אחד */
+const MULTI_VALUE_OPERATORS = ['IN', 'NOT_IN'];
+
+/** "ריק" / "אינו ריק" — מוצעים רק לשדה שיכול להיות ריק */
+const NULL_OPERATORS = ['IS_NULL', 'IS_NOT_NULL'];
+
+/** סוג קלט המסנן של השדה (CTRL_DataSourceFields.FilterInputType) */
+const FILTER_INPUT_LIST = 'LIST';
+
 /** השדות שהמשתמש ממלא — לחיווי ויזואלי של "מלא / ריק" */
 type FormFieldName =
   | 'name'
   | 'sourceId'
   | 'cardSourceId'
   | 'dateRangeType'
+  | 'dateFromFieldId'
+  | 'dateToFieldId'
   | 'calculationTypeId'
   | 'sumFieldId'
   | 'groupFieldId';
@@ -93,10 +121,13 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
   @Input() visible = false;
   @Output() visibleChange = new EventEmitter<boolean>();
 
-  /**
-   * הנתון שנערך — null/undefined במצב "יצירת נתון חדש".
-   * כשהוא מועבר, הדיאלוג נפתח עם ערכי הנתון, והשמירה מעדכנת אותו במקום ליצור חדש.
-   */
+  /** הכותרת "יצירת נתון חדש" / "עריכת נתון קיים" — מוצגת בראש גוף הדיאלוג */
+  headerTitle = '';
+
+  /** האם הכותרת מוצגת — נכבה יחד עם הדיאלוג בזמן הסגירה */
+  headerVisible = false;
+
+
   @Input() metric: MetricListItemDto | null = null;
 
   @Output() saved = new EventEmitter<number>();
@@ -119,10 +150,15 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
   creationDate: Date | null = null;
 
   saving = false;
-  previewing = false;
-  /** תוצאת תצוגה מקדימה אחרונה — מוצגת בפאנל שמעל הכפתורים */
-  previewResult: PreviewResult | null = null;
 
+ 
+  dateRangeMode: DateRangeMode = 'period';
+
+  /** אפשרויות "אופן התקופה" — מוצגות רק כשיש שדות תאריך במקור */
+  readonly rangeModeOptions: Array<{ value: DateRangeMode; label: string }> = [
+    { value: 'period', label: 'תקופה מוגדרת' },
+    { value: 'range', label: 'טווח תאריכים' }
+  ];
 
   private lastSourceId: string | null = null;
 
@@ -131,11 +167,19 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
   /** מזהה הנתון הנערך — null במצב יצירה. קובע גם את הכותרת ואת סוג השמירה */
   private editingMetricId: number | null = null;
 
-  /**
-   * ערכי העריכה שממתינים להשלמת הטעינות (תקופות / סמלים / מקורות).
-   * אסור להחילם לפני שהרשימות הגיעו — אחרת ברירות המחדל של "נתון חדש"
-   * ידרסו את הערכים השמורים.
-   */
+  /** RowVersion (Base64) כפי שנשלף ברשימה — נשלח בעדכון כ-If-Match */
+  private editingRowVersion: string | null = null;
+
+  /** עץ תנאי הסינון השמור — נקרא בעריכה, ונשלח חזרה בשמירה */
+  private editingFiltersJson: string | null = null;
+
+  /** אופרטורי הסינון — נטענים מ-CTRL_FilterOperators */
+  filterOperators: FilterOperator[] = [];
+
+  /** עץ תנאי הסינון בעריכת הטופס — null כשאין תנאים */
+  filterRoot: FilterGroup | null = null;
+
+ 
   private pendingEditMetric: MetricListItemDto | null = null;
 
   readonly form = this.fb.group({
@@ -146,9 +190,13 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
     cardSourceId: this.fb.control<string | null>(null),
 
     iconCode: this.fb.control<string | null>(null),
-    dateRangeType: this.fb.control<string | null>(null, { validators: [Validators.required] }),
+    // ריק = נבחר טווח תאריכים מפורש; בדיקת "יש תקופה" נעשית ב-save לפי אופן התקופה
+    dateRangeType: this.fb.control<string | null>(null),
+    // שני שדות התאריך של הטווח המפורש (רק כש-dateRangeType ריק)
+    dateFromFieldId: this.fb.control<number | null>(null),
+    dateToFieldId: this.fb.control<number | null>(null),
     // ה-ID של סוג החישוב מ-CTRL_CalculationTypes — נשמר כמספר כדי להתאים ל-optionValue
-    calculationTypeId: this.fb.control<CalculationTypeId | null>(null, { validators: [Validators.required] }),
+    calculationTypeId: this.fb.control<CalculationTypeId | null>(null),
     sumFieldId: this.fb.control<number | null>(null, { validators: [Validators.required] }),
     groupFieldId: this.fb.control<number | null>(null),
     // לפחות שדה פירוט אחד — השרת דוחה רשימה ריקה, ולכן הטופס חוסם זאת מראש
@@ -178,8 +226,152 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
   }
 
   get isSummaryVisible(): boolean {
+    return this.isSumCalculationType(this.form.controls.calculationTypeId.value);
+  }
 
-    return isSumCalculationType(this.form.controls.calculationTypeId.value, this.calculationTypeOptions);
+  /** האם הבחירה הנוכחית של סוג החישוב היא SUM — לפי הקוד מהקטלוג, לא לפי התווית */
+  private isSumCalculationType(calculationTypeId: CalculationTypeId | null): boolean {
+    const code = this.calculationTypeCode(calculationTypeId);
+    return code === CALCULATION_SUM;
+  }
+
+  /** הקוד הקנוני (COUNT / SUM / DIRECT) של סוג החישוב שנבחר */
+  private calculationTypeCode(calculationTypeId: CalculationTypeId | null): string | null {
+    if (calculationTypeId === null) {
+      return null;
+    }
+    return this.calculationTypeOptions.find(option => Number(option.value) === calculationTypeId)?.code
+      ?? null;
+  }
+
+ 
+  get isRowsSource(): boolean {
+    return this.selectedSource?.outputType === OUTPUT_TYPE_ROWS;
+  }
+
+ 
+  get canChooseRange(): boolean {
+    return this.dateFieldOptions.length >= 2;
+  }
+
+ 
+  get rangeModeChoices(): Array<{ value: DateRangeMode; label: string }> {
+    return this.canChooseRange ? this.rangeModeOptions : [this.rangeModeOptions[0]];
+  }
+
+  /**
+   * מקור פרוצדורה — אין בחירת סוג חישוב בטופס: DIRECT נשמר מאחורי הקלעים.
+   * מקור טבלה — הבחירה מוגבלת ל-SUM / COUNT.
+   */
+  get isProcedureSource(): boolean {
+    return (this.selectedSource?.sourceType ?? '').toUpperCase() === SOURCE_TYPE_PROCEDURE;
+  }
+
+  /** אפשרויות "סוג חישוב" — COUNT / SUM בלבד, ללא DIRECT */
+  get calculationTypeChoices(): LookupOption[] {
+    return this.calculationTypeOptions.filter(option =>
+      option.code === CALCULATION_SUM || option.code === CALCULATION_COUNT);
+  }
+
+  /** האם להציג את שדה "סוג חישוב" — מקור טבלה בלבד */
+  get isCalculationTypeVisible(): boolean {
+    return this.isRowsSource && !this.isProcedureSource;
+  }
+
+  /** תווית סוג המקור — מוצגת לצד שם המקור בטופס */
+  get sourceTypeLabel(): string {
+    switch (this.selectedSource?.sourceType) {
+      case 'TABLE':
+        return 'טבלה';
+      case SOURCE_TYPE_PROCEDURE:
+        return 'פרוצדורה';
+      default:
+        return '';
+    }
+  }
+
+  /** שדות תאריך של המקור — לבחירת טווח התקופה המפורש */
+  get dateFieldOptions(): DataSourceFieldOption[] {
+    return (this.selectedSource?.fields ?? []).filter(field => isDateType(field.dataType));
+  }
+
+  /** שני שדות התאריך חייבים להיבחר ולהבדיל זה מזה */
+  get isRangeFieldsInvalid(): boolean {
+    if (this.dateRangeMode !== 'range') {
+      return false;
+    }
+    const from = this.form.controls.dateFromFieldId.value;
+    const to = this.form.controls.dateToFieldId.value;
+    return from === null || to === null || from === to;
+  }
+
+ 
+  get isRangeModeInvalid(): boolean {
+    if (this.dateRangeMode === 'range') {
+      return this.isRangeFieldsInvalid;
+    }
+    return !this.form.controls.dateRangeType.value;
+  }
+
+  get periodOptions(): LookupOption[] {
+    const options = this.rangeOptions.filter(option => !isDashboardPeriod(option.value));
+    const current = this.form.controls.dateRangeType.value;
+
+    // תקופה היסטורית שאינה ברשימה — מוצגת בתוויתה כדי שהעריכה לא תיראה ריקה
+    if (current && !isDashboardPeriod(current) && !options.some(option => option.value === current)) {
+      return [...options, { value: current, label: this.labelOf(this.rangeOptions, current) }];
+    }
+
+    return options;
+  }
+
+  /** מעבר בין "תקופה מוגדרת" ל"טווח תאריכים" — מנקה את הצד שלא בשימוש */
+  onRangeModeChange(mode: DateRangeMode | null): void {
+    // המצב ננעל ל"תקופה מוגדרת" כשאין למקור שני שדות תאריך
+    this.dateRangeMode = mode === 'range' && this.canChooseRange ? 'range' : 'period';
+
+    if (this.dateRangeMode === 'range') {
+      this.form.controls.dateRangeType.setValue(null);
+      return;
+    }
+
+    this.form.controls.dateFromFieldId.setValue(null);
+    this.form.controls.dateToFieldId.setValue(null);
+    this.form.controls.dateRangeType.setValue(this.defaultPeriod());
+  }
+
+  /** בחירת חישוב ישיר (DIRECT) מנקה סיכום וקיבוץ — הם אינם רלוונטיים */
+  private isDirectCalculationType(calculationTypeId: CalculationTypeId | null): boolean {
+    return this.calculationTypeCode(calculationTypeId) === CALCULATION_DIRECT;
+  }
+
+  /**
+   * סוג החישוב שנקבע לפי המקור:
+   * מקור ערך יחיד או פרוצדורה — DIRECT (בלי בחירה בטופס);
+   * טבלת שורות — SUM אם יש שדה סיכום, אחרת COUNT.
+   */
+  private defaultCalculationTypeId(options: LookupOption[] = this.calculationTypeOptions): CalculationTypeId | null {
+    if (options.length === 0) {
+      return null;
+    }
+
+    // פרוצדורה אינה מציגה בחירה — DIRECT נשמר מאחורי הקלעים
+    if (this.selectedSource && (!this.isRowsSource || this.isProcedureSource)) {
+      const direct = options.find(option => option.code === CALCULATION_DIRECT);
+      if (direct) {
+        return Number(direct.value);
+      }
+    }
+
+    // טבלת שורות: SUM אם קיים שדה סיכום, אחרת COUNT
+    const hasSummableField = (this.selectedSource?.fields ?? []).some(field => field.isSummable);
+    const preferred = hasSummableField ? CALCULATION_SUM : CALCULATION_COUNT;
+    const match = options.find(option => option.code === preferred);
+    if (match) {
+      return Number(match.value);
+    }
+
+    return Number(options[0].value);
   }
 
   /** שדות הפירוט — מתוך השדות שהוגדרו במקור הנבחר */
@@ -284,8 +476,7 @@ get previewCard(): MetricCard {
       : [...current, fieldId];
 
     control.setValue(next);
-    // הערך החדש נקבע על ידי המסגרת, ולא על ידי הקלט עצמו — מסמנים כנוגע
-    // כדי ששגיאת "יש לבחור לפחות שדה אחד" תופיע ברגע ביטול הסימון האחרון.
+
     control.markAsDirty();
     control.markAsTouched();
   }
@@ -315,8 +506,6 @@ get previewCard(): MetricCard {
     this.watchSourceChanges();
     this.watchCardSourceChanges();
     this.watchCalculationTypeChanges();
-    // בחירת מקור מחזירה את השדות אחר כך; את התוצאה הישנה מנקים מיד עם שינוי ההגדרה
-    this.subscriptions.add(this.form.valueChanges.subscribe(() => (this.previewResult = null)));
     // טעינת המקורות קובעת את ברירת המחדל של "מקור נתונים" — אחרי שהמנוי כבר קיים
     this.loadSources();
   }
@@ -326,21 +515,38 @@ get previewCard(): MetricCard {
     if (changes['visible']?.currentValue === true) {
       this.resetForm();
       this.startMode(this.metric);
-      return;
-    }
-
-    // הנתון שנערך הוחלף בזמן שהדיאלוג פתוח — ממלאים מחדש
-    if (changes['metric']) {
-      this.editingMetricId = this.metric?.metricId ?? null;
-      this.pendingEditMetric = this.isEditing ? this.metric : null;
+    } else if (changes['metric']) {
+      // הנתון שנערך הוחלף בזמן שהדיאלוג פתוח — ממלאים מחדש
+      this.setEditingMetric(this.metric);
       this.tryApplyEditValues();
     }
+
+    // בכל מקרה — הכותרת שמוצגת בתוך הדיאלוג נגזרת מן המצב שקבענו עכשיו
+    if (changes['visible'] || changes['metric']) {
+      this.publishHeader();
+    }
+  }
+
+  /**
+   * קובע את הנתון הנערך — המזהה, ה-RowVersion ועץ הסינון השמור.
+   * null = יצירת נתון חדש.
+   */
+  private setEditingMetric(metric: MetricListItemDto | null): void {
+    this.editingMetricId = metric?.metricId ?? null;
+    this.editingRowVersion = metric?.rowVersion ?? null;
+    this.editingFiltersJson = metric?.filtersJson ?? null;
+    this.pendingEditMetric = this.isEditing ? metric : null;
+  }
+
+  /** מעדכן את ערכי הכותרת שמזינים את ה-contentTemplate של הדיאלוג */
+  private publishHeader(): void {
+    this.headerTitle = this.dialogTitle;
+    this.headerVisible = this.visible;
   }
 
   /** קובע את מצב הפתיחה: יצירת נתון חדש, או עריכת נתון שנבחר */
   private startMode(metric: MetricListItemDto | null): void {
-    this.editingMetricId = metric?.metricId ?? null;
-    this.pendingEditMetric = this.isEditing ? metric : null;
+    this.setEditingMetric(metric);
 
     // הרשימות עשויות להיטען לפני שנוספו שורות חדשות — בטעינה מחדש יימצא הערך השמור
     this.reloadLookups();
@@ -389,6 +595,13 @@ get previewCard(): MetricCard {
         error: (error: unknown) => this.notifications.errorFromServer(error, 'טעינת סוגי החישוב נכשלה')
       })
     );
+
+    this.subscriptions.add(
+      this.service.getFilterOperators().subscribe({
+        next: operators => (this.filterOperators = operators),
+        error: (error: unknown) => this.notifications.errorFromServer(error, 'טעינת אופרטורי הסינון נכשלה')
+      })
+    );
   }
 
   /** טעינה מחדש של הרשימות — בדיאלוג העריכה, כדי שהערכים השמורים יימצאו בהן */
@@ -423,15 +636,20 @@ get previewCard(): MetricCard {
     this.form.controls.iconCode.setValue(this.cardIcons[0].value);
   }
 
-  private findBoardFilterPeriod(): string | null {
-    return this.rangeOptions.find(option => option.value === BOARD_FILTER)?.value
-      ?? this.rangeOptions[0]?.value
-      ?? null;
+  /**
+   * ברירת המחדל של תקופת החישוב — התקופה הראשונה מקטלוג התקופות.
+   * "לפי מסנן הלוח" (DASHBOARD) אינו מוצע יותר בטופס.
+   */
+  private defaultPeriod(): string | null {
+    return this.rangeOptions.find(option => !isDashboardPeriod(option.value))?.value ?? null;
   }
 
   private selectDefaultPeriod(): void {
+    if (this.dateRangeMode !== 'period') {
+      return;
+    }
     if (this.rangeOptions.length > 0 && this.form.controls.dateRangeType.value === null) {
-      this.form.controls.dateRangeType.setValue(this.findBoardFilterPeriod());
+      this.form.controls.dateRangeType.setValue(this.defaultPeriod());
     }
   }
 
@@ -503,21 +721,41 @@ get previewCard(): MetricCard {
   private applyDefaultsAfterSourceSelected(source: DataSource): void {
     // בעריכה — שדות הפירוט והסיכום מגיעים מהנתון השמור, לא מברירת המחדל של "נתון חדש"
     const edit = this.pendingEditMetric;
+
     if (edit) {
+      // null ב-dateRangeValue = הנתון הוגדר בטווח תאריכים מפורש.
+      // מקור שאין בו שני שדות תאריך אינו מציג טווח, ולכן נשאר על תקופה מוגדרת
+      this.dateRangeMode = edit.dateRangeValue === null && this.canChooseRange ? 'range' : 'period';
       this.form.patchValue({
-        dateRangeType: edit.dateRangeValue ?? this.form.controls.dateRangeType.value,
+        // נתון ותיק שנשמר כ-DASHBOARD מוצג בתקופה הראשונה — האפשרות אינה בטופס
+        dateRangeType: this.dateRangeMode === 'period'
+          ? (edit.dateRangeValue && !isDashboardPeriod(edit.dateRangeValue)
+              ? edit.dateRangeValue
+              : this.defaultPeriod())
+          : null,
+        dateFromFieldId: null,
+        dateToFieldId: null,
         groupFieldId: edit.groupFieldId ?? NO_GROUPING,
         sumFieldId: edit.sumFieldId ?? null,
         detailFieldIds: (edit.detailFieldIds ?? []).filter(fieldId =>
           source.fields.some(field => field.fieldId === fieldId))
       });
     } else {
+      // מקור עם פחות משני שדות תאריך לא מאפשר טווח מפורש — נשארים על תקופה מוגדרת
+      if (!this.canChooseRange) {
+        this.dateRangeMode = 'period';
+      }
       this.form.patchValue({
-        dateRangeType: this.findBoardFilterPeriod(),
+        dateRangeType: this.dateRangeMode === 'period' ? this.defaultPeriod() : null,
+        dateFromFieldId: null,
+        dateToFieldId: null,
         groupFieldId: NO_GROUPING,
         sumFieldId: source.fields.find(f => f.isSummable)?.fieldId ?? null,
         detailFieldIds: source.fields.slice(0, DEFAULT_DETAIL_FIELD_COUNT).map(f => f.fieldId)
       });
+      // סוג החישוב נקבע מחדש לפי המקור (DIRECT לערך יחיד, SUM/COUNT לשורות)
+      this.applyCalculationType(this.defaultCalculationTypeId());
+      return;
     }
 
     this.applyCalculationType(this.form.controls.calculationTypeId.value);
@@ -533,25 +771,57 @@ get previewCard(): MetricCard {
     }
 
     const sumControl = this.form.controls.sumFieldId;
-    // הדרישה לסיכום נקבעת לפי סוג החישוב: רק SUM דורש שדה סיכום
-    if (isSumCalculationType(typeId, this.calculationTypeOptions)) {
+    const groupControl = this.form.controls.groupFieldId;
+
+    // הדרישה לסיכום נקבעת לפי סוג החישוב: רק SUM במקור שורות דורש שדה סיכום
+    if (this.isRowsSource && this.isSumCalculationType(typeId)) {
       sumControl.setValidators([Validators.required]);
     } else {
       // הסתרת הסיכום — מנקים גם את הערך כדי שלא יישמר שדה מוסתר
-      sumControl.setValue(null);
+      sumControl.setValue(null, { emitEvent: false });
       sumControl.clearValidators();
     }
     sumControl.updateValueAndValidity();
+
+    // חישוב ישיר (DIRECT) אינו מקובץ — מנקים גם את הקיבוץ
+    if (this.isDirectCalculationType(typeId) && groupControl.value !== NO_GROUPING) {
+      groupControl.setValue(NO_GROUPING, { emitEvent: false });
+    }
+
+    this.applyDetailFieldRequirement();
   }
 
-  /** איפוס שדות שתלויים במקור — אחרת נשארים ערכים של מקור אחר */
+
+  private applyDetailFieldRequirement(): void {
+    const control = this.form.controls.detailFieldIds;
+
+    if (this.isRowsSource) {
+      control.setValidators([atLeastOneItemValidator]);
+    } else {
+      // אין פירוט לבחור — מנקים את הערך כדי שלא יישלח ויידחה בשרת
+      if (control.value.length > 0) {
+        control.setValue([], { emitEvent: false });
+      }
+      control.clearValidators();
+    }
+    control.updateValueAndValidity({ emitEvent: false });
+  }
+
+
   private resetDependentFields(): void {
+    this.dateRangeMode = 'period';
+    // תנאי הסינון שייכים למקור הקודם — אינם תקפים למקור אחר
+    this.filterRoot = null;
     this.form.patchValue(
       {
         sumFieldId: null,
         groupFieldId: NO_GROUPING,
+        dateFromFieldId: null,
+        dateToFieldId: null,
         detailFieldIds: [],
-        // "סמל כרטיס" אינו תלוי במקור — נשמר כפי שהוא
+        // cardSourceId ו-iconCode נבדקים יחד — השני נגזר מהראשון דרך המנוי
+        cardSourceId: this.cardIcons[0]?.value ?? null,
+        iconCode: this.cardIcons[0]?.value ?? null
       },
       { emitEvent: false }
     );
@@ -560,16 +830,22 @@ get previewCard(): MetricCard {
   private resetForm(): void {
     this.selectedSource = null;
     this.lastSourceId = null;
-    this.previewResult = null;
+    this.dateRangeMode = 'period';
     // לפני startMode, שקובע את המצב מחדש לפי metric
     this.editingMetricId = null;
+    this.editingRowVersion = null;
+    this.editingFiltersJson = null;
     this.pendingEditMetric = null;
+    this.filterRoot = null;
     this.form.reset({
       name: '',
       sourceId: null,
-      cardSourceId: null,
-      iconCode: null,
-      dateRangeType: this.findBoardFilterPeriod(),
+      // הסמל מגיע מרשימת CTRL_ICON — ברירת המחדל נבחרת כשהרשימה נטענת
+      cardSourceId: this.cardIcons[0]?.value ?? null,
+      iconCode: this.cardIcons[0]?.value ?? null,
+      dateRangeType: this.defaultPeriod(),
+      dateFromFieldId: null,
+      dateToFieldId: null,
       calculationTypeId: null,
       sumFieldId: null,
       // "ללא קיבוץ" ברשימה = 0, ואילו בטופס נשמר null — כך ה-select מציג את השורה
@@ -581,13 +857,7 @@ get previewCard(): MetricCard {
     this.applyCalculationType(this.form.controls.calculationTypeId.value);
   }
 
-  /**
-   * ממלא את הטופס מערכי הנתון הנערך — רק כשיש את כל מה שנדרש:
-   * הרשימות (מקורות / תקופות / סמלים / סוגי חישוב) ושדות המקור.
-   * נקראת מכל טעינה שמסתיימת, ומדלגת עד שהתנאים מתקיימים.
-   * בסיום מנקה את הערכים הממתינים, כדי שברירות המחדל של "נתון חדש"
-   * לא ידרסו את השמורים.
-   */
+ 
   private tryApplyEditValues(): void {
     const edit = this.pendingEditMetric;
     if (!edit) {
@@ -630,13 +900,18 @@ get previewCard(): MetricCard {
         : this.form.controls.cardSourceId.value,
       iconCode: edit.iconCode ?? null,
       calculationTypeId: edit.calculationTypeId ?? null,
-      dateRangeType: edit.dateRangeValue ?? this.findBoardFilterPeriod(),
       groupFieldId: edit.groupFieldId ?? NO_GROUPING,
       sumFieldId: edit.sumFieldId ?? null,
-      detailFieldIds: (edit.detailFieldIds ?? []).filter(fieldId =>
-        this.selectedSource!.fields.some(field => field.fieldId === fieldId)),
+      // פירוט נשמר רק למקור שורות — במקור ערך יחיד השדות קבועים בקטלוג
+      detailFieldIds: this.isRowsSource
+        ? (edit.detailFieldIds ?? []).filter(fieldId =>
+            this.selectedSource!.fields.some(field => field.fieldId === fieldId))
+        : [],
       displayInDashboard: edit.isActive ?? true
     });
+
+    // תנאי הסינון נשמרו כ-JSON — מוצגים חזרה רק אם שדותיהם שייכים למקור
+    this.filterRoot = parseFilterTree(this.editingFiltersJson, this.selectedSource);
 
     // רכיבי ה-checkbox נקראים מהמערך, ולכן אין צורך בעדכון נוסף
     this.applyCalculationType(this.form.controls.calculationTypeId.value);
@@ -656,7 +931,11 @@ get previewCard(): MetricCard {
   /** "שדות להצגה בפירוט" ריקים אחרי שינוי או ניסיון שמירה */
   get isDetailFieldsInvalid(): boolean {
     const control = this.form.controls.detailFieldIds;
-    return control.invalid && (control.dirty || control.touched);
+    return this.isRowsSource && control.invalid && (control.dirty || control.touched);
+  }
+
+  get isScalarSource(): boolean {
+    return this.selectedSource !== null && !this.isRowsSource;
   }
 
 
@@ -665,10 +944,7 @@ get previewCard(): MetricCard {
     return value !== null && value !== undefined && value !== '';
   }
 
-  /**
-   * מזהה הבחירה (0 = "ללא קיבוץ") אינו "ערך" לתצוגה —
-   * לכן "קיבוץ לפי" נחשב מלא רק כשנבחר שדה קיבוץ אמיתי.
-   */
+ 
   isFieldEmptyForDisplay(fieldName: FormFieldName): boolean {
     if (!this.isFieldFilled(fieldName)) {
       return true;
@@ -681,10 +957,7 @@ get previewCard(): MetricCard {
     return { empty: this.isFieldEmptyForDisplay(fieldName) };
   }
 
-  /**
-   * טופס לא תקין → סימון כל השדות כנגועים (כדי שיודגשו) והודעת שגיאה כללית אחת.
-   * אין פירוט איזה שדה חסר — ההודעה זהה בכל מקרה.
-   */
+ 
   private reportIncompleteForm(): void {
     this.form.markAllAsTouched();
     this.notifications.error(INCOMPLETE_FORM_MESSAGE);
@@ -697,42 +970,235 @@ get previewCard(): MetricCard {
     return !detailFieldIds.valid && othersValid;
   }
 
-  
-  preview(): void {
-    const name = this.form.controls.name;
-    const sourceId = this.form.controls.sourceId;
-    const detailFieldIds = this.form.controls.detailFieldIds;
+  /* ---------------------- תנאי סינון (5.5.5–5.5.8) ---------------------- */
 
-    // תצוגה מקדימה בלי שדות פירוט אינה נותנת מידע — וממילא אי אפשר לשמור כך
-    if (name.invalid || sourceId.invalid || detailFieldIds.invalid) {
-      name.markAsTouched();
-      sourceId.markAsTouched();
-      detailFieldIds.markAsTouched();
-      this.reportIncompleteForm();
+  readonly filterLogicOptions: Array<{ value: FilterLogic; label: string }> = [
+    { value: 'AND', label: 'וגם (AND)' },
+    { value: 'OR', label: 'או (OR)' }
+  ];
+
+  /** שדות שניתנים לסינון במקור הנבחר — נקבעים בקטלוג (IsFilterable) */
+  get filterFields(): DataSourceField[] {
+    return (this.selectedSource?.fields ?? []).filter(field => field.isFilterable);
+  }
+
+  /** תנאי ראשון — נוצר שורש AND אוטומטית */
+  addFirstFilterCondition(): void {
+    this.filterRoot = {
+      kind: 'group',
+      id: newFilterId(),
+      logic: 'AND',
+      children: [newFilterCondition()]
+    };
+  }
+
+  addFilterCondition(group: FilterGroup): void {
+    const next = cloneFilterNode(this.filterRoot) as FilterGroup | null;
+    const target = next ? findFilterGroup(next, group.id) : null;
+    if (!next || !target) {
+      return;
+    }
+    target.children = [...target.children, newFilterCondition()];
+    this.filterRoot = next;
+  }
+
+  /** קבוצה חדשה — הכפתור מוסתר ברמה האחרונה, וגם כאן לא נוצרת מתחתיה */
+  addFilterGroup(group: FilterGroup): void {
+    const next = cloneFilterNode(this.filterRoot) as FilterGroup | null;
+    const target = next ? findFilterGroup(next, group.id) : null;
+    if (!next || !target || filterDepthOf(next, group.id) >= MAX_FILTER_DEPTH) {
+      return;
+    }
+    target.children = [...target.children, newFilterGroup()];
+    this.filterRoot = next;
+  }
+
+  /** הסרת תנאי או קבוצה — קבוצה שנשארה ריקה נמחקת עמו */
+  removeFilterNode(node: FilterNode): void {
+    const next = cloneFilterNode(this.filterRoot) as FilterGroup | null;
+    if (!next) {
+      return;
+    }
+    if (next.id === node.id) {
+      this.filterRoot = null;
+      return;
+    }
+    if (!removeFromFilterTree(next, node.id)) {
+      return;
+    }
+    this.filterRoot = pruneEmptyFilterGroups(next);
+  }
+
+  /** החלפת AND / OR של קבוצה */
+  setFilterLogic(group: FilterGroup, logic: FilterLogic): void {
+    this.updateFilterGroup(group, target => {
+      target.logic = logic === 'OR' ? 'OR' : 'AND';
+    });
+  }
+
+  /** בחירת שדה — האופרטור והערך שייכים לשדה הקודם ולכן מתאפסים */
+  setFilterField(group: FilterGroup, condition: FilterCondition, field: DataSourceField | null): void {
+    const fieldId = field?.fieldId ?? null;
+    this.updateFilterCondition(group, condition, updated => {
+      if (updated.fieldId === fieldId) {
+        return;
+      }
+      updated.fieldId = fieldId;
+      updated.operator = '';
+      updated.value = null;
+      updated.values = [];
+    });
+  }
+
+  /**
+   * האופרטורים הזמינים לתנאי: כל הפעילים מ-CTRL_FilterOperators,
+   * פרט ל"ריק" / "אינו ריק" שאינם מוצעים לשדה שלא יכול להיות ריק.
+   */
+  filterOperatorOptions(condition: FilterCondition): FilterOperator[] {
+    const field = this.filterFieldOf(condition.fieldId);
+    return this.filterOperators.filter(operator =>
+      NULL_OPERATORS.includes((operator.code ?? '').toUpperCase())
+        ? field?.isNullable === true
+        : true);
+  }
+
+  /** בחירת אופרטור — ערך נשמר רק כשהאופרטור מחייב ערך, ובצורתו המתאימה */
+  setFilterOperator(group: FilterGroup, condition: FilterCondition, operator: FilterOperator | null): void {
+    this.updateFilterCondition(group, condition, updated => {
+      updated.operator = operator?.code ?? '';
+      if (!operator?.needsValue) {
+        // אין רכיב ערך — הערך הקודם מנוקה כדי שלא יישמר תנאי לא הגיוני
+        updated.value = null;
+        updated.values = [];
+      } else if (filterIsMultiValue(updated)) {
+        updated.value = null;
+      } else {
+        updated.values = [];
+      }
+    });
+  }
+
+  /** ערך יחיד — מחרוזת; מתאריך נשמרת כ-YYYY-MM-DD */
+  setFilterValue(group: FilterGroup, condition: FilterCondition, value: unknown): void {
+    const text = value instanceof Date ? toIsoDate(value) : value == null ? null : String(value);
+    this.updateFilterCondition(group, condition, updated => {
+      updated.value = text;
+    });
+  }
+
+  /** ערכי רשימה — IN / NOT_IN */
+  setFilterValues(group: FilterGroup, condition: FilterCondition, values: string[] | null): void {
+    this.updateFilterCondition(group, condition, updated => {
+      updated.values = [...(values ?? [])];
+    });
+  }
+
+  /** האם לתנאי יש רכיב ערך — לפי needsValue של האופרטור שנבחר */
+  filterNeedsValue(condition: FilterCondition): boolean {
+    return this.filterOperatorOf(condition)?.needsValue === true;
+  }
+
+  /** האם התנאי מקבל כמה ערכים (IN / NOT_IN) — בורר מרובה */
+  isFilterMultiValue(condition: FilterCondition): boolean {
+    return filterIsMultiValue(condition);
+  }
+
+  /** שדה מסוג רשימה — רכיב הערך הוא בורר (ללא מקור ערכים בשלב זה) */
+  isFilterListField(condition: FilterCondition): boolean {
+    return (this.filterFieldOf(condition.fieldId)?.filterInputType ?? '').toUpperCase() === FILTER_INPUT_LIST;
+  }
+
+  /** שדה תאריך — רכיב הערך הוא בורר תאריך */
+  isFilterDateField(condition: FilterCondition): boolean {
+    return isDateType(this.filterFieldOf(condition.fieldId)?.dataType);
+  }
+
+  /** האם הקבוצה נמצאת ברמה שמתחתיה אסור להוסיף קבוצה */
+  isFilterMaxDepth(group: FilterGroup): boolean {
+    return this.filterRoot === null || filterDepthOf(this.filterRoot, group.id) >= MAX_FILTER_DEPTH;
+  }
+
+  filterFieldOf(fieldId: number | null): DataSourceField | null {
+    if (fieldId === null) {
+      return null;
+    }
+    return this.filterFields.find(field => field.fieldId === fieldId) ?? null;
+  }
+
+  /** הערך של p-datepicker — מחרוזת ה-ISO של התנאי מומרת ל-Date */
+  filterDateValue(value: string | null): Date | null {
+    if (!value) {
+      return null;
+    }
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+    return match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : null;
+  }
+
+  /** תנאי חסר — שדה, אופרטור או ערך חובה; חוסם שמירה */
+  get hasIncompleteFilterCondition(): boolean {
+    return collectFilterConditions(this.filterRoot).some(condition => {
+      if (condition.fieldId === null || !condition.operator) {
+        return true;
+      }
+      if (!this.filterNeedsValue(condition)) {
+        return false;
+      }
+      if (filterIsMultiValue(condition)) {
+        return !Array.isArray(condition.values) || condition.values.length === 0;
+      }
+      return condition.value === null || String(condition.value).trim() === '';
+    });
+  }
+
+  isFilterGroup = (node: FilterNode): node is FilterGroup => node.kind === 'group';
+
+  trackFilterNode = (_index: number, node: FilterNode): number => node.id;
+
+  private filterOperatorOf(condition: FilterCondition): FilterOperator | null {
+    const code = (condition.operator ?? '').toUpperCase();
+    if (!code) {
+      return null;
+    }
+    return this.filterOperators.find(operator => (operator.code ?? '').toUpperCase() === code) ?? null;
+  }
+
+  private updateFilterGroup(group: FilterGroup, mutate: (group: FilterGroup) => void): void {
+    const next = cloneFilterNode(this.filterRoot) as FilterGroup | null;
+    const target = next ? findFilterGroup(next, group.id) : null;
+    if (!next || !target) {
+      return;
+    }
+    mutate(target);
+    this.filterRoot = next;
+  }
+
+  /** עדכון תנאי בודד — העץ מוחלף בהעתק, ולכן הקלט של ההורה אינו משתנה במקום */
+  private updateFilterCondition(
+    group: FilterGroup,
+    condition: FilterCondition,
+    mutate: (condition: FilterCondition) => void
+  ): void {
+    this.updateFilterGroup(group, target => {
+      const found = target.children.find(
+        child => child.kind === 'condition' && child.id === condition.id
+      );
+      if (found?.kind === 'condition') {
+        mutate(found);
+      }
+    });
+  }
+
+  
+  /** שמירה בקטלוג המרכזי */
+  save(): void {
+    // טווח התאריכים אינו נבדק על ידי הוולידטורים של הטופס (תלוי באופן התקופה)
+    if (this.isRangeModeInvalid) {
+      this.form.controls.dateFromFieldId.markAsTouched();
+      this.form.controls.dateToFieldId.markAsTouched();
+      this.notifications.error(DATE_RANGE_REQUIRED_MESSAGE);
       return;
     }
 
-    this.previewing = true;
-    this.subscriptions.add(
-      this.service.preview(this.buildDraft()).subscribe({
-        next: result => {
-          this.previewing = false;
-          this.previewResult = result;
-          this.notifications.info(
-            `התקבלו ${result.rows.length} שורות · סה"כ ${result.total}`,
-            'תצוגה מקדימה'
-          );
-        },
-        error: (error: unknown) => {
-          this.previewing = false;
-          this.notifications.errorFromServer(error, 'לא ניתן היה להפיק תצוגה מקדימה');
-        }
-      })
-    );
-  }
-
-  /** שמירה בקטלוג המרכזי */
-  save(): void {
     if (!this.form.valid) {
       // ההודעה הייעודית מוצגת כשהיא הסיבה היחידה לחסימה
       if (this.onlyDetailFieldsInvalid()) {
@@ -743,13 +1209,15 @@ get previewCard(): MetricCard {
       return;
     }
 
+    // תנאי סינון אינם חוסמים את השמירה: תנאי חסר נשמט מהעץ (ראו buildFilterJson)
+
     this.saving = true;
 
     const metricId = this.editingMetricId;
     if (metricId !== null) {
       // עריכה: עדכון השורה הקיימת — לא נוצרת רשומה חדשה
       this.subscriptions.add(
-        this.service.updateMetric(metricId, this.buildDraft()).subscribe({
+        this.service.updateMetric(metricId, this.buildDraft(), this.editingRowVersion).subscribe({
           next: () => {
             this.saving = false;
             this.notifications.success('הנתון עודכן');
@@ -789,25 +1257,296 @@ get previewCard(): MetricCard {
 
   private buildDraft(): MetricDraft {
     const value = this.form.getRawValue();
+    const isRange = this.dateRangeMode === 'range';
+    const isRows = this.isRowsSource;
+
     return {
       name: value.name.trim(),
       // המזהה מחרוזת בטופס; השרת מצפה ל-int
       sourceId: value.sourceId === null ? null : Number(value.sourceId),
-      calculationTypeId: value.calculationTypeId === null ? null : Number(value.calculationTypeId),
-      // סיכום נשלח רק ב-SUM; ב-COUNT \u200FapplyCalculationType כבר מנקה את הערך
-      sumFieldId: isSumCalculationType(value.calculationTypeId, this.calculationTypeOptions)
+      // פרוצדורה — DIRECT נקבע מאחורי הקלעים ואינו תלוי בבחירה בטופס
+      calculationTypeId: this.isProcedureSource
+        ? this.defaultCalculationTypeId()
+        : (value.calculationTypeId === null ? null : Number(value.calculationTypeId)),
+      // סיכום נשלח רק ב-SUM במקור שורות; applyCalculationType כבר מנקה את הערך אחרת
+      sumFieldId: isRows && this.isSumCalculationType(value.calculationTypeId)
         ? value.sumFieldId
         : null,
-      // 0 ברשימה = "ללא קיבוץ"; השרת שומר null
-      groupFieldId: value.groupFieldId === NO_GROUPING ? null : value.groupFieldId,
-      // ברירת מחדל סבירה אם הקטלוג עדיין לא נטען
-      dateRangeType: value.dateRangeType ?? this.findBoardFilterPeriod() ?? '',
+      // 0 ברשימה = "ללא קיבוץ"; השרת שומר null. מקור ערך יחיד אינו מקובץ.
+      groupFieldId: !isRows || value.groupFieldId === NO_GROUPING ? null : value.groupFieldId,
+      // null = טווח תאריכים מפורש; אחרת מספר הימים כפי שהוא בקטלוג
+      // ("לפי מסנן הלוח" אינו מוצע בטופס — ערך כזה מוחלף בתקופה הראשונה)
+      dateRangeType: isRange
+        ? null
+        : (value.dateRangeType && !isDashboardPeriod(value.dateRangeType)
+            ? value.dateRangeType
+            : this.defaultPeriod()),
+      dateFromFieldId: isRange ? value.dateFromFieldId : null,
+      dateToFieldId: isRange ? value.dateToFieldId : null,
       iconCode: value.iconCode,
-      detailFieldIds: [...value.detailFieldIds],
-      displayInDashboard: value.displayInDashboard
+      detailFieldIds: isRows ? [...value.detailFieldIds] : [],
+      displayInDashboard: value.displayInDashboard,
+      // מקור ערך יחיד אינו מסונן. מקור שורות שולח את העץ; "{}" = אין תנאים
+      // (null היה משאיר בשרת את העץ הישן — ראו UpdateMetricCommand)
+      filtersJson: isRows ? this.buildFilterJson() : null
     };
+  }
+
+  /**
+   * ה-JSON של עץ תנאי הסינון. תנאים חסרים אינם חוסמים את השמירה —
+   * הם נשמטים מהעץ, וקבוצה שנשארה בלי ילדים נשמטת גם היא.
+   * העץ אינו משפיע על שאר שדות הטופס.
+   */
+  private buildFilterJson(): string {
+    const root = this.filterRoot;
+    if (root === null) {
+      return '{}';
+    }
+
+    const cleaned = toFilterJson(root, this.filterOperators);
+    return JSON.stringify(cleaned ?? {});
   }
 }
 
 /** אפשרות שדה בתבנית — תואמת לשדות שחוזרים מהשרת */
 type DataSourceFieldOption = DataSource['fields'][number];
+
+/**
+ * האם התקופה היא "לפי מסנן הלוח" — הערך ההיסטורי DASHBOARD.
+ * האפשרות אינה מוצגת בטופס, אך נתונים ותיקים עדיין נושאים אותה.
+ */
+function isDashboardPeriod(value: string | null | undefined): boolean {
+  return (value ?? '').trim().toUpperCase() === DASHBOARD;
+}
+
+/**
+ * האם סוג הנתון במסד הוא תאריך/שעה — לפי השם שמוחזר מהקטלוג
+ * (datetime, date, smalldatetime, time...).
+ */
+function isDateType(dataType: string | null | undefined): boolean {
+  if (!dataType) {
+    return false;
+  }
+  const normalized = dataType.toLowerCase();
+  return normalized.includes('date') || normalized.includes('time');
+}
+
+/* ---------------------- עזרי עץ תנאי הסינון ---------------------- */
+
+/** תנאי חדש — ריק עד שהמשתמש בוחר שדה ואופרטור */
+function newFilterCondition(): FilterCondition {
+  return { kind: 'condition', id: newFilterId(), fieldId: null, operator: '', value: null, values: [] };
+}
+
+/** קבוצה חדשה — AND כברירת מחדל, בלי ילדים */
+function newFilterGroup(): FilterGroup {
+  return { kind: 'group', id: newFilterId(), logic: 'AND', children: [] };
+}
+
+/** מזהה מקומי בלבד — אינו נשמר בשרת */
+function newFilterId(): number {
+  return Math.floor(Math.random() * 1_000_000_000);
+}
+
+/** העתקה עמוקה של צומת — העץ מוחלף ולא משתנה במקום */
+function cloneFilterNode(node: FilterNode | null): FilterNode | null {
+  if (node === null) {
+    return null;
+  }
+  if (node.kind === 'condition') {
+    return { ...node, values: [...node.values] };
+  }
+  return { ...node, children: node.children.map(child => cloneFilterNode(child) as FilterNode) };
+}
+
+/** אופרטור של ערכים מרובים (IN / NOT_IN) — חייב לפחות ערך אחד */
+function filterIsMultiValue(condition: FilterCondition): boolean {
+  const code = (condition.operator ?? '').toUpperCase();
+  return MULTI_VALUE_OPERATORS.includes(code);
+}
+
+/**
+ * התנאי שלם — יש שדה, אופרטור מוכר, וערך כנדרש ממנו.
+ * תנאי חסר נשמט מהעץ שנשלח לשרת ואינו חוסם את השמירה.
+ */
+function isFilterConditionComplete(condition: FilterCondition, operators: FilterOperator[]): boolean {
+  if (condition.fieldId === null || !condition.operator) {
+    return false;
+  }
+
+  const operator = operators.find(item => item.code.toUpperCase() === condition.operator.toUpperCase());
+  if (!operator) {
+    return false;
+  }
+
+  if (!operator.needsValue) {
+    return true;
+  }
+
+  if (filterIsMultiValue(condition)) {
+    return condition.values.some(value => (value ?? '').trim().length > 0);
+  }
+
+  return (condition.value ?? '').toString().trim().length > 0;
+}
+
+/**
+ * ממיר את העץ ל-JSON שנשמר: תנאים חסרים נשמטים,
+ * וקבוצה שנשארה בלי ילדים נשמטת גם היא. null = אין תנאים בכלל.
+ */
+function toFilterJson(node: FilterNode, operators: FilterOperator[] = []): FilterGroup | FilterCondition | null {
+  if (node.kind === 'condition') {
+    return isFilterConditionComplete(node, operators) ? node : null;
+  }
+
+  const children = node.children
+    .map(child => toFilterJson(child, operators))
+    .filter((child): child is FilterGroup | FilterCondition => child !== null);
+
+  return children.length === 0 ? null : { ...node, children };
+}
+
+function findFilterGroup(group: FilterGroup, id: number): FilterGroup | null {
+  if (group.id === id) {
+    return group;
+  }
+  for (const child of group.children) {
+    if (child.kind === 'group') {
+      const found = findFilterGroup(child, id);
+      if (found) {
+        return found;
+      }
+    }
+  }
+  return null;
+}
+
+/** עומק הקבוצה — השורש ברמה 1; 0 = לא נמצאה */
+function filterDepthOf(group: FilterGroup, id: number, depth = 1): number {
+  if (group.id === id) {
+    return depth;
+  }
+  for (const child of group.children) {
+    if (child.kind === 'group') {
+      const found = filterDepthOf(child, id, depth + 1);
+      if (found > 0) {
+        return found;
+      }
+    }
+  }
+  return 0;
+}
+
+/** מוחק את הצומת עם המזהה — מחזיר האם נמצאה */
+function removeFromFilterTree(group: FilterGroup, id: number): boolean {
+  const index = group.children.findIndex(child => child.id === id);
+  if (index >= 0) {
+    group.children = [...group.children.slice(0, index), ...group.children.slice(index + 1)];
+    return true;
+  }
+  for (const child of group.children) {
+    if (child.kind === 'group' && removeFromFilterTree(child, id)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * מסיר קבוצות שנשארו בלי ילדים. קבוצה ריקה אינה נשמרת — גם השרת דוחה אותה —
+ * ולכן היא אינה נשארת בעץ. עץ שהתרוקן לגמרי חוזר ל-null.
+ */
+function pruneEmptyFilterGroups(group: FilterGroup): FilterGroup | null {
+  group.children = group.children
+    .map(child => (child.kind === 'group' ? pruneEmptyFilterGroups(child) : child))
+    .filter((child): child is FilterNode => child !== null);
+
+  return group.children.length === 0 ? null : group;
+}
+
+/** כל התנאים בעץ, בכל עומק */
+function collectFilterConditions(node: FilterNode | null): FilterCondition[] {
+  if (node === null) {
+    return [];
+  }
+  if (node.kind === 'condition') {
+    return [node];
+  }
+  return node.children.flatMap(collectFilterConditions);
+}
+
+/**
+ * קורא את עץ הסינון השמור (FiltersJson). JSON ריק או פגום → אין תנאים.
+ * תנאי ששדהו אינו במקור מושמט, וקבוצה שנשארה ריקה מוסרת.
+ */
+function parseFilterTree(json: string | null | undefined, source: DataSource | null): FilterGroup | null {
+  if (!json) {
+    return null;
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    return null;
+  }
+
+  if (!isPlainObject(parsed) || !Array.isArray(parsed['children'])) {
+    return null;
+  }
+
+  const fieldIds = new Set((source?.fields ?? []).map(field => field.fieldId));
+  const root = readFilterNode(parsed, fieldIds);
+  return root?.kind === 'group' ? pruneEmptyFilterGroups(root) : null;
+}
+
+/** צומת מהג'ייסון — תנאי, קבוצה, או null לצומת שאינו תקין */
+function readFilterNode(value: unknown, fieldIds: Set<number>): FilterNode | null {
+  if (!isPlainObject(value)) {
+    return null;
+  }
+
+  if (Array.isArray(value['children'])) {
+    const children = value['children']
+      .map(child => readFilterNode(child, fieldIds))
+      .filter((child): child is FilterNode => child !== null);
+
+    if (children.length === 0) {
+      return null;
+    }
+
+    return {
+      kind: 'group',
+      id: newFilterId(),
+      logic: String(value['logic'] ?? '').toUpperCase() === 'OR' ? 'OR' : 'AND',
+      children
+    };
+  }
+
+  const fieldId = Number(value['fieldId']);
+  if (!Number.isInteger(fieldId) || !fieldIds.has(fieldId)) {
+    return null;
+  }
+
+  return {
+    kind: 'condition',
+    id: newFilterId(),
+    fieldId,
+    operator: typeof value['operator'] === 'string' ? value['operator'] : '',
+    value: typeof value['value'] === 'string' ? value['value'] : null,
+    values: Array.isArray(value['values'])
+      ? value['values'].filter((item): item is string => typeof item === 'string')
+      : []
+  };
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** Date → "YYYY-MM-DD" — התאריך נשמר בעץ כמחרוזת */
+function toIsoDate(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+}

@@ -24,9 +24,17 @@ public record MetricListItemDto(
     List<int> DetailFieldIds,
     /// <summary>
     /// מספר הימים כפי שהוא מוצג ברשימת הטופס (Value של CTRL_CalculationDays),
-    /// או BOARD_FILTER. העריכה מחזירה זאת כי הטופס שולח את ה-Value, לא את ה-Name.
+    /// או DASHBOARD. העריכה מחזירה זאת כי הטופס שולח את ה-Value, לא את ה-Name.
+    /// <c>null</c> = למדד הוגדר טווח תאריכים מפורש.
     /// </summary>
-    string? DateRangeValue);
+    string? DateRangeValue,
+    /// <summary>
+    /// חתימת הגרסה (RowVersion) — נשלחת חזרה בעדכון כדי לזהות התנגשות עדכון.
+    /// מוצגת כ-Base64.
+    /// </summary>
+    string? RowVersion,
+    /// <summary>עץ תנאי הסינון שנשמר (JSON) — נטען חזרה לטופס העריכה</summary>
+    string? FiltersJson);
 
 public class GetMetricsQueryHandler : IRequestHandler<GetMetricsQuery, List<MetricListItemDto>>
 {
@@ -34,18 +42,12 @@ public class GetMetricsQueryHandler : IRequestHandler<GetMetricsQuery, List<Metr
 
     public GetMetricsQueryHandler(IApplicationDbContext context) => _context = context;
 
-    /// <summary>
-    /// שליפת כל הנתונים. סוג החישוב נטען מ-CTRL_CalculationTypes
-    /// באמצעות LEFT JOIN — נתון עם CalculationTypeID שאינו קיים עדיין
-    /// לא ייעלם מהרשימה, רק יגיע בלי סוג.
-    /// מחזיר DTO ולא את הישות, כדי לא לחשוף את שדות ה-navigation וה-RowVersion.
-    /// שדות הפירוט נטענים בהטרמה, לפי DisplayOrder — כדי שטופס העריכה ימלא אותם.
-    /// </summary>
+
     public async Task<List<MetricListItemDto>> Handle(GetMetricsQuery request, CancellationToken cancellationToken)
     {
-        var rows = await (from m in _context.Metrics.AsNoTracking()
-                          join t in _context.CalculationTypes.AsNoTracking()
-                              on m.CalculationTypeID equals t.Id into calcTypes
+        var rows = await (from m in _context.CtrlMetrics.AsNoTracking()
+                          join t in _context.CtrlCalculationTypes.AsNoTracking()
+                              on m.CalculationTypeID equals t.ID into calcTypes
                           from t in calcTypes.DefaultIfEmpty()
                           orderby m.MetricID descending
                           select new
@@ -58,7 +60,7 @@ public class GetMetricsQueryHandler : IRequestHandler<GetMetricsQuery, List<Metr
         var metricIds = rows.Select(row => row.Metric.MetricID).ToList();
 
         // DetailFields.ID נטען עם אילוץ המפתח הזר — כאן רק המזהים והסדר
-        var detailFieldIdsByMetric = (await _context.MetricDetailFields.AsNoTracking()
+        var detailFieldIdsByMetric = (await _context.CtrlMetricDetailFields.AsNoTracking()
                 .Where(detail => metricIds.Contains(detail.MetricID))
                 .OrderBy(detail => detail.DisplayOrder)
                 .Select(detail => new { detail.MetricID, detail.FieldID })
@@ -66,7 +68,6 @@ public class GetMetricsQueryHandler : IRequestHandler<GetMetricsQuery, List<Metr
             .GroupBy(detail => detail.MetricID)
             .ToDictionary(group => group.Key, group => group.Select(detail => detail.FieldID).ToList());
 
-        // הנחת יסוד: העמודה שומרת מספר ימים (INT); null = "לפי מסנן הלוח"
         return rows
             .Select(row => new MetricListItemDto(
                 row.Metric.MetricID,
@@ -80,19 +81,38 @@ public class GetMetricsQueryHandler : IRequestHandler<GetMetricsQuery, List<Metr
                 row.Metric.IconCode,
                 row.Metric.IsActive,
                 detailFieldIdsByMetric.GetValueOrDefault(row.Metric.MetricID) ?? [],
-                ToDateRangeValue(row.Metric.DateRangeType)))
+                ToDateRangeValue(row.Metric.DateRangeType),
+                ToRowVersion(row.Metric.RowVersion),
+                row.Metric.FiltersJson))
             .ToList();
     }
 
     /// <summary>
-    /// הטופס עובד עם ה-Value של התקופה ("30" / "7" / "90"). במסד נשמר ה-Name
-    /// ("30 ימים") או BOARD_FILTER, ולכן ממירים חזרה ל-Value.
-    /// ערך ריק או null פירושו "לפי מסנן הלוח"; ערך מספרי ישן מוחזר כמו שהוא.
+    /// התקופה כפי שהטופס שולח ומציג אותה (ה-Value של CTRL_CalculationDays — "30" / "7" / "90"),
+    /// או <c>DASHBOARD</c> עבור "לפי מסנן הלוח".
+    /// <para>
+    /// <c>null</c> = למדד הוגדר טווח תאריכים מפורש (DateRangeType ריק) — הטופס מזהה זאת
+    /// ומציג את שני שדות התאריך.
+    /// </para>
+    /// ערך ישן (BOARD_FILTER / MONTH / LAST_30_DAYS) מוחזר כמו שהוא כדי שעריכת נתון קיים לא תיכשל.
     /// </summary>
-    private static string ToDateRangeValue(string? stored)
+    private static string? ToDateRangeValue(string? stored)
     {
-        return string.IsNullOrWhiteSpace(stored)
-            ? MetricConstants.DateRangeBoardFilter
+        if (string.IsNullOrWhiteSpace(stored))
+        {
+            return null;
+        }
+
+        // נתונים ותיקים שנשמרו כ-BOARD_FILTER מוצגים כ-DASHBOARD (אותו "לפי מסנן הלוח")
+        return MetricConstants.IsDashboard(stored)
+            ? MetricConstants.DateRangeDashboard
             : stored.Trim();
     }
+
+    /// <summary>
+    /// חתימת הגרסה כ-Base64 — הערך שנשלח חזרה כ-If-Match בעדכון.
+    /// עמודה ריקה (אין rowversion) מוחזרת כ-null, כלומר אין בדיקת התנגשות.
+    /// </summary>
+    private static string? ToRowVersion(byte[] rowVersion) =>
+        rowVersion.Length == 0 ? null : Convert.ToBase64String(rowVersion);
 }

@@ -27,9 +27,24 @@ public class DataCatalogController : ControllerBase
     public async Task<IActionResult> Update(
         int id,
         [FromBody] MetricDraftDto draft,
+        [FromHeader(Name = "If-Match")] string? rowVersion,
         CancellationToken cancellationToken)
     {
-        var updated = await _sender.Send(new UpdateMetricCommand(id, draft), cancellationToken);
+        // If-Match: ערך ה-RowVersion (Base64) שהלקוח שלף — מזהה התנגשות עדכון (409)
+        byte[]? version = null;
+        if (!string.IsNullOrWhiteSpace(rowVersion))
+        {
+            try
+            {
+                version = Convert.FromBase64String(rowVersion.Trim('"'));
+            }
+            catch (FormatException)
+            {
+                return BadRequest("If-Match אינו RowVersion תקין.");
+            }
+        }
+
+        var updated = await _sender.Send(new UpdateMetricCommand(id, draft, version), cancellationToken);
         return updated ? NoContent() : NotFound();
     }
 

@@ -14,7 +14,7 @@
       <span class="headlineBtn__icon" aria-hidden="true">⚙</span>
       <span>התאמת תצוגה</span>
     </p-button>
-    <p-button styleClass="headlineBtnPrimary" (onClick)="openNewData()">
+    <p-button styleClass="headlineBtnPrimary" (onClick)="openNewDataDialog()">
       <span class="headlineBtn__icon" aria-hidden="true">+</span>
       <span>נתון חדש</span>
     </p-button>
@@ -26,12 +26,6 @@
                          [fromDate]="dateRange().from" [toDate]="dateRange().to"
                          (closed)="closeDetail()" />
 }
-
-<!-- דיאלוג יצירת נתון חדש — מצב יצירה (metric = null) -->
-<app-adding-new-data-entry
-  [(visible)]="newDataVisible"
-  (saved)="onNewDataSaved()" />
-
 
 <app-control-panel-filters
   [refreshing]="refreshing()"
@@ -50,3 +44,7 @@
   [refreshToken]="refreshToken()"
   (detail)="openDetail($event)">
 </app-control-panel-cube>
+
+<app-adding-new-data-entry
+  [(visible)]="newDataVisible"
+  (saved)="onDataSaved($event)" />

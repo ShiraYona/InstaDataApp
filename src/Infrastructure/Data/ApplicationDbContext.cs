@@ -18,16 +18,15 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<CtrlFine> CtrlFines => Set<CtrlFine>();
     public DbSet<CtrlClaim> CtrlClaims => Set<CtrlClaim>();
     public DbSet<CtrlCalculationType> CtrlCalculationTypes => Set<CtrlCalculationType>();
-    public DbSet<CtrlIcon> CtrlIcons => Set<CtrlIcon>();
+        public DbSet<CtrlTask> CtrlTasks => Set<CtrlTask>();
+    public DbSet<CtrlTaskComment> CtrlTaskComments => Set<CtrlTaskComment>();
+    public DbSet<CtrlTaskHistory> CtrlTaskHistories => Set<CtrlTaskHistory>();
+    public DbSet<CtrlTaskView> CtrlTaskViews => Set<CtrlTaskView>();
 
-    public DbSet<DataSource> DataSources => Set<DataSource>();
-    public DbSet<DataSourceField> DataSourceFields => Set<DataSourceField>();
-    public DbSet<Metric> Metrics => Set<Metric>();
-    public DbSet<MetricDetailField> MetricDetailFields => Set<MetricDetailField>();
+    public DbSet<CtrlFilterOperator> FilterOperators => Set<CtrlFilterOperator>();
 
     public DbSet<CardIcon> CardIcons => Set<CardIcon>();
     public DbSet<CalculationPeriod> CalculationDays => Set<CalculationPeriod>();
-    public DbSet<CalculationTypeDefinition> CalculationTypes => Set<CalculationTypeDefinition>();
 
     public DbSet<UserDisplaySettings> UserDisplaySettings => Set<UserDisplaySettings>();
     public DbSet<UserMetricSetting> UserMetricSettings => Set<UserMetricSetting>();
@@ -37,7 +36,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         base.OnModelCreating(builder);
 
         // טבלאות הקטלוג (CTRL_*) קיימות מראש — המיפוי שלהן נמצא ב-Configurations,
-        // ואין להריץ Migrations עליהן.
         builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
     }
 }

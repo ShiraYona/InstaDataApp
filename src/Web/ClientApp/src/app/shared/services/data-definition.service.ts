@@ -1,38 +1,15 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, map, shareReplay, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
-  CardIconOption,
   DataSource,
+  FilterOperator,
   LookupOption,
   MetricDraft,
   PreviewResult
 } from '../models/data-definition.model';
 import { DataCatalogClient, MetricListItemDto, SetMetricActiveRequest } from '../../web-api-client';
-
-/**
- * ערכי ברירת מחדל של קטלוגי העזר (בשרת יגיעו מטבלאות עזר).
- * משמשים כערכי התחלה בטופס ובערכי ברירת המחדל שלו.
- */
-export const CARD_ICON_OPTIONS: CardIconOption[] = [
-  { id: 1, label: '▦ נתון' },
-  { id: 2, label: '₪ כספי' },
-  { id: 3, label: '▤ שומה' },
-  { id: 4, label: '◉ התראה' },
-  { id: 5, label: '🏷 הנחה' },
-  { id: 6, label: '🧾 שובר' },
-  { id: 7, label: '⚖ תביעה' }
-];
-
-export const CALCULATION_PERIOD_OPTIONS: LookupOption[] = [
-  { value: '1', label: 'לפי מסנן הלוח' },
-  { value: '2', label: '7 ימים' },
-  { value: '3', label: '30 ימים' },
-  { value: '4', label: '90 ימים' }
-];
-
-
 
 @Injectable({ providedIn: 'root' })
 export class DataDefinitionService {
@@ -52,6 +29,8 @@ export class DataDefinitionService {
     this.http.get<LookupOption[]>(`${this.baseUrl}/card-icons`));
   private readonly calculationTypeList$ = this.shareOnce(() =>
     this.http.get<LookupOption[]>(`${this.baseUrl}/calculation-types`));
+  private readonly filterOperatorList$ = this.shareOnce(() =>
+    this.http.get<FilterOperator[]>(`${this.baseUrl}/filter-operators`));
 
 
   /**
@@ -73,8 +52,6 @@ export class DataDefinitionService {
 
   /**
    * מספר הימים לחישוב (לפי מסנן הלוח / 7 / 30 / 90 ימים) — מ-CTRL_CalculationDays.
-   * forceReload — טעינה מחדש מהשרת, למשל בפתיחת דיאלוג העריכה, כי רשימה
-   * שנשמרה במטמון לפני שנוספה תקופה חדשה אינה מעודכנת.
    */
   getCalculationPeriods(forceReload = false): Observable<LookupOption[]> {
     if (forceReload) {
@@ -86,7 +63,6 @@ export class DataDefinitionService {
 
   /**
    * סמלי הכרטיס — נשלפים מ-CTRL_ICON (המילה והאייקון מגיעים מהמסד).
-   * forceReload — כמו בתקופות: בדיאלוג העריכה ה-select צריך להכיר את הסמל השמור.
    */
   getCardIcons(forceReload = false): Observable<LookupOption[]> {
     if (forceReload) {
@@ -99,6 +75,11 @@ export class DataDefinitionService {
   /** סוגי החישוב — נשלפים מ-CTRL_CalculationTypes */
   getCalculationTypes(): Observable<LookupOption[]> {
     return this.calculationTypeList$;
+  }
+
+  /** אופרטורי תנאי הסינון — נשלפים מ-CTRL_FilterOperators (הפעילים בלבד) */
+  getFilterOperators(): Observable<FilterOperator[]> {
+    return this.filterOperatorList$;
   }
 
  
@@ -161,9 +142,14 @@ export class DataDefinitionService {
       sumFieldId: draft.sumFieldId,
       groupFieldId: draft.groupFieldId,
       dateRangeType: draft.dateRangeType,
+      // רלוונטיים רק כשנבחר טווח תאריכים (dateRangeType ריק)
+      dateFromFieldId: draft.dateFromFieldId,
+      dateToFieldId: draft.dateToFieldId,
       iconCode: draft.iconCode,
       detailFieldIds: draft.detailFieldIds,
-      displayInDashboard: draft.displayInDashboard
+      displayInDashboard: draft.displayInDashboard,
+      // undefined = השדה אינו נשלח כלל, והשרת משאיר את עץ הסינון השמור
+      filtersJson: draft.filtersJson
     } satisfies Record<string, unknown>;
   }
 
@@ -188,10 +174,16 @@ export class DataDefinitionService {
       .pipe(map(() => undefined));
   }
 
-  /** עדכון נתון קיים — מעדכן את השורה ב-CTRL_Metrics, לא יוצר חדשה */
-  updateMetric(metricId: number, draft: MetricDraft): Observable<void> {
+  /**
+   * עדכון נתון קיים — מעדכן את השורה ב-CTRL_Metrics, לא יוצר חדשה.
+   * rowVersion (Base64 מהרשימה) נשלח כ-If-Match: שורה שהשתנתה בינתיים
+   * מוחזרת ב-409, ועל המשתמש לטעון מחדש ולשמור שוב.
+   */
+  updateMetric(metricId: number, draft: MetricDraft, rowVersion: string | null): Observable<void> {
+    const headers = rowVersion ? new HttpHeaders({ 'If-Match': `"${rowVersion}"` }) : undefined;
+
     return this.http
-      .put<void>(`${this.dataCatalogClientBaseUrl}/${metricId}`, this.toWire(draft))
+      .put<void>(`${this.dataCatalogClientBaseUrl}/${metricId}`, this.toWire(draft), { headers })
       .pipe(map(() => undefined));
   }
 
