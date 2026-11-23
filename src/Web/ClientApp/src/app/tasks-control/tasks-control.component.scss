@@ -459,24 +459,24 @@ p {
 
 /* ברירת המחדל של תיבה מרובה: כשהמערך ריק PrimeNG מציג placeholder,
    והוא צריך להיראות כמו טקסט רגיל — "הכול" בתוך הכפתור ולא רמז אפור */
-::ng-deep .field p-select .p-select-label.p-placeholder {
-  color: #243b58;
-  opacity: 1;
-}
+// ::ng-deep .field p-select .p-select-label.p-placeholder {
+//   color: #243b58;
+//   opacity: 1;
+// }
 
-::ng-deep .field p-select .p-select-dropdown,
-::ng-deep .periodline p-select .p-select-dropdown,
-::ng-deep .headline p-select.role .p-select-dropdown {
-  width: 1.6rem;
-  color: #7c91ab;
-}
+// ::ng-deep .field p-select .p-select-dropdown,
+// ::ng-deep .periodline p-select .p-select-dropdown,
+// ::ng-deep .headline p-select.role .p-select-dropdown {
+//   width: 1.6rem;
+//   color: #7c91ab;
+// }
 
-::ng-deep .field p-select .p-select-dropdown .p-icon,
-::ng-deep .periodline p-select .p-select-dropdown .p-icon,
-::ng-deep .headline p-select.role .p-select-dropdown .p-icon {
-  width: 10px;
-  height: 10px;
-}
+// ::ng-deep .field p-select .p-select-dropdown .p-icon,
+// ::ng-deep .periodline p-select .p-select-dropdown .p-icon,
+// ::ng-deep .headline p-select.role .p-select-dropdown .p-icon {
+//   width: 10px;
+//   height: 10px;
+// }
 
 /* ============================================================
    רשימת האפשרויות הפתוחה — מראה זהה בכל תיבות הבחירה במסך.
@@ -920,6 +920,11 @@ th.sort:hover {
   gap: 9px;
   border-bottom: 1px solid #e2e9f2;
   margin: 20px 0;
+  /* הטאבים נשארים גלויים בזמן גלילה בתוך תוכן הטאב */
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 2;
 }
 
 .subnav button {
@@ -934,6 +939,29 @@ th.sort:hover {
   color: #1966bc;
   border-color: #1966bc;
   font-weight: 700;
+}
+
+/* גלילה פנימית בתוכן הטאב — כשההערות או ההיסטוריה ארוכות */
+.detail-scroll {
+  max-height: 46vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-left: 6px;
+  padding-right: 2px;
+}
+
+/* פס גלילה דק וברור, גם ב-RTL */
+.detail-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.detail-scroll::-webkit-scrollbar-thumb {
+  background: #c6d5e6;
+  border-radius: 8px;
+}
+
+.detail-scroll::-webkit-scrollbar-thumb:hover {
+  background: #9eb7d2;
 }
 
 .timeline {
