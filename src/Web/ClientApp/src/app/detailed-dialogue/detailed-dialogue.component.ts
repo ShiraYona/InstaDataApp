@@ -142,21 +142,24 @@ export class DetailedDialogueComponent implements OnInit, OnChanges {
     }));
   });
 
- // שם שדה הקיבוץ לתצוגה. ריק = אין שדה קיבוץ.
- // ה-label לבדו אינו מספיק: השרת מחזיר תווית ברירת מחדל ("מערכת") גם בלי קיבוץ,
- // ולכן הקביעה היא לפי groupFieldName; הכרטיס יוצר גיבוי רק כשהוא עצמו מקובץ
- readonly groupName = computed(() => {
-  const d = this.detail();
-  if (d?.groupFieldName) return d.groupFieldLabel || d.groupFieldName;
-  if (!d && this.card?.groupField) return this.card.groupFieldLabel || this.card.groupField;
-  return '';
-});
+ // האם יש שדה קיבוץ. התווית עצמה אינה תלויה בשדה — היא תמיד "מערכת",
+ // אבל עצם קיומו של הקיבוץ קובע אם טבלת החלוקה מוצגת בכלל
+ readonly hasGroupField = computed(() =>
+  this.detail()?.groupFieldName ? true : (!this.detail() && !!this.card?.groupField)
+);
 
  // טבלת הקבוצות מוצגת רק כשיש שדה קיבוץ — בהיעדרו אינה מוצגת כלל
- readonly hasGrouping = computed(() => this.groupName() !== '');
-  readonly columns = computed(() =>
+ readonly hasGrouping = computed(() => this.hasGroupField());
+  /** כל העמודות שהשרת החזיר — הבסיס לייצוא (שם נשארות כל העמודות) */
+  private readonly allColumns = computed(() =>
     (this.detail()?.columns ?? []).map(c => ({ key: c.fieldName, label: c.label, dataType: c.dataType }))
   );
+
+  /** לתצוגה מוסרים לכל היותר שתי העמודות האחרונות (התאריך ועמודת העזר שלידו) */
+  readonly columns = computed(() => {
+    const cols = this.allColumns();
+    return cols.length > 2 ? cols.slice(0, -2) : cols;
+  });
   readonly totalRecords = computed(() => this.detail()?.totalRecords ?? 0);
   readonly totalValue = computed(() => this.detail()?.totalValue ?? null);
   // COUNT מזוהה לפי סוג החישוב עצמו (calcType); SignType נשמר כגיבוי בלבד

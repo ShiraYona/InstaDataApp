@@ -56,7 +56,7 @@ public class GetMetricDetailsQueryHandler(IApplicationDbContext context, ILogger
             SourceName = source.SourceName,
             CreatedDate = metric.CreatedDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             GroupFieldName = groupField?.FieldName,
-            GroupFieldLabel = groupField?.DisplayName ?? "מערכת",
+            GroupFieldLabel = "מערכת",
             SignType = metric.CalculationType?.SignType,
             CalcType = metric.CalculationType?.Value,
             ValueFieldName = sumField?.DisplayName ?? sumField?.FieldName

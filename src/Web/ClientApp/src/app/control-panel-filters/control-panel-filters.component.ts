@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
-import { DataCatalogClient } from '../web-api-client';
+import { DataDefinitionService } from '../shared/services/data-definition.service';
 import { DisplayLayoutService } from '../shared/services/display-layout.service';
 import { Router } from '@angular/router';
 
@@ -41,7 +41,7 @@ export class ControlPanelFiltersComponent implements OnInit {
   @Output() cardsPerRowChanged = new EventEmitter<number | null>();
   @Output() layoutManagementRequested = new EventEmitter<void>();
 
-  private readonly dataCatalogClient = inject(DataCatalogClient);
+  private readonly dataDefinitionService = inject(DataDefinitionService);
   private readonly layoutService = inject(DisplayLayoutService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
@@ -60,17 +60,18 @@ export class ControlPanelFiltersComponent implements OnInit {
     { label: '4 כרטיסים', value: 4 }
   ];
     ngOnInit(): void {
-    this.dataCatalogClient.getCalculationDays().subscribe({
-           next: days => {
-        this.periodOptions = [
-          ...days
-            .filter(d => d.value != null && d.name != null)
-            .map(d => ({ label: d.name!, value: d.value! }))
-        ];
-      },
-
-      error: () => { /* נשארת רק "כל התקופה" */ }
-    });
+    // אפשרויות "תקופת נתונים" — מהשרת, כולל "לפי מסנן הלוח" שאינו שורה בטבלה
+    this.dataDefinitionService
+      .getCalculationPeriods()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: options => {
+          this.periodOptions = options
+            .map(o => ({ label: o.label, value: Number(o.value) }))
+            .filter(o => Number.isFinite(o.value));
+        },
+        error: () => { /* הרשימה נשארת ריקה — הסינון עצמו ממשיך לעבוד */ }
+      });
 
     this.layoutService
       .loadCardsPerRow()
