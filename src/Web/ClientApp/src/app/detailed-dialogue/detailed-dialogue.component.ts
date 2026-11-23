@@ -166,6 +166,17 @@ export class DetailedDialogueComponent implements OnInit, OnChanges {
     return calc === 'COUNT';
   });
 
+    /** אין נתונים להצגה — לא נטענו רשומות, אין ערך, ואין קבוצות עם רשומות */
+  readonly noData = computed(() => {
+    const d = this.detail();
+    if (this.loading()) return false;
+    if ((d?.records?.length ?? 0) > 0) return false;
+    if ((d?.totalRecords ?? 0) > 0) return false;
+    const hasGroups = this.systems().some(g => (g.records ?? 0) > 0);
+    if (hasGroups) return false;
+    return true;
+  });
+
 readonly summary = computed(() => {
   const d = this.detail();
   const c = this.card;

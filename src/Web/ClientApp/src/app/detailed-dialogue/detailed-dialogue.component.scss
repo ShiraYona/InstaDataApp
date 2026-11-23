@@ -363,10 +363,12 @@ tbody tr.is-active td {
   position: fixed;
   inset: 0;
 background: #00000065;   /* ~22% אטימות – רואים את הקומפוננטה שמתחת */
-  display: grid;
-  place-items: start center;   /* מיושר למעלה, לא למרכז */
+  display: flex;
+  align-items: center;         /* מרכוז אנכי — החלון במרכז הדפדפן בכל גודל */
+  justify-content: center;     /* מרכוז אופקי */
   overflow: auto;              /* הגלילה תהיה של הרקע */
   padding: 22px;
+  box-sizing: border-box;
   z-index: 1000;
 }
 
@@ -375,10 +377,16 @@ background: #00000065;   /* ~22% אטימות – רואים את הקומפונ
   border-radius: 17px;
   padding: 24px 28px;
   width: min(100%, 1050px);
+  flex: 0 0 auto;              /* לא נמתח ולא מתכווץ — הגודל נשאר לפי התוכן/RTL */
   max-height: none;            /* מגביל רק דרך ה-backdrop */
   overflow: visible;
   box-shadow: 0 20px 70px #06102c66;
   box-sizing: border-box;
+}
+
+/* במסך נמוך מהחלון — מרכוז לפי margin אוטומטי, כדי שהגלילה תגיע לקצוות ולא תחתוך את הכותרת */
+.dialog-backdrop > .dd-modal {
+  margin: auto;
 }
 
 .dd-head {
