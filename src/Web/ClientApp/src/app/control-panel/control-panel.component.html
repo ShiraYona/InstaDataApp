@@ -27,12 +27,6 @@
                          (closed)="closeDetail()" />
 }
 
-<!-- דיאלוג יצירת נתון חדש — מצב יצירה (metric = null) -->
-<app-adding-new-data-entry
-  [(visible)]="newDataVisible"
-  (saved)="onNewDataSaved()" />
-
-
 <app-control-panel-filters
   [refreshing]="refreshing()"
   (filtersChanged)="onFiltersChanged($event)"

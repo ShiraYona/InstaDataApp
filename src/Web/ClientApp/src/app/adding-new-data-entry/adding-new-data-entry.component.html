@@ -5,20 +5,21 @@
     [resizable]="false"
     [focusOnShow]="false"
     [rtl]="true"
-    [showHeader]="true"
+    [showHeader]="false"
     [dismissableMask]="true"
     [styleClass]="'new-data-dialog'"
     [maskStyleClass]="'new-data-dialog-mask'"
     [style]="{ width: 'min(100%, 1000px)' }"
     (visibleChange)="visibleChange.emit($event)">
 
-    <ng-template pTemplate="header">
-        <div class="modal-head">
-            <strong>{{ dialogTitle }}</strong>
-            <!-- הכפתור בפינה השמאלית העליונה — מתחת ל-padding של הגוף וממורט לשוליו (CSS) -->
-            <button type="button" class="close" aria-label="סגירה" (click)="cancel()">×</button>
-        </div>
-    </ng-template>
+    <!-- הכותרת היא חלק מגוף הדיאלוג ולא headerTemplate: תבנית שנמסרת ל-p-dialog
+         מגיעה עם ההצהרה של הרכיב הזה, והדיאלוג (OnPush) לא מרנדר אותה מחדש בכל
+         שינוי מצב — כך היא נעלמה בעריכה. בגוף התוכן היא מתרעננת יחד עם הטופס. -->
+    <div class="modal-head" [class.headHidden]="!headerVisible">
+        <strong>{{ headerTitle }}</strong>
+        <!-- הכפתור בפינה השמאלית העליונה — מתחת ל-padding של הגוף וממורט לשוליו (CSS) -->
+        <button type="button" class="close" aria-label="סגירה" (click)="cancel()">×</button>
+    </div>
 
     <div class="modal-body">
         <form [formGroup]="form">

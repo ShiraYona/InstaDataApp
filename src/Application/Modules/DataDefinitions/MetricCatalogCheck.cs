@@ -113,7 +113,6 @@ public static class MetricCatalogCheck
     public static async Task<string?> ResolveDateRangeAsync(
         IApplicationDbContext context,
         string? requested,
-        string? requested,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(requested))

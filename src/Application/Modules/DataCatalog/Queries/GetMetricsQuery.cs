@@ -1,6 +1,5 @@
 using InstaDataApp.Application.Common.Interfaces;
 using InstaDataApp.Application.Modules.DataDefinitions;
-using InstaDataApp.Application.Modules.DataDefinitions;
 using InstaDataApp.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -69,7 +68,6 @@ public class GetMetricsQueryHandler : IRequestHandler<GetMetricsQuery, List<Metr
             .GroupBy(detail => detail.MetricID)
             .ToDictionary(group => group.Key, group => group.Select(detail => detail.FieldID).ToList());
 
-        // הנחת יסוד: העמודה שומרת מספר ימים (INT); null = "לפי מסנן הלוח"
         return rows
             .Select(row => new MetricListItemDto(
                 row.Metric.MetricID,
@@ -83,46 +81,38 @@ public class GetMetricsQueryHandler : IRequestHandler<GetMetricsQuery, List<Metr
                 row.Metric.IconCode,
                 row.Metric.IsActive,
                 detailFieldIdsByMetric.GetValueOrDefault(row.Metric.MetricID) ?? [],
-                ToDateRangeValue(row.Metric.DateRangeType)))
-               // ResolveDateRangeValue(row.Metric.DateRangeType, dateRangeValues),
-              //  row.Metric.RowVersion.Length == 0 ? null : Convert.ToBase64String(row.Metric.RowVersion),
-              //  row.Metric.FiltersJson))
+                ToDateRangeValue(row.Metric.DateRangeType),
+                ToRowVersion(row.Metric.RowVersion),
+                row.Metric.FiltersJson))
             .ToList();
     }
 
     /// <summary>
-    /// הטופס עובד עם ה-Value של התקופה ("30" / "7" / "90"). במסד נשמר ה-Name
-    /// ("30 ימים") או BOARD_FILTER, ולכן ממירים חזרה ל-Value.
-    /// ערך ריק או null פירושו "לפי מסנן הלוח"; ערך מספרי ישן מוחזר כמו שהוא.
+    /// התקופה כפי שהטופס שולח ומציג אותה (ה-Value של CTRL_CalculationDays — "30" / "7" / "90"),
+    /// או <c>DASHBOARD</c> עבור "לפי מסנן הלוח".
+    /// <para>
+    /// <c>null</c> = למדד הוגדר טווח תאריכים מפורש (DateRangeType ריק) — הטופס מזהה זאת
+    /// ומציג את שני שדות התאריך.
+    /// </para>
+    /// ערך ישן (BOARD_FILTER / MONTH / LAST_30_DAYS) מוחזר כמו שהוא כדי שעריכת נתון קיים לא תיכשל.
     /// </summary>
-    private static string ToDateRangeValue(string? stored)
-
-    //private static string? ResolveDateRangeValue(
-    //    string? stored,
-    //    IReadOnlyDictionary<string, string> dateRangeValues)
+    private static string? ToDateRangeValue(string? stored)
     {
-        return string.IsNullOrWhiteSpace(stored)
-            ? MetricConstants.DateRangeBoardFilter
+        if (string.IsNullOrWhiteSpace(stored))
+        {
+            return null;
+        }
+
+        // נתונים ותיקים שנשמרו כ-BOARD_FILTER מוצגים כ-DASHBOARD (אותו "לפי מסנן הלוח")
+        return MetricConstants.IsDashboard(stored)
+            ? MetricConstants.DateRangeDashboard
             : stored.Trim();
-       // if (string.IsNullOrWhiteSpace(stored))
-        //{
-        //    return null;
-       //}
-
-        // ערך ישן (BOARD_FILTER) מוחזר כ-DASHBOARD כדי שהטופס יבחר את אותה אפשרות
-      //  if (MetricConstants.IsDashboard(stored))
-       // {
-       //     return MetricConstants.DateRangeDashboard;
-      //  }
-
-       // if (dateRangeValues.TryGetValue(stored, out var value))
-       // {
-       //     return value;
-       // }
-
-       // var trimmed = stored.Trim();
-
-        // נתונים ישנים: "7" / "30" / "90" נשמרו כמספר, והם כבר ה-Value
-        //return int.TryParse(trimmed, out _) ? trimmed : null;
     }
+
+    /// <summary>
+    /// חתימת הגרסה כ-Base64 — הערך שנשלח חזרה כ-If-Match בעדכון.
+    /// עמודה ריקה (אין rowversion) מוחזרת כ-null, כלומר אין בדיקת התנגשות.
+    /// </summary>
+    private static string? ToRowVersion(byte[] rowVersion) =>
+        rowVersion.Length == 0 ? null : Convert.ToBase64String(rowVersion);
 }

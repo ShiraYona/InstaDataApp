@@ -5,7 +5,6 @@ import { AddingNewDataEntryComponent } from '../adding-new-data-entry/adding-new
 import { ControlPanelCubeComponent } from '../control-panel-cube/control-panel-cube.component';
 import { ControlPanelFiltersComponent, FilterState } from '../control-panel-filters/control-panel-filters.component';
 import { DetailedDialogueComponent } from '../detailed-dialogue/detailed-dialogue.component';
-import { AddingNewDataEntryComponent } from '../adding-new-data-entry/adding-new-data-entry.component';
 import { MetricCard } from '../shared/models/controlPanel/MetricCard';
 
 @Component({
@@ -88,38 +87,19 @@ export class ControlPanelComponent {
     this.detailCard.set(null);
   }
 
-  /** פתיחת הדיאלוג ליצירת נתון חדש */
-  openNewData(): void {
-    this.newDataVisible.set(true);
-  }
-
   /** לחיצה על "ריענון" — שליפה מחדש מהשרת של כל הכרטיסים, בלי לשנות תצוגה */
   onRefreshRequested(): void {
     this.refreshToken.update(value => value + 1);
   }
 
-  /** אחרי שמירה מוצלחת — הקובייה מרעננת את הנתונים שלה */
-  onNewDataSaved(): void {
+  /** פתיחת דיאלוג יצירת נתון חדש */
+  openNewDataDialog(): void {
+    this.newDataVisible.set(true);
+  }
+
+  /** אחרי שמירה מוצלחת — סגירת הדיאלוג ורענון הקובייה */
+  onDataSaved(_id: number): void {
+    this.newDataVisible.set(false);
     this.refreshToken.update(value => value + 1);
-  }
-
-  newDataVisible = false;
-
-  openNewDataDialog(): void {
-    this.newDataVisible = true;
-  }
-
-  onDataSaved(_id: number): void {
-    this.newDataVisible = false;
-  }
-
-  newDataVisible = false;
-
-  openNewDataDialog(): void {
-    this.newDataVisible = true;
-  }
-
-  onDataSaved(_id: number): void {
-    this.newDataVisible = false;
   }
 }

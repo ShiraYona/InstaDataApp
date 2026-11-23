@@ -23,12 +23,6 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<CtrlTaskHistory> CtrlTaskHistories => Set<CtrlTaskHistory>();
     public DbSet<CtrlTaskView> CtrlTaskViews => Set<CtrlTaskView>();
 
-    public DbSet<CtrlIcon> CtrlIcons => Set<CtrlIcon>();
-
-    public DbSet<DataSource> DataSources => Set<DataSource>();
-    public DbSet<DataSourceField> DataSourceFields => Set<DataSourceField>();
-    public DbSet<Metric> Metrics => Set<Metric>();
-    public DbSet<MetricDetailField> MetricDetailFields => Set<MetricDetailField>();
     public DbSet<CtrlFilterOperator> FilterOperators => Set<CtrlFilterOperator>();
 
     public DbSet<CardIcon> CardIcons => Set<CardIcon>();

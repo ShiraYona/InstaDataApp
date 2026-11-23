@@ -78,6 +78,16 @@
   background: #fff;
   border-bottom: 1px solid #e7edf5;
 
+  // הדיאלוג מגלגל את התוכן שלו — הכותרת נשארת בראש הגלילה
+  position: sticky;
+  top: 0;
+  z-index: 1;
+
+  // יציאה מהדיאלוג: הכותרת יורדת יחד עם תוכן הדיאלוג
+  &.headHidden {
+    display: none;
+  }
+
   // גריד, לא flex — הקיצור flex: 0 1 auto (base-size 0) היה מוחק את הטקסט
   strong {
     grid-column: 2;

@@ -118,6 +118,12 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
   @Input() visible = false;
   @Output() visibleChange = new EventEmitter<boolean>();
 
+  /** הכותרת "יצירת נתון חדש" / "עריכת נתון קיים" — מוצגת בראש גוף הדיאלוג */
+  headerTitle = '';
+
+  /** האם הכותרת מוצגת — נכבה יחד עם הדיאלוג בזמן הסגירה */
+  headerVisible = false;
+
 
   @Input() metric: MetricListItemDto | null = null;
 
@@ -487,13 +493,15 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
     if (changes['visible']?.currentValue === true) {
       this.resetForm();
       this.startMode(this.metric);
-      return;
-    }
-
-    // הנתון שנערך הוחלף בזמן שהדיאלוג פתוח — ממלאים מחדש
-    if (changes['metric']) {
+    } else if (changes['metric']) {
+      // הנתון שנערך הוחלף בזמן שהדיאלוג פתוח — ממלאים מחדש
       this.setEditingMetric(this.metric);
       this.tryApplyEditValues();
+    }
+
+    // בכל מקרה — הכותרת שמוצגת בתוך הדיאלוג נגזרת מן המצב שקבענו עכשיו
+    if (changes['visible'] || changes['metric']) {
+      this.publishHeader();
     }
   }
 
@@ -506,6 +514,12 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
     this.editingRowVersion = metric?.rowVersion ?? null;
     this.editingFiltersJson = metric?.filtersJson ?? null;
     this.pendingEditMetric = this.isEditing ? metric : null;
+  }
+
+  /** מעדכן את ערכי הכותרת שמזינים את ה-contentTemplate של הדיאלוג */
+  private publishHeader(): void {
+    this.headerTitle = this.dialogTitle;
+    this.headerVisible = this.visible;
   }
 
   /** קובע את מצב הפתיחה: יצירת נתון חדש, או עריכת נתון שנבחר */

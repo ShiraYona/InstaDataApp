@@ -22,8 +22,6 @@ public interface IApplicationDbContext
     DbSet<CtrlTaskHistory> CtrlTaskHistories { get; }
     DbSet<CtrlTaskView> CtrlTaskViews { get; }
 
-    DbSet<CtrlIcon> CtrlIcons { get; }
-
     DbSet<UserDisplaySettings> UserDisplaySettings { get; }
     DbSet<UserMetricSetting> UserMetricSettings { get; }
 
