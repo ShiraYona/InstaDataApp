@@ -16,12 +16,11 @@ export type CalculationType = 'COUNT' | 'SUM';
 export interface LookupOption {
   value: string;
   label: string;
-  /**
-   * קוד ה-PrimeIcons שמוצג ליד התווית (כמו "pi pi-chart-line").
-   * אופציונלי: מגיע עבור סמלי הכרטיס בלבד.
-   */
   icon?: string;
+  /** סימון מפורש מהשרת: האם סוג החישוב הזה הוא "סכימה" */
+  isSum?: boolean;
 }
+
 export interface CardIconOption {
   id: number;
   label: string;

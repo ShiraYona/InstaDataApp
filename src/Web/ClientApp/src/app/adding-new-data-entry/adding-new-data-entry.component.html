@@ -259,17 +259,9 @@
         </form>
 
 <div id="preview">
-  @if (previewResult; as result) {
-    <div class="panel">
-      <strong>תצוגה מקדימה</strong>
-      <p>
-        {{ draftName || 'ללא שם' }}
-        · סה"כ {{ result.total }}
-        · מקור: {{ selectedSource?.label ?? 'ללא' }}
-      </p>
-      <app-preview-cube [card]="previewCard" [columns]="1" />
-    </div>
-  }
+@if (previewCard; as card) {
+  <app-preview-cube [card]="card" />
+}
 </div>
     </div>
 </p-dialog>

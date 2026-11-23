@@ -1745,6 +1745,7 @@ export class LookupOptionDto implements ILookupOptionDto {
     value?: string;
     label?: string;
     icon?: string | undefined;
+    isSum?: boolean;
 
     constructor(data?: ILookupOptionDto) {
         if (data) {
@@ -1760,6 +1761,7 @@ export class LookupOptionDto implements ILookupOptionDto {
             this.value = _data["value"];
             this.label = _data["label"];
             this.icon = _data["icon"];
+            this.isSum = _data["isSum"];
         }
     }
 
@@ -1775,6 +1777,7 @@ export class LookupOptionDto implements ILookupOptionDto {
         data["value"] = this.value;
         data["label"] = this.label;
         data["icon"] = this.icon;
+        data["isSum"] = this.isSum;
         return data;
     }
 }
@@ -1783,6 +1786,7 @@ export interface ILookupOptionDto {
     value?: string;
     label?: string;
     icon?: string | undefined;
+    isSum?: boolean;
 }
 
 export class DataSourceDto implements IDataSourceDto {

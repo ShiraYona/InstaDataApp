@@ -1,65 +1,11 @@
-@if (metric; as m) {
-  <div class="cube-cards" dir="rtl" [style.--cols]="columns + ''">
-    <article class="metric">
-      @if (m.isError) {
-        <div class="card-error">
-          <span>⚠ שגיאה בחישוב הנתון</span>
-        </div>
-      }
-
-      <div class="mh">
-        <div class="mname">{{ m.title }}</div>
-        <div class="micon">
-          <i [ngClass]="m.icon || 'pi pi-chart-line'"></i>
-        </div>
-      </div>
-
-      @if (m.groupValue !== undefined) {
-        <div class="mgroup">
-          <span class="mgroup-label">{{ m.groupFieldLabel ?? 'קבוצה' }}</span>
-          <span class="mgroup-value">{{ m.groupValue || '—' }}</span>
-        </div>
-      }
-
-      <div>
-        <div class="value">
-          {{ m.value }}
-          @if (m.unit) { <span class="unit">{{ m.unit }}</span> }
-          @if (m.signType) { <span class="sign">{{ m.signType }}</span> }
-        </div>
-
-        <div class="mf">
-          <span>מקור : {{ m.source }}</span>
-        </div>
-      </div>
-
-      <div class="minirow">
-        @switch (m.status) {
-          @case ('ok') { <span class="chip ok">ללא חריגה</span> }
-          @case ('warn') { <span class="chip warn">⚠ חריגה קלה</span> }
-          @default { <span class="chip bad">⚠ חריגה מסף</span> }
-        }
-        @if (m.updated) {
-          <span class="chip ok">● מעודכן</span>
-        } @else {
-          <span class="chip warn">◷ מידע ישן</span>
-        }
-      </div>
-
-      <div class="minirow">
-        @if (m.hasComparison === false) {
-          <span class="micro">ללא נתון להשוואה</span>
-        } @else {
-          <span class="micro" [class.trendup]="m.trendPositive" [class.trenddown]="!m.trendPositive">
-            {{ m.trendPositive ? '▲' : '▼' }} {{ m.trend | number: '1.1-1' }}% מול תקופה קודמת
-          </span>
-        }
-        @if (m.targetText) {
-          <span class="micro">{{ m.targetText }}</span>
-        }
-      </div>
-    </article>
-  </div>
-} @else {
-  <p class="empty-cards">אין נתון לתצוגה מקדימה</p>
+@if (card; as c) {
+  <p-card styleClass="preview-panel" dir="rtl">
+    <strong class="block mb-2 text-color">תצוגה מקדימה</strong>
+    <p class="m-0 text-color-secondary line-height-3">
+      {{ c.title || 'ללא שם' }} ·
+      @if (c.calcType && c.calcType.trim().toUpperCase() === 'SUM') { {{ c.value }} {{ c.signType }}{{ signFallback }} }
+      @else { {{ c.value }} }
+      · מקור: {{ c.source || 'ללא' }}
+    </p>
+  </p-card>
 }

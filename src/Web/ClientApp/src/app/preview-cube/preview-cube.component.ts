@@ -1,5 +1,9 @@
-import { DecimalPipe, NgClass } from '@angular/common';
-import { Component, Input, inject } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
+import { Component, Input } from '@angular/core';
+import { CardModule } from 'primeng/card';
+import { TagModule } from 'primeng/tag';
+import { ButtonModule } from 'primeng/button';
+import { ChipModule } from 'primeng/chip';
 import { MetricCard } from '../shared/models/controlPanel/MetricCard';
 import { CubeMetric, CubeStatus } from '../shared/models/controlPanel/CubeMetric';
 
@@ -10,10 +14,11 @@ import { CubeMetric, CubeStatus } from '../shared/models/controlPanel/CubeMetric
 @Component({
   selector: 'app-preview-cube',
   standalone: true,
-  imports: [DecimalPipe, NgClass],
+  imports: [DecimalPipe, CardModule, TagModule, ButtonModule, ChipModule],
   templateUrl: './preview-cube.component.html',
   styleUrl: './preview-cube.component.scss'
 })
+
 export class PreviewCubeComponent {
   /** הכרטיס316 שמוצג — ההורה (adding-new-data-entry) בונה אותו */
   @Input() card: MetricCard | null = null;
@@ -24,6 +29,22 @@ export class PreviewCubeComponent {
   /** המרה לפורמט התצוגה של הקובייה */
   get metric(): CubeMetric | null {
     return this.card ? this.toCubeMetric(this.card) : null;
+  }
+  /** חומרת התג לפי המצב — הצבעים מגיעים מה-preset של PrimeNG */
+  get statusSeverity(): 'success' | 'warn' | 'danger' {
+    return this.metric?.status === 'warn' ? 'warn'
+         : this.metric?.status === 'danger' ? 'danger'
+         : 'success';
+  }
+
+  get statusLabel(): string {
+    return this.metric?.status === 'warn' ? 'חריגה קלה'
+         : this.metric?.status === 'danger' ? 'חריגה מסף'
+         : 'ללא חריגה';
+  }
+  /** סימן ברירת מחדל כשהשרת לא מחזיר SignType — כמו money() בדמו */
+  get signFallback(): string {
+    return this.card?.signType ?? '₪';
   }
 
   private toCubeMetric(row: MetricCard): CubeMetric {

@@ -46,9 +46,9 @@ function isSumCalculationType(calculationTypeId: CalculationTypeId | null, optio
   if (calculationTypeId === null) {
     return false;
   }
-  const label = options.find(option => Number(option.value) === calculationTypeId)?.label ?? '';
-  return label.includes(SUM_LABEL_MARKER);
+  return options.find(option => Number(option.value) === calculationTypeId)?.isSum ?? false;
 }
+
 
 
 const LEGACY_LOOKUP_LABELS: Record<string, string> = {
@@ -381,7 +381,8 @@ get previewCard(): MetricCard {
         next: types => {
           this.calculationTypeOptions = types;
           // אין ברירת מחדל קשיחה: נבחרת שורת הסכימה אם קיימת, אחרת הראשונה ברשימה
-          const sum = types.find(option => option.label.includes(SUM_LABEL_MARKER));
+          // const sum = types.find(option => option.label.includes(SUM_LABEL_MARKER));
+        const sum = types.find(option => option.isSum);
           this.applyCalculationType((sum ?? types[0])?.value ?? null);
           this.tryApplyEditValues();
         },

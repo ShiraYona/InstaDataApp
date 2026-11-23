@@ -45,6 +45,8 @@ public class LookupOptionDto
 
     /// <summary>קוד אייקון לתצוגה (PrimeIcons) — ריק כשאין אייקון</summary>
     public string? Icon { get; init; }
+    public bool IsSum { get; init; }
+
 }
 
 /// <summary>שדה של מקור נתונים — כפי שמוצג בטופס</summary>

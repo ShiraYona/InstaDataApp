@@ -2,11 +2,6 @@ using InstaDataApp.Application.Common.Interfaces;
 
 namespace InstaDataApp.Application.Modules.DataDefinitions;
 
-/// <summary>
-/// סמלי הכרטיס — נקראים מ-CTRL_ICON (ID / Name / Value / IconClass).
-/// ה-Name הוא מה שנשמר ב-CTRL_Metrics.IconCode;
-/// ה-Value הוא המילה המוצגת, וה-IconClass הוא האייקון שלצידה.
-/// </summary>
 public record GetCardIconsQuery : IRequest<List<LookupOptionDto>>;
 
 public class GetCardIconsQueryHandler : IRequestHandler<GetCardIconsQuery, List<LookupOptionDto>>
@@ -29,14 +24,6 @@ public class GetCardIconsQueryHandler : IRequestHandler<GetCardIconsQuery, List<
     }
 }
 
-/// <summary>
-/// מספר הימים לחישוב — נקראים מ-CTRL_CalculationDays.
-/// ה-Name הוא הטקסט שמוצג ("30 ימים"), וה-Value הוא מספר הימים (INT).
-/// הטופס עובד עם ה-Value, ואילו ב-CTRL_Metrics.DateRangeType נשמר ה-Name —
-/// ההמרה בין השניים נעשית ב-ResolveDateRangeAsync.
-/// "לפי מסנן הלוח" אינו שורה בטבלה (אין לו מספר ימים) — הוא מתווסף כאן בקוד
-/// בראש הרשימה, והוא ברירת המחדל בטופס.
-/// </summary>
 public record GetDateRangeTypesQuery : IRequest<List<LookupOptionDto>>;
 
 public class GetDateRangeTypesQueryHandler : IRequestHandler<GetDateRangeTypesQuery, List<LookupOptionDto>>
@@ -68,10 +55,6 @@ public class GetDateRangeTypesQueryHandler : IRequestHandler<GetDateRangeTypesQu
     }
 }
 
-/// <summary>
-/// סוגי החישוב — נקראים מ-CTRL_CalculationTypes.
-/// הערך בטופס הוא ה-ID (מפתח לטבלה), כי הוא זה שנשמר ב-CTRL_Metrics.CalculationTypeID.
-/// </summary>
 public record GetCalculationTypesQuery : IRequest<List<LookupOptionDto>>;
 
 public class GetCalculationTypesQueryHandler : IRequestHandler<GetCalculationTypesQuery, List<LookupOptionDto>>
@@ -86,22 +69,20 @@ public class GetCalculationTypesQueryHandler : IRequestHandler<GetCalculationTyp
     {
         var types = await _context.CalculationTypes
             .OrderBy(type => type.Id)
-            .Select(type => new LookupOptionDto
-            {
-                Value = type.Id.ToString(),
-                Label = type.Name + " (" + type.Value + ")"
-            })
+.Select(type => new LookupOptionDto
+{
+    Value = type.Id.ToString(),
+    Label = type.Name + " (" + type.Value + ")",
+    // אותו זיהוי של CalculationTypeMap.ToCode, כדי שהלקוח לא יפענח תוויות
+    IsSum = type.Name.Trim().StartsWith("סכימ", StringComparison.Ordinal)
+            || type.Value.Trim().Equals("SUM", StringComparison.OrdinalIgnoreCase)
+})
             .ToListAsync(cancellationToken);
 
         return types;
     }
 }
 
-/// <summary>
-/// המרה בין הקטלוג (Name בעברית או באנגלית) לבין הקוד הקנוני (COUNT / SUM / DIRECT).
-/// הקוד אינו נשמר במדד — נשמר ה-ID — אך הוא משמש לזיהוי סוג החישוב בכל מקום שבו
-/// צריך לדעת אם מדובר בסכימה.
-/// </summary>
 public static class CalculationTypeMap
 {
     /// <summary>הופך את ה-Name מהקטלוג לקוד קנוני, לפי שם או לפי תווית</summary>
