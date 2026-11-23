@@ -43,7 +43,7 @@ public class UpdateUserMetricSettingsCommandHandler(
         // 2. אימות מול הקטלוג: כל MetricId חייב להיות קיים ופעיל.
         var requestedIds = request.Items.Select(x => x.MetricId).ToList();
 
-        var validIds = await db.Metrics
+        var validIds = await db.CtrlMetrics
             .AsNoTracking()
             .Where(m => m.IsActive && requestedIds.Contains(m.MetricID))
             .Select(m => m.MetricID)

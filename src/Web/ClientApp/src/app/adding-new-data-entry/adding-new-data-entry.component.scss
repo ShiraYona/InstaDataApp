@@ -25,57 +25,83 @@
 }
 
 
+// --- מבנה הדיאלוג ---
 .new-data-dialog {
-  // הדיאלוג נפרס לגובה התוכן; אם הוא גבוה מהמסך — נגלל רק הוא
   align-items: flex-start;
-  overflow-y: auto;
+  justify-content: center;
+  padding: 16px;
+  overflow: hidden;
 }
 
 :host ::ng-deep .new-data-dialog.p-dialog {
   background: #fff;
   border: 0;
   border-radius: 14px;
-  width: min(100%, 1000px);
-  overflow: visible;
+  width: min(100%, 1080px);
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   box-shadow: 0 20px 70px #06102c66;
+
+  .p-dialog-header {
+    padding: 0;
+    background: #fff;
+    flex-shrink: 0;
+  }
 
   .p-dialog-content {
     padding: 0;
     background: #fff;
-    overflow: visible;
     border-radius: 14px;
+    // הגלילה היחידה — גוף הדיאלוג בלבד
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-padding-bottom: 8px;
   }
 
- 
   .p-dialog-close-button {
     display: none;
   }
 }
 
-
 .modal-head {
-  // display: flex;
-  // align-items: center;
-  // justify-content: space-between;
-  // padding: 24px 28px;
-  // border-bottom: 1px solid #e7edf5;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+  // רווח שווה מהשוליים בשני הצדדים — ה-X באותו מרחק מהקצה שהכותרת נמצאת ממנו
+  padding: 24px 16px;
+  background: #fff;
+  border-bottom: 1px solid #e7edf5;
 
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 24px 28px;
-    border-bottom: 1px solid #e7edf5;
+  // הדיאלוג מגלגל את התוכן שלו — הכותרת נשארת בראש הגלילה
+  position: sticky;
+  top: 0;
+  z-index: 1;
 
+  // יציאה מהדיאלוג: הכותרת יורדת יחד עם תוכן הדיאלוג
+  &.headHidden {
+    display: none;
+  }
 
+  // גריד, לא flex — הקיצור flex: 0 1 auto (base-size 0) היה מוחק את הטקסט
   strong {
+    grid-column: 2;
+    min-width: 0;
+    text-align: right;
     font-size: 18px;
     font-weight: 700;
     color: #19304d;
   }
 }
-
-
 .close {
+  grid-column: 3;
+  justify-self: start;
+  margin: 0;
   border: 0;
   background: #f0f3f8;
   color: #48617f;
@@ -137,6 +163,92 @@
 .source-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+}
+
+// תג סוג המקור — "טבלה · ROWS" / "פרוצדורה · SCALAR"
+.source-badge {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #eef4fc;
+  border: 1px solid #d7e4f5;
+  color: #2f5d9e;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+// כותרת מקטע פנימית (למשל "תנאי סינון")
+.fieldset__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #33415c;
+  margin-bottom: 10px;
+}
+
+// --- תנאי סינון ---
+.filter-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-group {
+  border-inline-start: 2px dashed #d4dfeb;
+  padding-inline-start: 12px;
+  margin-inline-start: 4px;
+
+  & + & {
+    margin-top: 10px;
+  }
+}
+
+// קבוצת השורש אינה מקוננת — בלי הקו המקווקו
+.fieldset > .filter-group {
+  border-inline-start: 0;
+  padding-inline-start: 0;
+  margin-inline-start: 0;
+}
+
+.filter-group__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+
+  // האופרטור (AND / OR) — רוחב קבוע כדי שהכפתורים לא "יקפצו"
+  p-select {
+    width: 130px;
+  }
+}
+
+.filter-condition {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.1fr) minmax(0, 1.6fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+
+  p-select,
+  p-multiSelect,
+  p-datepicker,
+  input {
+    width: 100%;
+  }
+
+  // כפתור ההסרה — צר, לא מותח את העמודה
+  p-button {
+    justify-self: start;
+  }
+
+  // "אין צורך בערך" — ממלא את מקום רכיב הערך
+  &__placeholder {
+    font-size: 12px;
+    color: #8a97ab;
+  }
 }
 
 .fieldset {
@@ -361,9 +473,6 @@
   }
 }
 
-// --- .toggle ---
-// יושב במקטע נפרד עם קו עליון — ולכן אינו צריך מרווח עליון משלו.
-// הכרטיס הוא <label>: הטקסט מימין והריבוע משמאלו (row-reverse ב-RTL).
 .toggle {
   display: flex;
   align-items: center;
@@ -378,15 +487,12 @@
     user-select: none;
   }
 
-  // אותו .check-item__input, אך עם מרווח מתאים לשורה
   .check-item__input {
     width: 18px;
     height: 18px;
   }
 }
 
-// --- .actionrow ---
-// שורה אחת: הכפתורים בצד ימין (תחילת השורה ב-RTL) והצ'קבוקס בצד שמאל
 .actionrow {
   display: flex;
   align-items: center;
@@ -395,8 +501,6 @@
   flex-wrap: wrap;
   margin-top: 22px;
 
-  // הטקסט עצמו מודגש — ה-label של p-button הוא span פנימי,
-  // ולכן font-weight על הכפתור לא מספיק
   ::ng-deep .p-button-label {
     font-weight: 700;
   }
@@ -440,8 +544,6 @@
   }
 }
 
-// --- פאנל ---
-// --- .panel ---
 .panel {
   background: #fff;
   border: 1px solid #e2eaf4;
@@ -484,7 +586,8 @@
 
 @media (max-width: 760px) {
   .formgrid,
-  .source-row {
+  .source-row,
+  .filter-condition {
     grid-template-columns: 1fr;
   }
 
@@ -518,7 +621,6 @@
     gap: 0;
   }
 
-  // שורה ברשימה — גובה אחיד, יישור לימין, בלי שבירת שורה
   .p-select-option {
     display: flex;
     align-items: center;
@@ -535,7 +637,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
 
-    // Aura כבר צובעת את הנבחר ואת ה-focus — מחזירים רק גוונים תואמים לדיאלוג
     &.p-select-option-selected,
     &.p-select-option-selected.p-focus {
       background: #eaf1fb;

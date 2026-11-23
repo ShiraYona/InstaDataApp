@@ -1,4 +1,4 @@
-using InstaDataApp.Application.Common.Interfaces;
+﻿using InstaDataApp.Application.Common.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,7 +18,7 @@ public class GetUserMetricSettingsQueryHandler(IApplicationDbContext db)
         GetUserMetricSettingsQuery request, CancellationToken ct)
     {
         // 1. כל הנתונים הפעילים — עדיין לא ממוינים.
-        var metrics = await db.Metrics
+        var metrics = await db.CtrlMetrics
             .AsNoTracking()
             .Where(m => m.IsActive)
             .Select(m => new

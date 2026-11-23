@@ -43,7 +43,6 @@ export class NotificationService {
     this.show('error', summary, detail);
   }
   /**
-   
    * @param error השגיאה שנתפסה ב-catchError
    * @param fallback נוסח ברירת מחדל כשאין הודעת שגיאה מהשרת
    */
