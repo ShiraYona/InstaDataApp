@@ -97,7 +97,7 @@ export interface CommentEntry {
   CreatedDate: string;
 }
 
-/** אפשרות בתיבת בחירה; value=null מסמן את שורת "הכול". */
+/** אפשרות בתיבת בחירה; value=null מסמן את שורת "הכל". */
 interface SelectOption {
   value: string | null;
   label: string;
@@ -250,11 +250,11 @@ const PERIODS = [7, 30, 90];
 /** גודל מנה בטעינה הדרגתית (7.3.6.1–3). */
 const PAGE_SIZE = 20;
 
-/** מוסיף בראש הרשימה את שורת "הכול" (ערך null) — ברירת המחדל של כל מסנן. */
+/** מוסיף בראש הרשימה את שורת "הכל" (ערך null) — ברירת המחדל של כל מסנן. */
 function withAllOption(
   options: readonly { value: string; label: string }[],
 ): SelectOption[] {
-  return [{ value: null, label: 'הכול' }, ...options];
+  return [{ value: null, label: 'הכל' }, ...options];
 }
 
 /** הרוחב המינימלי של רשימת אפשרויות פתוחה — קטן ממנו הטקסט נחתך. */
@@ -841,7 +841,7 @@ export class TasksControlComponent implements OnInit, OnDestroy {
       .map((p) => ({ value: p.id, label: p.name }));
   }
 
-  /* רשימות האפשרויות של תיבות הבחירה (p-select) — כוללות תמיד שורת "הכול" */
+  /* רשימות האפשרויות של תיבות הבחירה (p-select) — כוללות תמיד שורת "הכל" */
 
   /** תצוגות ההרשאה — התווית של "עובד" כוללת את שם המשתמש הנוכחי. */
   roleSelectOptions(): { value: Role; label: string }[] {
@@ -859,8 +859,8 @@ export class TasksControlComponent implements OnInit, OnDestroy {
 
   /**
    * אפשרויות רב-בחירה (סטטוס / עדיפות / מקור / מצב טיפול).
-   * בראש הרשימה עומדת שורת "הכול" (ערך null): בחירתה מחזירה את המסנן
-   * למצבו ההתחלתי, ולכן הכפתור מציג תמיד "הכול" כברירת מחדל.
+   * בראש הרשימה עומדת שורת "הכל" (ערך null): בחירתה מחזירה את המסנן
+   * למצבו ההתחלתי, ולכן הכפתור מציג תמיד "הכל" כברירת מחדל.
    */
   statusSelectOptions(): SelectOption[] {
     return withAllOption(this.statusOptions);
@@ -877,12 +877,12 @@ export class TasksControlComponent implements OnInit, OnDestroy {
 
   /** אפשרויות "צוות מטפל" — בחירת צוות נוסף על הקיים. */
   teamSelectOptions(): { value: number | null; label: string }[] {
-    return [{ value: null, label: 'הכול' }, ...this.teamFilterOptions()];
+    return [{ value: null, label: 'הכל' }, ...this.teamFilterOptions()];
   }
 
   /** אפשרויות "עובד אחראי" — בחירת עובד נוסף על הקיים. */
   workerSelectOptions(): { value: string | null; label: string }[] {
-    return [{ value: null, label: 'הכול' }, ...this.workerFilterOptions()];
+    return [{ value: null, label: 'הכל' }, ...this.workerFilterOptions()];
   }
 
   /* ===================== רשימה ומדדים (מהשרת) ===================== */
@@ -951,7 +951,7 @@ export class TasksControlComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * סימון תיבת הבחירה במסנן מרובה-ערכים. "הכול" מסומן כשאין בחירה,
+   * סימון תיבת הבחירה במסנן מרובה-ערכים. "הכל" מסומן כשאין בחירה,
    * וערך רגיל — כשהוא נמצא ברשימת המסנן (ערכים ריקים ו-null אינם נחשבים).
    */
   isOptionChecked(item: unknown, values: readonly string[]): boolean {
@@ -971,10 +971,10 @@ export class TasksControlComponent implements OnInit, OnDestroy {
     return value == null || value === '' ? null : String(value);
   }
 
-  /** האם השורה ברשימה היא "הכול" (ערך null) — שורת ברירת המחדל. */
+  /** האם השורה ברשימה היא "הכל" (ערך null) — שורת ברירת המחדל. */
   isAllItem(item: unknown): boolean {
     // PrimeNG מעביר לתבנית לעיתים את האובייקט עצמו ולעיתים את הערך בלבד —
-    // null, מחרוזת ריקה ופרמטר חסר נחשבים כולם "הכול".
+    // null, מחרוזת ריקה ופרמטר חסר נחשבים כולם "הכל".
     if (item === null || item === undefined) {
       return true;
     }
@@ -985,7 +985,7 @@ export class TasksControlComponent implements OnInit, OnDestroy {
     return value == null || value === '';
   }
 
-  /** סימון תיבת הבחירה בתיבת בחירה יחידה, כולל שורת "הכול" (ערך ריק). */
+  /** סימון תיבת הבחירה בתיבת בחירה יחידה, כולל שורת "הכל" (ערך ריק). */
   isSingleChecked(item: unknown, current: string): boolean {
     return this.isAllItem(item) ? !current : this.optionValueOf(item) === current;
   }
@@ -1010,7 +1010,7 @@ export class TasksControlComponent implements OnInit, OnDestroy {
 
   /**
    * מסננים מרובי־ערכים (סטטוס / עדיפות / מקור / מצב טיפול) — מערך מחרוזות.
-   * ערך null מגיע משורת "הכול" ומשמעותו: ביטול המסנן.
+   * ערך null מגיע משורת "הכל" ומשמעותו: ביטול המסנן.
    */
   setMultiFilter(
     key: 'status' | 'priority' | 'source' | 'state',
@@ -1047,25 +1047,25 @@ export class TasksControlComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** התווית של תיבת בחירה יחידה — "הכול" כברירת מחדל (ערך ריק). */
+  /** התווית של תיבת בחירה יחידה — "הכל" כברירת מחדל (ערך ריק). */
   singleLabel(value: string, options: readonly { value: unknown; label: string }[]): string {
     if (!value) {
-      return 'הכול';
+      return 'הכל';
     }
     return options.find((o) => String(o.value) === value)?.label ?? value;
   }
 
-  /** טקסט תצוגה על כפתור המסנן: "הכול" כשאין בחירה, אחרת התוויות הנבחרות. */
+  /** טקסט תצוגה על כפתור המסנן: "הכל" כשאין בחירה, אחרת התוויות הנבחרות. */
   filterSummary(values: readonly string[], labels: Record<string, string>): string {
     if (!values.length) {
-      return 'הכול';
+      return 'הכל';
     }
     return values.map((v) => labels[v] ?? v).join(', ');
   }
 
   /** מסנני בחירה יחידה (צוות / עובד / טווח תאריכים) — מחרוזת או תאריך. */
   setFilter(key: 'team' | 'worker' | 'dueFrom' | 'dueTo', value: string | number | null): void {
-    // "הכול" מגיע כ-null מתיבת הבחירה — נשמור מחרוזת ריקה כמו קודם.
+    // "הכל" מגיע כ-null מתיבת הבחירה — נשמור מחרוזת ריקה כמו קודם.
     this.filters.update((f) => ({ ...f, [key]: value == null ? '' : String(value) }));
     this.loaded.set(PAGE_SIZE);
   }
