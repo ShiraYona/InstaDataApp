@@ -150,16 +150,28 @@ export class DetailedDialogueComponent implements OnInit, OnChanges {
 
  // טבלת הקבוצות מוצגת רק כשיש שדה קיבוץ — בהיעדרו אינה מוצגת כלל
  readonly hasGrouping = computed(() => this.hasGroupField());
-  /** כל העמודות שהשרת החזיר — הבסיס לייצוא (שם נשארות כל העמודות) */
-  private readonly allColumns = computed(() =>
-    (this.detail()?.columns ?? []).map(c => ({ key: c.fieldName, label: c.label, dataType: c.dataType }))
-  );
+private readonly allColumns = computed(() =>
+  (this.detail()?.columns ?? []).map(c => ({
+    key: c.fieldName,
+    label: c.label,
+    dataType: c.dataType,
+    isHidden: c.isHidden ?? false    // ← זה החדש
+  }))
+);
 
-  /** לתצוגה מוסרים לכל היותר שתי העמודות האחרונות (התאריך ועמודת העזר שלידו) */
-  readonly columns = computed(() => {
-    const cols = this.allColumns();
-    return cols.length > 2 ? cols.slice(0, -2) : cols;
-  });
+/** מזהי העמודות שהוסתרו מהתצוגה — לפי הזהות שהנתון מגדיר, ולא לפי מיקומן */
+private readonly hiddenColumns = computed<Set<string>>(() => {
+  const d = this.detail();
+  const names = [d?.groupFieldName, d?.valueFieldName]
+    .filter((n): n is string => !!n && n.trim() !== '');
+  return new Set(names.map(n => n.toLowerCase()));
+});
+
+/** לתצוגה מוסרים השדות שהנתון לא מגדיר כעמודות מערכת/סכום */
+readonly columns = computed(() =>
+  this.allColumns().filter(c => !this.hiddenColumns().has(c.key.toLowerCase()))
+);
+
   readonly totalRecords = computed(() => this.detail()?.totalRecords ?? 0);
   readonly totalValue = computed(() => this.detail()?.totalValue ?? null);
   // COUNT מזוהה לפי סוג החישוב עצמו (calcType); SignType נשמר כגיבוי בלבד

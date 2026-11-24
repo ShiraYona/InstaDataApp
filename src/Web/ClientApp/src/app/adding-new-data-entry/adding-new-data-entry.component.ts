@@ -166,6 +166,10 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
   get isEditing(): boolean {
     return this.editingMetricId !== null;
   }
+  /** הסתרת התצוגה המקדימה — מחזיר את הדיאלוג למצב "לפני לחיצה" */
+  clearPreview(): void {
+    this.previewResult = null;
+  }
 
   /** כותרת הדיאלוג — משתנה לפי המצב */
   get dialogTitle(): string {
@@ -219,12 +223,19 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
 /** כרטיס התצוגה המקדימה — בנוי מערכי הטופס */
 get previewCard(): MetricCard {
   const icon = this.cardIcons.find(o => o.value === this.form.controls.cardSourceId.value)?.icon ?? '';
+  const typeId = this.form.controls.calculationTypeId.value;
+  
   return {
     key: 'preview',
     title: this.draftName || 'ללא שם',
     icon,
     value: String(this.previewResult?.total ?? 0),
     source: this.selectedSource?.label ?? '',
+    // אותו זיהוי SUM של buildDraft — כדי שלא יהיו שני כללים שונים
+    calcType: isSumCalculationType(typeId, this.calculationTypeOptions) ? 'SUM' : 'COUNT',
+    // הסימן מהתווית של סוג החישוב: "סכימת ערכי שדה (SUM  )" → לא מספיק.
+    // הכי בטוח — לפי המצב, כמו שדה sumField
+    signType: isSumCalculationType(typeId, this.calculationTypeOptions) ? '₪' : '',
     hasComparison: false,
     status: 'ok',
     updated: true

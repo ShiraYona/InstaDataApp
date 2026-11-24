@@ -59,7 +59,7 @@ public class GetMetricDetailsQueryHandler(IApplicationDbContext context, ILogger
             GroupFieldLabel = "מערכת",
             SignType = metric.CalculationType?.SignType,
             CalcType = metric.CalculationType?.Value,
-            ValueFieldName = sumField?.DisplayName ?? sumField?.FieldName
+ValueFieldName = sumField?.FieldName,
         };
 
         var connection = await OpenAsync(ct);
@@ -159,12 +159,13 @@ public class GetMetricDetailsQueryHandler(IApplicationDbContext context, ILogger
 
         foreach (var f in visible) if (!ordered.Contains(f)) ordered.Add(f);
 
-        return ordered.Select(f => new DetailColumnDto
-        {
-            FieldName = f.FieldName,
-            Label = string.IsNullOrWhiteSpace(f.DisplayName) ? f.FieldName : f.DisplayName!,
-            DataType = f.DataType ?? string.Empty
-        }).ToList();
+return ordered.Select(f => new DetailColumnDto
+{
+    FieldName = f.FieldName,
+    Label = string.IsNullOrWhiteSpace(f.DisplayName) ? f.FieldName : f.DisplayName!,
+    DataType = f.DataType ?? string.Empty,
+    IsHidden = f.FieldName == groupName || f.FieldName == sumName   // ← זה החדש
+}).ToList();
     }
 
     private static readonly Dictionary<string, Dictionary<string, string>> ColumnsCache = new();

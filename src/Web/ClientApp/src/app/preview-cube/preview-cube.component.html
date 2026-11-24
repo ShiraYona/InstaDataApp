@@ -3,8 +3,7 @@
     <strong class="block mb-2 text-color">תצוגה מקדימה</strong>
     <p class="m-0 text-color-secondary line-height-3">
       {{ c.title || 'ללא שם' }} ·
-      @if (c.calcType && c.calcType.trim().toUpperCase() === 'SUM') { {{ c.value }} {{ c.signType }}{{ signFallback }} }
-      @else { {{ c.value }} }
+      {{ c.value }}@if (c.signType) { {{ c.signType }} }
       · מקור: {{ c.source || 'ללא' }}
     </p>
   </p-card>

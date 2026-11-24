@@ -37,7 +37,8 @@ public class DataDefinitionsController : ControllerBase
     public async Task<ActionResult<DateTime>> GetCurrentDate(CancellationToken cancellationToken)
         => Ok(await _sender.Send(new GetCurrentDateQuery(), cancellationToken));
 
-    /// <summary>תצוגה מקדימה של הנתון — מחזיר את מבנה השורות, בלי לשמור דבר</summary>
+       /// <summary>תצוגה מקדימה של הנתון — מחזיר את מבנה השורות, בלי לשמור דבר</summary>
+    [ApiExplorerSettings(IgnoreApi = true)]
     [HttpPost("preview")]
     public async Task<ActionResult<PreviewResultDto>> Preview([FromBody] MetricDraftDto draft, CancellationToken cancellationToken)
         => Ok(await _sender.Send(new GetMetricPreviewQuery(draft), cancellationToken));

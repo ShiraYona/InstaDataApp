@@ -258,10 +258,14 @@
 
         </form>
 
-<div id="preview">
-@if (previewCard; as card) {
-  <app-preview-cube [card]="card" />
+@if (previewResult) {
+    <div id="preview" class="preview-panel">
+        <div class="preview-panel__head">
+            <strong>תצוגה מקדימה</strong>
+            <button type="button" class="close" aria-label="הסתרת התצוגה המקדימה" (click)="clearPreview()">×</button>
+        </div>
+        <app-preview-cube [card]="previewCard" />
+    </div>
 }
-</div>
     </div>
 </p-dialog>

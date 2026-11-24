@@ -78,7 +78,7 @@ export interface DataDefinitionDraft {
 }
 
 export interface PreviewResult {
-  rows: Array<{ key: string; label: string; value: number }>;
+  rows: Array<{ key: string; label: string; value: number | null }>;
   total: number;
 }
 
