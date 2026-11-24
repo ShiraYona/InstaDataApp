@@ -1,7 +1,8 @@
-using InstaDataApp.Application.Common.Exceptions;
+﻿using InstaDataApp.Application.Common.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace InstaDataApp.Web.Infrastructure;
 
@@ -21,6 +22,7 @@ public class CustomExceptionHandler : IExceptionHandler
             { typeof(NotFoundException), HandleNotFoundException },
             { typeof(UnauthorizedAccessException), HandleUnauthorizedAccessException },
             { typeof(ForbiddenAccessException), HandleForbiddenAccessException },
+            { typeof(DbUpdateConcurrencyException), HandleConcurrencyException },
         };
     }
 
@@ -70,6 +72,20 @@ public class CustomExceptionHandler : IExceptionHandler
             Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
             Title = "הפריט המבוקש לא נמצא.",
             Detail = exception.Message
+        });
+    }
+
+    /// <summary>הנתון נערך במקביל (RowVersion שונה) — הלקוח צריך לטעון מחדש</summary>
+    private async Task HandleConcurrencyException(HttpContext httpContext, Exception ex)
+    {
+        httpContext.Response.StatusCode = StatusCodes.Status409Conflict;
+
+        await httpContext.Response.WriteAsJsonAsync(new ProblemDetails
+        {
+            Status = StatusCodes.Status409Conflict,
+            Title = "הנתון עודכן בינתיים על ידי מישהו אחר.",
+            Detail = "יש לטעון את הנתון מחדש ולשמור שוב.",
+            Type = "https://tools.ietf.org/html/rfc7231#section-6.5.8"
         });
     }
 

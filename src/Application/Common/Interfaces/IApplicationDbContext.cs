@@ -13,22 +13,20 @@ public interface IApplicationDbContext
     DbSet<CtrlDataSourceParameter> CtrlDataSourceParameters { get; }
     DbSet<CtrlMetricDetailField> CtrlMetricDetailFields { get; }
     DbSet<CtrlCalculationType> CtrlCalculationTypes { get; }
+    DbSet<CtrlFilterOperator> FilterOperators { get; }
     DbSet<CtrlPayment> CtrlPayments { get; }
     DbSet<CtrlFine> CtrlFines { get; }
     DbSet<CtrlClaim> CtrlClaims { get; }
-    DbSet<CtrlIcon> CtrlIcons { get; }
+        DbSet<CtrlTask> CtrlTasks { get; }
+    DbSet<CtrlTaskComment> CtrlTaskComments { get; }
+    DbSet<CtrlTaskHistory> CtrlTaskHistories { get; }
+    DbSet<CtrlTaskView> CtrlTaskViews { get; }
 
     DbSet<UserDisplaySettings> UserDisplaySettings { get; }
     DbSet<UserMetricSetting> UserMetricSettings { get; }
-    DbSet<Metric> Metrics { get; }
-
-    DbSet<DataSource> DataSources { get; }
-    DbSet<DataSourceField> DataSourceFields { get; }
-    DbSet<MetricDetailField> MetricDetailFields { get; }
 
     DbSet<CardIcon> CardIcons { get; }
     DbSet<CalculationPeriod> CalculationDays { get; }
-    DbSet<CalculationTypeDefinition> CalculationTypes { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

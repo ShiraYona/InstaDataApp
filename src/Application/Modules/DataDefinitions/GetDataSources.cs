@@ -13,7 +13,7 @@ public class GetDataSourcesQueryHandler : IRequestHandler<GetDataSourcesQuery, L
 
     public async Task<List<LookupOptionDto>> Handle(GetDataSourcesQuery request, CancellationToken cancellationToken)
     {
-        var sources = await _context.DataSources
+        var sources = await _context.CtrlDataSources
             .Where(s => s.IsActive)
             .OrderBy(s => s.SourceName)
             .ToListAsync(cancellationToken);

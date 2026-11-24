@@ -1,4 +1,4 @@
-using InstaDataApp.Application.Common.Interfaces;
+﻿using InstaDataApp.Application.Common.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,13 +14,15 @@ public class DeleteMetricCommandHandler : IRequestHandler<DeleteMetricCommand, b
 
     public async Task<bool> Handle(DeleteMetricCommand request, CancellationToken cancellationToken)
     {
-        var metric = await _context.Metrics
+        // שדות הפירוט חייבים להיכלל — ה-FK שלהם הוא NoAction, ובלעדיהם המחיקה נכשלת
+        var metric = await _context.CtrlMetrics
+            .Include(m => m.DetailFields)
             .FirstOrDefaultAsync(m => m.MetricID == request.MetricId, cancellationToken);
 
         if (metric is null)
             return false;
 
-        _context.Metrics.Remove(metric);
+        _context.CtrlMetrics.Remove(metric);
 
         await _context.SaveChangesAsync(cancellationToken);
         return true;

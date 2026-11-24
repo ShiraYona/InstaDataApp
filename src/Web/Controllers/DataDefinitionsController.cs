@@ -4,7 +4,12 @@ namespace InstaDataApp.Web.Controllers;
 
 /// <summary>
 /// נתוני הבסיס עבור דיאלוג "הוספת נתון חדש", ושמירת הנתון עצמו.
+/// <para>
+/// <c>[ApiController]</c> — כדי ש-<c>[FromBody]</c> יחול אוטומטית ושגיאות מודל
+/// יוחזרו כ-400 ProblemDetails לפני שהבקשה מגיעה ל-handler.
+/// </para>
 /// </summary>
+[ApiController]
 [Route("api/data-definitions")]
 public class DataDefinitionsController : ControllerBase
 {
@@ -31,6 +36,11 @@ public class DataDefinitionsController : ControllerBase
     [HttpGet("calculation-types")]
     public async Task<ActionResult<List<LookupOptionDto>>> GetCalculationTypes(CancellationToken cancellationToken)
         => Ok(await _sender.Send(new GetCalculationTypesQuery(), cancellationToken));
+
+    /// <summary>האופרטורים לתנאי הסינון — מ-CTRL_FilterOperators (הפעילים בלבד)</summary>
+    [HttpGet("filter-operators")]
+    public async Task<ActionResult<List<FilterOperatorDto>>> GetFilterOperators(CancellationToken cancellationToken)
+        => Ok(await _sender.Send(new GetFilterOperatorsQuery(), cancellationToken));
 
     /// <summary>התאריך לתצוגת "תאריך יצירה" — נקרא ברקע בפתיחת הדיאלוג</summary>
     [HttpGet("current-date")]

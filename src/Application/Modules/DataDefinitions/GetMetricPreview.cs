@@ -23,14 +23,17 @@ public class GetMetricPreviewQueryHandler : IRequestHandler<GetMetricPreviewQuer
     {
         var draft = request.Draft;
 
-        await MetricDraftCheck.ValidateAsync(_context, draft, cancellationToken);
+        // אותה בדיקה כמו בשמירה — התצוגה המקדימה לא אמורה להראות מה שהשמירה תדחה
+        var canonical = await MetricDraftCheck.ValidateAndCanonicalizeAsync(_context, draft, cancellationToken);
 
         var fieldIds = draft.DetailFieldIds
             .Concat(new[] { draft.SumFieldId, draft.GroupFieldId }.OfType<int>())
+            .Concat(new[] { draft.DateFromFieldId, draft.DateToFieldId }.OfType<int>())
+            .Where(id => canonical.FieldDataTypes.ContainsKey(id))
             .Distinct()
             .ToList();
 
-        var labels = await _context.DataSourceFields
+        var labels = await _context.CtrlDataSourceFields.AsNoTracking()
             .Where(f => f.SourceID == draft.SourceId && fieldIds.Contains(f.FieldID))
             .ToDictionaryAsync(f => f.FieldID, f => f.DisplayName, cancellationToken);
 

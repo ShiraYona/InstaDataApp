@@ -3,6 +3,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TableModule } from 'primeng/table';
+import { ToastModule } from 'primeng/toast';
 
 import { AddingNewDataEntryComponent } from '../adding-new-data-entry/adding-new-data-entry.component';
 import { DataDefinitionService } from '../shared/services/data-definition.service';
@@ -11,11 +12,12 @@ import { MetricListItemDto } from '../web-api-client';
 @Component({
   selector: 'app-data-management-screen',
   standalone: true,
-  imports: [AddingNewDataEntryComponent, ButtonModule, ConfirmDialogModule, TableModule],
+  imports: [AddingNewDataEntryComponent, ButtonModule, ConfirmDialogModule, TableModule, ToastModule],
 
   templateUrl: './DataManagementScreen.html',
   styleUrl: './DataManagementScreen.scss',
-  providers: [ConfirmationService]
+  // MessageService מוזרק כאן כדי שיהיה תחום למסך — ההודעות של המסך הזה לא נוחתות במסכים אחרים
+  providers: [ConfirmationService, MessageService]
 })
 export class DataManagementScreen implements OnInit {
   private readonly dataService = inject(DataDefinitionService);

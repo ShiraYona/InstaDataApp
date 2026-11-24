@@ -10,7 +10,14 @@ import { MetricCard } from '../shared/models/controlPanel/MetricCard';
 @Component({
   selector: 'app-control-panel',
   standalone: true,
-  imports: [Button, RouterModule, DetailedDialogueComponent, ControlPanelCubeComponent, ControlPanelFiltersComponent, AddingNewDataEntryComponent],
+  imports: [
+    Button,
+    RouterModule,
+    DetailedDialogueComponent,
+    ControlPanelCubeComponent,
+    ControlPanelFiltersComponent,
+    AddingNewDataEntryComponent
+  ],
   templateUrl: './control-panel.component.html',
   styleUrl: './control-panel.component.scss'
 })
@@ -80,18 +87,19 @@ export class ControlPanelComponent {
     this.detailCard.set(null);
   }
 
-  /** פתיחת הדיאלוג ליצירת נתון חדש */
-  openNewData(): void {
-    this.newDataVisible.set(true);
-  }
-
   /** לחיצה על "ריענון" — שליפה מחדש מהשרת של כל הכרטיסים, בלי לשנות תצוגה */
   onRefreshRequested(): void {
     this.refreshToken.update(value => value + 1);
   }
 
-  /** אחרי שמירה מוצלחת — הקובייה מרעננת את הנתונים שלה */
-  onNewDataSaved(): void {
+  /** פתיחת דיאלוג יצירת נתון חדש */
+  openNewDataDialog(): void {
+    this.newDataVisible.set(true);
+  }
+
+  /** אחרי שמירה מוצלחת — סגירת הדיאלוג ורענון הקובייה */
+  onDataSaved(_id: number): void {
+    this.newDataVisible.set(false);
     this.refreshToken.update(value => value + 1);
   }
 }

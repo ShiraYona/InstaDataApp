@@ -12,5 +12,11 @@ public class CtrlMetricDetailFieldConfiguration : IEntityTypeConfiguration<CtrlM
 
         // PK מורכב לפי האפיון: MetricID + FieldID
         b.HasKey(x => new { x.MetricID, x.FieldID });
+
+        // יחס ל-המדד — המסד אינו מגדיר FK, ולכן NoAction
+        b.HasOne<CtrlMetric>()
+            .WithMany(m => m.DetailFields)
+            .HasForeignKey(x => x.MetricID)
+            .OnDelete(DeleteBehavior.NoAction);
     }
 }
