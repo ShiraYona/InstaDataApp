@@ -20,15 +20,12 @@ export interface Task {
   CreatedDate: string;
   UpdatedBy: string | null;
   UpdatedDate: string | null;
-  /** בפועל מגיע כ-base64; לא מספר. */
   RowVersion: string;
-  /** נוצרה או עודכנה אחרי הצפייה האחרונה של המשתמש — מחושב בשרת. */
   IsNewForMe: boolean;
 }
 
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 export type Status = 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-/** תואם ל-SourceType ב-CTRL_Tasks (7.2.3). */
 export type Source = 'MANUAL' | 'DASHBOARD' | 'EXTERNAL';
 
 export interface Comment {
