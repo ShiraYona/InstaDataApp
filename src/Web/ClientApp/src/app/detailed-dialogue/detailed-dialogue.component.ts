@@ -142,21 +142,36 @@ export class DetailedDialogueComponent implements OnInit, OnChanges {
     }));
   });
 
- // שם שדה הקיבוץ לתצוגה. ריק = אין שדה קיבוץ.
- // ה-label לבדו אינו מספיק: השרת מחזיר תווית ברירת מחדל ("מערכת") גם בלי קיבוץ,
- // ולכן הקביעה היא לפי groupFieldName; הכרטיס יוצר גיבוי רק כשהוא עצמו מקובץ
- readonly groupName = computed(() => {
-  const d = this.detail();
-  if (d?.groupFieldName) return d.groupFieldLabel || d.groupFieldName;
-  if (!d && this.card?.groupField) return this.card.groupFieldLabel || this.card.groupField;
-  return '';
-});
+ // האם יש שדה קיבוץ. התווית עצמה אינה תלויה בשדה — היא תמיד "מערכת",
+ // אבל עצם קיומו של הקיבוץ קובע אם טבלת החלוקה מוצגת בכלל
+ readonly hasGroupField = computed(() =>
+  this.detail()?.groupFieldName ? true : (!this.detail() && !!this.card?.groupField)
+);
 
  // טבלת הקבוצות מוצגת רק כשיש שדה קיבוץ — בהיעדרו אינה מוצגת כלל
- readonly hasGrouping = computed(() => this.groupName() !== '');
-  readonly columns = computed(() =>
-    (this.detail()?.columns ?? []).map(c => ({ key: c.fieldName, label: c.label, dataType: c.dataType }))
-  );
+ readonly hasGrouping = computed(() => this.hasGroupField());
+private readonly allColumns = computed(() =>
+  (this.detail()?.columns ?? []).map(c => ({
+    key: c.fieldName,
+    label: c.label,
+    dataType: c.dataType,
+    isHidden: c.isHidden ?? false    // ← זה החדש
+  }))
+);
+
+/** מזהי העמודות שהוסתרו מהתצוגה — לפי הזהות שהנתון מגדיר, ולא לפי מיקומן */
+private readonly hiddenColumns = computed<Set<string>>(() => {
+  const d = this.detail();
+  const names = [d?.groupFieldName, d?.valueFieldName]
+    .filter((n): n is string => !!n && n.trim() !== '');
+  return new Set(names.map(n => n.toLowerCase()));
+});
+
+/** לתצוגה מוסרים השדות שהנתון לא מגדיר כעמודות מערכת/סכום */
+readonly columns = computed(() =>
+  this.allColumns().filter(c => !this.hiddenColumns().has(c.key.toLowerCase()))
+);
+
   readonly totalRecords = computed(() => this.detail()?.totalRecords ?? 0);
   readonly totalValue = computed(() => this.detail()?.totalValue ?? null);
   // COUNT מזוהה לפי סוג החישוב עצמו (calcType); SignType נשמר כגיבוי בלבד

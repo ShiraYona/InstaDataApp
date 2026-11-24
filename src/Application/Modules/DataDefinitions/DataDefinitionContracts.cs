@@ -13,71 +13,42 @@ public class MetricDraftDto
 
     public int SourceId { get; set; }
 
-    /// <summary>מזהה סוג החישוב מ-CTRL_CalculationTypes — נשמר ב-CTRL_Metrics.CalculationTypeID</summary>
     public int CalculationTypeId { get; set; }
 
-    /// <summary>חובה ל-SUM — אחרת null</summary>
     public int? SumFieldId { get; set; }
 
-    /// <summary>null או "none" משמעו ללא קיבוץ</summary>
     public int? GroupFieldId { get; set; }
 
-    /// <summary>
-    /// תקופת החישוב: <c>DASHBOARD</c> ("לפי מסנן הלוח") או ה-Value של התקופה
-    /// מ-CTRL_CalculationDays (מספר הימים, למשל "30"). ריק כשנבחר טווח תאריכים.
-    /// </summary>
     public string? DateRangeType { get; set; } = MetricConstants.DateRangeDashboard;
 
-    /// <summary>
-    /// שדה התאריך שממנו מתחיל הטווח — רלוונטי רק כש-<see cref="DateRangeType"/> ריק
-    /// (המשתמש בחר שני שדות תאריך של המקור במקום תקופה מוגדרת).
-    /// </summary>
     public int? DateFromFieldId { get; set; }
 
-    /// <summary>שדה התאריך שבו נגמר הטווח — יחד עם <see cref="DateFromFieldId"/></summary>
     public int? DateToFieldId { get; set; }
 
     public string? IconCode { get; set; }
 
-    /// <summary>שדות הפירוט לפי סדר התצוגה</summary>
     public List<int> DetailFieldIds { get; set; } = new();
 
-    /// <summary>האם להציג את הנתון במערכת הניהול והבקרה — נשמר ב-CTRL_Metrics.IsActive</summary>
     public bool DisplayInDashboard { get; set; } = true;
 
-    /// <summary>
-    /// עץ תנאי הסינון (JSON) — נשמר כמו שהוא ב-CTRL_Metrics.FiltersJson.
-    /// null בעריכה משמעו "לא שונה" — הערך הקיים נשמר.
-    /// </summary>
     public string? FiltersJson { get; set; }
 }
 
-// ----------------------------------------------------------------- מוצא
 
-/// <summary>אפשרות ברשימה נפתחת</summary>
 public class LookupOptionDto
 {
     public string Value { get; init; } = string.Empty;
 
     public string Label { get; init; } = string.Empty;
 
-    /// <summary>קוד אייקון לתצוגה (PrimeIcons) — ריק כשאין אייקון</summary>
     public string? Icon { get; init; }
+    public bool IsSum { get; init; }
 
-    /// <summary>
-    /// הקוד הקנוני של סוג החישוב (COUNT / SUM / DIRECT) — לסוגי חישוב בלבד.
-    /// הטופס מסתמך עליו ולא על ניסוח התווית.
-    /// </summary>
     public string? Code { get; init; }
 
-    /// <summary>
-    /// לסוגי חישוב בלבד: האם הבחירה מחייבת שדה סיכום (SUM).
-    /// נקבע בשרת — הלקוח לא מסיק זאת מהתווית.
-    /// </summary>
     public bool RequiresSumField { get; init; }
 }
 
-/// <summary>שדה של מקור נתונים — כפי שמוצג בטופס</summary>
 public class DataSourceFieldDto
 {
     public int FieldId { get; init; }

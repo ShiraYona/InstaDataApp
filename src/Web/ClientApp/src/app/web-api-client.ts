@@ -701,58 +701,6 @@ export class DataDefinitionsClient {
         return _observableOf(null as any);
     }
 
-    preview(draft: MetricDraftDto): Observable<PreviewResultDto> {
-        let url_ = this.baseUrl + "/api/data-definitions/preview";
-        url_ = url_.replace(/[?&]$/, "");
-
-        const content_ = JSON.stringify(draft);
-
-        let options_ : any = {
-            body: content_,
-            observe: "response",
-            responseType: "blob",
-            headers: new HttpHeaders({
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            })
-        };
-
-        return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processPreview(response_);
-        })).pipe(_observableCatch((response_: any) => {
-            if (response_ instanceof HttpResponseBase) {
-                try {
-                    return this.processPreview(response_ as any);
-                } catch (e) {
-                    return _observableThrow(e) as any as Observable<PreviewResultDto>;
-                }
-            } else
-                return _observableThrow(response_) as any as Observable<PreviewResultDto>;
-        }));
-    }
-
-    protected processPreview(response: HttpResponseBase): Observable<PreviewResultDto> {
-        const status = response.status;
-        const responseBlob =
-            response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
-
-        let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 200) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            let result200: any = null;
-            let resultData200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
-            result200 = PreviewResultDto.fromJS(resultData200);
-            return _observableOf(result200);
-            }));
-        } else if (status !== 200 && status !== 204) {
-            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            }));
-        }
-        return _observableOf(null as any);
-    }
-
     create(draft: MetricDraftDto): Observable<number> {
         let url_ = this.baseUrl + "/api/data-definitions";
         url_ = url_.replace(/[?&]$/, "");
@@ -2552,6 +2500,7 @@ export class LookupOptionDto implements ILookupOptionDto {
     value?: string;
     label?: string;
     icon?: string | undefined;
+    isSum?: boolean;
     code?: string | undefined;
     requiresSumField?: boolean;
 
@@ -2569,6 +2518,7 @@ export class LookupOptionDto implements ILookupOptionDto {
             this.value = _data["value"];
             this.label = _data["label"];
             this.icon = _data["icon"];
+            this.isSum = _data["isSum"];
             this.code = _data["code"];
             this.requiresSumField = _data["requiresSumField"];
         }
@@ -2586,6 +2536,7 @@ export class LookupOptionDto implements ILookupOptionDto {
         data["value"] = this.value;
         data["label"] = this.label;
         data["icon"] = this.icon;
+        data["isSum"] = this.isSum;
         data["code"] = this.code;
         data["requiresSumField"] = this.requiresSumField;
         return data;
@@ -2596,6 +2547,7 @@ export interface ILookupOptionDto {
     value?: string;
     label?: string;
     icon?: string | undefined;
+    isSum?: boolean;
     code?: string | undefined;
     requiresSumField?: boolean;
 }
@@ -2786,98 +2738,6 @@ export interface IFilterOperatorDto {
     label?: string;
     needsValue?: boolean;
     isMultiValue?: boolean;
-}
-
-export class PreviewResultDto implements IPreviewResultDto {
-    rows?: PreviewRowDto[];
-    total?: number;
-
-    constructor(data?: IPreviewResultDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            if (Array.isArray(_data["rows"])) {
-                this.rows = [] as any;
-                for (let item of _data["rows"])
-                    this.rows!.push(PreviewRowDto.fromJS(item));
-            }
-            this.total = _data["total"];
-        }
-    }
-
-    static fromJS(data: any): PreviewResultDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new PreviewResultDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        if (Array.isArray(this.rows)) {
-            data["rows"] = [];
-            for (let item of this.rows)
-                data["rows"].push(item.toJSON());
-        }
-        data["total"] = this.total;
-        return data;
-    }
-}
-
-export interface IPreviewResultDto {
-    rows?: PreviewRowDto[];
-    total?: number;
-}
-
-export class PreviewRowDto implements IPreviewRowDto {
-    key?: string;
-    label?: string;
-    value?: number;
-
-    constructor(data?: IPreviewRowDto) {
-        if (data) {
-            for (var property in data) {
-                if (data.hasOwnProperty(property))
-                    (<any>this)[property] = (<any>data)[property];
-            }
-        }
-    }
-
-    init(_data?: any) {
-        if (_data) {
-            this.key = _data["key"];
-            this.label = _data["label"];
-            this.value = _data["value"];
-        }
-    }
-
-    static fromJS(data: any): PreviewRowDto {
-        data = typeof data === 'object' ? data : {};
-        let result = new PreviewRowDto();
-        result.init(data);
-        return result;
-    }
-
-    toJSON(data?: any) {
-        data = typeof data === 'object' ? data : {};
-        data["key"] = this.key;
-        data["label"] = this.label;
-        data["value"] = this.value;
-        return data;
-    }
-}
-
-export interface IPreviewRowDto {
-    key?: string;
-    label?: string;
-    value?: number;
 }
 
 export class MetricCardDto implements IMetricCardDto {
@@ -3412,6 +3272,7 @@ export class DetailColumnDto implements IDetailColumnDto {
     fieldName?: string;
     label?: string;
     dataType?: string;
+    isHidden?: boolean;
 
     constructor(data?: IDetailColumnDto) {
         if (data) {
@@ -3427,6 +3288,7 @@ export class DetailColumnDto implements IDetailColumnDto {
             this.fieldName = _data["fieldName"];
             this.label = _data["label"];
             this.dataType = _data["dataType"];
+            this.isHidden = _data["isHidden"];
         }
     }
 
@@ -3442,6 +3304,7 @@ export class DetailColumnDto implements IDetailColumnDto {
         data["fieldName"] = this.fieldName;
         data["label"] = this.label;
         data["dataType"] = this.dataType;
+        data["isHidden"] = this.isHidden;
         return data;
     }
 }
@@ -3450,6 +3313,7 @@ export interface IDetailColumnDto {
     fieldName?: string;
     label?: string;
     dataType?: string;
+    isHidden?: boolean;
 }
 
 export class ProblemDetails implements IProblemDetails {

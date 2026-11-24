@@ -2,11 +2,6 @@
 
 namespace InstaDataApp.Application.Modules.DataDefinitions;
 
-/// <summary>
-/// סמלי הכרטיס — נקראים מ-CTRL_ICON (ID / Value / IconClass).
-/// ה-IconClass הוא האייקון וגם מה שנשמר ב-CTRL_Metrics.IconCode;
-/// ה-Value הוא המילה המוצגת לצידו.
-/// </summary>
 public record GetCardIconsQuery : IRequest<List<LookupOptionDto>>;
 
 public class GetCardIconsQueryHandler : IRequestHandler<GetCardIconsQuery, List<LookupOptionDto>>
@@ -30,15 +25,6 @@ public class GetCardIconsQueryHandler : IRequestHandler<GetCardIconsQuery, List<
     }
 }
 
-/// <summary>
-/// מספר הימים לחישוב — נקראים מ-CTRL_CalculationDays בלבד.
-/// ה-Name הוא הטקסט שמוצג ("30 ימים"), וה-Value הוא מספר הימים (INT) —
-/// הוא הערך שנשמר ב-CTRL_Metrics.DateRangeType, ולכן מוחזר כמחרוזת בטופס.
-/// </summary>
-/// <remarks>
-/// "לפי מסנן הלוח" אינו מוצע יותר בטופס. הערך <c>DASHBOARD</c> נשאר חוקי בשמירה
-/// (<see cref="MetricConstants.IsDashboard"/>) — נתונים קיימים שנשמרו כך ממשיכים לעבוד.
-/// </remarks>
 public record GetDateRangeTypesQuery : IRequest<List<LookupOptionDto>>;
 
 public class GetDateRangeTypesQueryHandler : IRequestHandler<GetDateRangeTypesQuery, List<LookupOptionDto>>
@@ -61,10 +47,6 @@ public class GetDateRangeTypesQueryHandler : IRequestHandler<GetDateRangeTypesQu
     }
 }
 
-/// <summary>
-/// סוגי החישוב — נקראים מ-CTRL_CalculationTypes.
-/// הערך בטופס הוא ה-ID (מפתח לטבלה), כי הוא זה שנשמר ב-CTRL_Metrics.CalculationTypeID.
-/// </summary>
 public record GetCalculationTypesQuery : IRequest<List<LookupOptionDto>>;
 
 public class GetCalculationTypesQueryHandler : IRequestHandler<GetCalculationTypesQuery, List<LookupOptionDto>>
@@ -99,19 +81,19 @@ public class GetCalculationTypesQueryHandler : IRequestHandler<GetCalculationTyp
     }
 }
 
-/// <summary>
-/// המרה בין שורת הקטלוג לבין הקוד הקנוני (COUNT / SUM / DIRECT).
-/// הקוד אינו נשמר במדד — נשמר ה-ID — אך הוא משמש לזיהוי סוג החישוב בכל מקום שבו
-/// צריך לדעת אם מדובר בסכימה (למשל החובה לבחור שדה סיכום).
-/// </summary>
 public static class CalculationTypeMap
 {
     /// <summary>
     /// הופך שורת CTRL_CalculationTypes לקוד קנוני. העמודה Value היא המקור (COUNT / SUM),
     /// כפי שקוראים אותה גם הפרוצדורות ו-GetMetricDetails; ה-Name בעברית הוא גיבוי בלבד.
     /// </summary>
-    public static string ToCode(Domain.Entities.CtrlCalculationType type)
+    public static string ToCode(Domain.Entities.CtrlCalculationType? type)
     {
+        if (type is null)
+        {
+            return MetricConstants.CalculationDirect;
+        }
+
         var fromValue = Normalize(type.Value);
         if (fromValue is not null)
         {

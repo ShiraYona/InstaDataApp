@@ -1,0 +1,12 @@
+// הפאנל כמו בדמו — שאר העיצוב מגיע מ-p-card
+:host ::ng-deep .preview-panel {
+  background: #fff;
+  border: 1px solid #e2eaf4;
+  border-radius: 15px;
+  box-shadow: 0 4px 16px #16334c07;
+  margin-top: 23px;
+}
+
+:host ::ng-deep .preview-panel .p-card-body {
+  padding: 22px;
+}

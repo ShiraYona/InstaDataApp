@@ -495,9 +495,11 @@
                         label="תצוגה מקדימה"
                         severity="secondary"
                         [outlined]="true"
-                        [disabled]="true"
-                        pTooltip="התכונה אינה זמינה עדיין"
-                        tooltipPosition="top" />
+                        [loading]="previewing"
+                        [disabled]="isRangeModeInvalid"
+                        pTooltip="חישוב הנתון לפי ההגדרות בטופס"
+                        tooltipPosition="top"
+                        (onClick)="preview()" />
                     <p-button
                         label="ביטול"
                         severity="secondary"
@@ -508,5 +510,15 @@
             </div>
 
         </form>
+
+@if (previewResult) {
+    <div id="preview" class="preview-panel">
+        <div class="preview-panel__head">
+            <strong>תצוגה מקדימה</strong>
+            <button type="button" class="close" aria-label="הסתרת התצוגה המקדימה" (click)="clearPreview()">×</button>
+        </div>
+        <app-preview-cube [card]="previewCard" />
+    </div>
+}
     </div>
 </p-dialog>

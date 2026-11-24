@@ -3,7 +3,6 @@ import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, Validat
 import { ButtonModule } from 'primeng/button';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
-import { InputTextModule } from 'primeng/inputtext';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
@@ -18,11 +17,14 @@ import {
   FilterNode,
   FilterOperator,
   LookupOption,
-  MetricDraft
+  MetricDraft,
+  PreviewResult
 } from '../shared/models/data-definition.model';
 import { DataDefinitionService } from '../shared/services/data-definition.service';
 import { NotificationService } from '../shared/services/notification.service';
 import { MetricListItemDto } from '../web-api-client';
+import { PreviewCubeComponent } from '../preview-cube/preview-cube.component';
+import { MetricCard } from '../shared/models/controlPanel/MetricCard';
 
 const DEFAULT_DETAIL_FIELD_COUNT = 3;
 
@@ -51,13 +53,22 @@ const CALCULATION_DIRECT = 'DIRECT';
 const CALCULATION_SUM = 'SUM';
 const CALCULATION_COUNT = 'COUNT';
 
-/** OUTPUT_TYPE של מקור נתונים */
+/** סוג המקור (CTRL_DataSources.SourceType) */
+const SOURCE_TYPE_PROCEDURE = 'PROCEDURE';
+
+/** סוג הפלט של המקור (CTRL_DataSources.OutputType) */
 const OUTPUT_TYPE_ROWS = 'ROWS';
 
-const SOURCE_TYPE_PROCEDURE = 'PROCEDURE';
+function isSumCalculationType(calculationTypeId: CalculationTypeId | null, options: LookupOption[]): boolean {
+  if (calculationTypeId === null) {
+    return false;
+  }
+  return options.find(option => Number(option.value) === calculationTypeId)?.isSum ?? false;
+}
 
 /** אופן הגדרת התקופה בטופס */
 export type DateRangeMode = 'period' | 'range';
+
 
 const LEGACY_LOOKUP_LABELS: Record<string, string> = {
   MONTH: 'חודש נוכחי',
@@ -99,11 +110,11 @@ type FormFieldName =
     FormsModule,
     DialogModule,
     ButtonModule,
-    InputTextModule,
     SelectModule,
     MultiSelectModule,
     DatePickerModule,
-    TooltipModule
+    TooltipModule,
+    PreviewCubeComponent
   ],
   templateUrl: './adding-new-data-entry.component.html',
   styleUrl: './adding-new-data-entry.component.scss'
@@ -148,7 +159,11 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
 
   saving = false;
 
- 
+  /** תוצאת התצוגה המקדימה — null כשלא הופקה תצוגה */
+  previewResult: PreviewResult | null = null;
+
+  previewing = false;
+
   dateRangeMode: DateRangeMode = 'period';
 
   /** אפשרויות "אופן התקופה" — מוצגות רק כשיש שדות תאריך במקור */
@@ -210,6 +225,38 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
   /** האם הדיאלוג במצב עריכה של נתון קיים */
   get isEditing(): boolean {
     return this.editingMetricId !== null;
+  }
+  /** הסתרת התצוגה המקדימה — מחזיר את הדיאלוג למצב "לפני לחיצה" */
+  clearPreview(): void {
+    this.previewResult = null;
+  }
+
+  /**
+   * תצוגה מקדימה — שולח את ההגדרות הנוכחיות לשרת ומציג את התוצאה.
+   * אינה דורשת טופס תקין: תנאי סינון חסרים נשמטים, כמו בשמירה.
+   */
+  preview(): void {
+    if (this.isRangeModeInvalid) {
+      this.form.controls.dateFromFieldId.markAsTouched();
+      this.form.controls.dateToFieldId.markAsTouched();
+      this.notifications.error(DATE_RANGE_REQUIRED_MESSAGE);
+      return;
+    }
+
+    this.previewing = true;
+    this.subscriptions.add(
+      this.service.preview(this.buildDraft()).subscribe({
+        next: result => {
+          this.previewing = false;
+          this.previewResult = result;
+        },
+        error: (error: unknown) => {
+          this.previewing = false;
+          this.previewResult = null;
+          this.notifications.errorFromServer(error, 'הפקת התצוגה המקדימה נכשלה');
+        }
+      })
+    );
   }
 
   /** כותרת הדיאלוג — משתנה לפי המצב */
@@ -401,6 +448,32 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
     return [{ fieldId: NO_GROUPING, label: 'ללא קיבוץ' }, ...fields.map(f => ({ fieldId: f.fieldId, label: f.label }))];
   }
 
+  /** שם הנתון כפי שהוזן — לתצוגה המקדימה */
+  get draftName(): string {
+    return this.form.controls.name.value.trim();
+  }
+/** כרטיס התצוגה המקדימה — בנוי מערכי הטופס */
+get previewCard(): MetricCard {
+  const icon = this.cardIcons.find(o => o.value === this.form.controls.cardSourceId.value)?.icon ?? '';
+  const typeId = this.form.controls.calculationTypeId.value;
+  
+  return {
+    key: 'preview',
+    title: this.draftName || 'ללא שם',
+    icon,
+    value: String(this.previewResult?.total ?? 0),
+    source: this.selectedSource?.label ?? '',
+    // אותו זיהוי SUM של buildDraft — כדי שלא יהיו שני כללים שונים
+    calcType: isSumCalculationType(typeId, this.calculationTypeOptions) ? 'SUM' : 'COUNT',
+    // הסימן מהתווית של סוג החישוב: "סכימת ערכי שדה (SUM  )" → לא מספיק.
+    // הכי בטוח — לפי המצב, כמו שדה sumField
+    signType: isSumCalculationType(typeId, this.calculationTypeOptions) ? '₪' : '',
+    hasComparison: false,
+    status: 'ok',
+    updated: true
+  };
+}
+
   /** תווית עברית לשורה שנבחרה ברשימה נפתחת (הערך עצמו נשמר כמו שהוא) */
   labelOf(options: LookupOption[], code: string | null): string {
     if (code == null) {
@@ -564,8 +637,10 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
       this.service.getCalculationTypes().subscribe({
         next: types => {
           this.calculationTypeOptions = types;
-          // ברירת המחדל נגזרת מהמקור (DIRECT לערך יחיד; SUM/COUNT לשורות) — ראו defaultCalculationTypeId
-          this.applyCalculationType(this.defaultCalculationTypeId(types));
+          // אין ברירת מחדל קשיחה: נבחרת שורת הסכימה אם קיימת, אחרת הראשונה ברשימה
+          // const sum = types.find(option => option.label.includes(SUM_LABEL_MARKER));
+        const sum = types.find(option => option.isSum);
+          this.applyCalculationType((sum ?? types[0])?.value ?? null);
           this.tryApplyEditValues();
         },
         error: (error: unknown) => this.notifications.errorFromServer(error, 'טעינת סוגי החישוב נכשלה')
