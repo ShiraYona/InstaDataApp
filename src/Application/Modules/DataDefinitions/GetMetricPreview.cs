@@ -12,7 +12,6 @@ public record GetMetricPreviewQuery(MetricDraftDto Draft) : IRequest<PreviewResu
 
 public class GetMetricPreviewQueryHandler : IRequestHandler<GetMetricPreviewQuery, PreviewResultDto>
 {
-    // שמות טבלה/עמודה מוזרקים ל-SQL — מאשרים אותם כמו בשאר השאילתות
     private static readonly Regex Safe = new("^[A-Za-z_][A-Za-z0-9_$#]*$", RegexOptions.Compiled);
 
     private readonly IApplicationDbContext _context;
@@ -22,8 +21,6 @@ public class GetMetricPreviewQueryHandler : IRequestHandler<GetMetricPreviewQuer
     public async Task<PreviewResultDto> Handle(GetMetricPreviewQuery request, CancellationToken cancellationToken)
     {
         var draft = request.Draft;
-
-        // אותה בדיקה כמו בשמירה — התצוגה המקדימה לא אמורה להראות מה שהשמירה תדחה
         var canonical = await MetricDraftCheck.ValidateAndCanonicalizeAsync(_context, draft, cancellationToken);
 
         var fieldIds = draft.DetailFieldIds
@@ -46,25 +43,21 @@ public class GetMetricPreviewQueryHandler : IRequestHandler<GetMetricPreviewQuer
             })
             .ToList();
 
-        // --- חישוב אמיתי על המקור: אותה שיטה של הקובייה (COUNT / SUM) ---
-        var source = await _context.DataSources.AsNoTracking()
+        var source = await _context.CtrlDataSources.AsNoTracking()
             .FirstOrDefaultAsync(s => s.SourceID == draft.SourceId, cancellationToken);
 
-        // DIRECT — אין סכימה, מציגים רק את השורות (הערכים אינם מספריים)
         if (source is null || !Safe.IsMatch(source.ObjectName))
         {
             return new PreviewResultDto { Rows = rows, Total = 0 };
         }
 
-               var calculationType = await _context.CalculationTypes.AsNoTracking()
-            .FirstOrDefaultAsync(type => type.Id == draft.CalculationTypeId, cancellationToken);
+        var calculationType = await _context.CtrlCalculationTypes.AsNoTracking()
+            .FirstOrDefaultAsync(type => type.ID == draft.CalculationTypeId, cancellationToken);
 
-        // כמו הקובייה: ה-Value הוא הקוד הקנוני (COUNT / SUM), לא ה-Name
         var calcCode = (calculationType?.Value ?? string.Empty).Trim().ToUpperInvariant();
         if (calcCode.Length == 0)
         {
-            // גיבוי: קטלוג שאין בו Value — ממירים מה-Name
-            calcCode = CalculationTypeMap.ToCode(calculationType?.Name);
+            calcCode = CalculationTypeMap.ToCode(calculationType);
         }
 
         var aggregate = calcCode switch
@@ -78,8 +71,7 @@ public class GetMetricPreviewQueryHandler : IRequestHandler<GetMetricPreviewQuer
         {
             return new PreviewResultDto { Rows = rows, Total = 0 };
         }
-
-        var (where, parameters) = await PeriodWhereAsync(source, draft.DateRangeType, cancellationToken);
+        var (where, parameters) = await PeriodWhereAsync(source, canonical.DateRangeType, cancellationToken);
 
         var connection = _context.Database.GetDbConnection();
         if (connection.State != ConnectionState.Open)
@@ -105,7 +97,6 @@ public class GetMetricPreviewQueryHandler : IRequestHandler<GetMetricPreviewQuer
         }
         catch (Exception ex)
         {
-            // נפילה ל-0 אם ה-SQL נכשל — במקום 500 שמאתחל את הטופס
             // שגיאה בחישוב — מוצג 0 במקום 500
             _ = ex;
             return new PreviewResultDto { Rows = rows, Total = 0 };
@@ -114,9 +105,8 @@ public class GetMetricPreviewQueryHandler : IRequestHandler<GetMetricPreviewQuer
 
         return new PreviewResultDto { Rows = rows, Total = (long)Math.Round(total) };
     }
-    /// <summary>שמות העמודות בטבלה בפועל וטיפוסן — כמו ActualColumnsAsync בקובייה</summary>
     private static async Task<Dictionary<string, string>> ActualColumnsAsync(
-        DbConnection conn, DataSource source, CancellationToken cancellationToken)
+        DbConnection conn, CtrlDataSource source, CancellationToken cancellationToken)
     {
         var schema = source.SchemaName ?? "dbo";
         await using var command = conn.CreateCommand();
@@ -134,7 +124,6 @@ public class GetMetricPreviewQueryHandler : IRequestHandler<GetMetricPreviewQuer
         return map;
     }
 
-    /// <summary>האם העמודה קיימת בטבלה ובאמת מטיפוס תאריך — כמו IsDateColumn בקובייה</summary>
     private static bool IsDateColumn(Dictionary<string, string> actual, string? column)
     {
         if (string.IsNullOrWhiteSpace(column) || !actual.TryGetValue(column, out var type))
@@ -148,10 +137,6 @@ public class GetMetricPreviewQueryHandler : IRequestHandler<GetMetricPreviewQuer
             || type.Equals("datetimeoffset", StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>
-    /// SUM — על שדה הסיכום. כך מחושב הערך בקובייה (GetMetricDetailsQuery.CardValueAsync),
-    /// אבל אם השדה אינו קיים בטבלה בפועל, נופלים לשדה הקיבוץ (אותו כלל).
-    /// </summary>
     private async Task<string?> SumAggregateAsync(MetricDraftDto draft, CancellationToken cancellationToken)
     {
         var candidates = new[] { draft.SumFieldId, draft.GroupFieldId }
@@ -164,7 +149,7 @@ public class GetMetricPreviewQueryHandler : IRequestHandler<GetMetricPreviewQuer
             return null;
         }
 
-        var names = await _context.DataSourceFields
+        var names = await _context.CtrlDataSourceFields
             .Where(f => f.SourceID == draft.SourceId && candidates.Contains(f.FieldID))
             .ToDictionaryAsync(f => f.FieldID, f => f.FieldName, cancellationToken);
 
@@ -177,32 +162,28 @@ public class GetMetricPreviewQueryHandler : IRequestHandler<GetMetricPreviewQuer
             : $"ISNULL(SUM(TRY_CAST([{column}] AS decimal(38,4))),0)";
     }
 
-    /// <summary>
-    /// תנאי תקופה לפי התאריך של המקור וסוג התקופה שנשמר.
-    /// BOARD_FILTER — אין מסנן לוח בתצוגה מקדימה, לכן מציגים את כל הנתונים.
-    /// </summary>
     private async Task<(string Where, Dictionary<string, object?> Params)> PeriodWhereAsync(
-        DataSource source,
+        CtrlDataSource source,
         string? dateRangeType,
         CancellationToken cancellationToken)
     {
         var parameters = new Dictionary<string, object?>();
         var value = (dateRangeType ?? string.Empty).Trim();
 
-        if (value.Length == 0
-            || string.Equals(value, MetricConstants.DateRangeBoardFilter, StringComparison.Ordinal))
+        if (value.Length == 0 || MetricConstants.IsDashboard(value))
         {
             return ("", parameters);
         }
 
-        // תקופות ישנות: MONTH / QUARTER / YEAR
-        var days = value.ToUpperInvariant() switch
-        {
-            MetricConstants.DateRangeCurrentMonth => DateTime.DaysInMonth(DateTime.Today.Year, DateTime.Today.Month),
-            MetricConstants.DateRangeQuarter => 90,
-            MetricConstants.DateRangeYear => 365,
-            _ => await DaysFromPeriodAsync(value, cancellationToken)
-        };
+        var days = MetricConstants.TryGetPeriodDays(value, out var periodDays)
+            ? periodDays
+            : value.ToUpperInvariant() switch
+            {
+                MetricConstants.DateRangeCurrentMonth => DateTime.DaysInMonth(DateTime.Today.Year, DateTime.Today.Month),
+                MetricConstants.DateRangeQuarter => 90,
+                MetricConstants.DateRangeYear => 365,
+                _ => await DaysFromPeriodAsync(value, cancellationToken)
+            };
 
         if (days <= 0)
         {
@@ -211,7 +192,7 @@ public class GetMetricPreviewQueryHandler : IRequestHandler<GetMetricPreviewQuer
 
         var dateFieldName = source.DateFieldID is null
             ? null
-            : await _context.DataSourceFields.AsNoTracking()
+            : await _context.CtrlDataSourceFields.AsNoTracking()
                 .Where(f => f.SourceID == source.SourceID && f.FieldID == source.DateFieldID)
                 .Select(f => f.FieldName)
                 .FirstOrDefaultAsync(cancellationToken);
@@ -221,19 +202,17 @@ public class GetMetricPreviewQueryHandler : IRequestHandler<GetMetricPreviewQuer
             return ("", parameters);
         }
 
-        // כמו הקובייה: הסינון מוחל רק אם העמודה באמת קיימת בטבלה ומטיפוס תאריך
-        var connection = _context.Database.GetDbConnection();
-        if (connection.State != ConnectionState.Open)
+        // סינון התקופה מוחל רק אם העמודה באמת קיימת בטבלה ומטיפוס תאריך
+        var columnsConnection = _context.Database.GetDbConnection();
+        if (columnsConnection.State != ConnectionState.Open)
         {
-            await connection.OpenAsync(cancellationToken);
+            await columnsConnection.OpenAsync(cancellationToken);
         }
-        var actualColumns = await ActualColumnsAsync(connection, source, cancellationToken);
+        var actualColumns = await ActualColumnsAsync(columnsConnection, source, cancellationToken);
         if (!IsDateColumn(actualColumns, dateFieldName))
         {
             return ("", parameters);
         }
-
-        // כמו PeriodWhere ב-GetMetricDetailsQuery: הסוף הוא "לפני יום המחרת"
         var to = DateTime.Today.AddDays(1);
         var from = DateTime.Today.AddDays(-days);
 
@@ -243,10 +222,6 @@ public class GetMetricPreviewQueryHandler : IRequestHandler<GetMetricPreviewQuer
         return ($" WHERE [{dateFieldName}] >= @pFrom AND [{dateFieldName}] < @pTo", parameters);
     }
 
-    /// <summary>
-    /// המרת הבחירה בטופס למספר ימים: ה-Value של CTRL_CalculationDays ("30"),
-    /// או ה-Name ("30 ימים") שמגיע לנתונים שנשמרו.
-    /// </summary>
     private async Task<int> DaysFromPeriodAsync(string value, CancellationToken cancellationToken)
     {
         if (int.TryParse(value, out var parsed))

@@ -9,6 +9,10 @@ export interface LookupOption {
   icon?: string;
   /** סימון מפורש מהשרת: האם סוג החישוב הזה הוא "סכימה" */
   isSum?: boolean;
+  /** הקוד הקנוני של סוג החישוב (COUNT / SUM / DIRECT) — מגיע מהשרת */
+  code?: string | null;
+  /** האם סוג החישוב מחייב בחירת שדה סיכום */
+  requiresSumField?: boolean;
 }
 
 export interface CardIconOption {

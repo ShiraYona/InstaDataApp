@@ -495,9 +495,11 @@
                         label="תצוגה מקדימה"
                         severity="secondary"
                         [outlined]="true"
-                        [disabled]="true"
-                        pTooltip="התכונה אינה זמינה עדיין"
-                        tooltipPosition="top" />
+                        [loading]="previewing"
+                        [disabled]="isRangeModeInvalid"
+                        pTooltip="חישוב הנתון לפי ההגדרות בטופס"
+                        tooltipPosition="top"
+                        (onClick)="preview()" />
                     <p-button
                         label="ביטול"
                         severity="secondary"

@@ -59,16 +59,9 @@ public class GetCalculationTypesQueryHandler : IRequestHandler<GetCalculationTyp
         GetCalculationTypesQuery request,
         CancellationToken cancellationToken)
     {
-        var types = await _context.CalculationTypes
-            .OrderBy(type => type.Id)
-.Select(type => new LookupOptionDto
-{
-    Value = type.Id.ToString(),
-    Label = type.Name + " (" + type.Value + ")",
-    // אותו זיהוי של CalculationTypeMap.ToCode, כדי שהלקוח לא יפענח תוויות
-    IsSum = type.Name.Trim().StartsWith("סכימ", StringComparison.Ordinal)
-            || type.Value.Trim().Equals("SUM", StringComparison.OrdinalIgnoreCase)
-})
+        var types = await _context.CtrlCalculationTypes
+            .AsNoTracking()
+            .OrderBy(type => type.ID)
             .ToListAsync(cancellationToken);
 
         // הקוד הקנוני (COUNT / SUM / DIRECT) נקבע כאן, כדי שהלקוח לא יסיק אותו מהתווית.
@@ -94,8 +87,13 @@ public static class CalculationTypeMap
     /// הופך שורת CTRL_CalculationTypes לקוד קנוני. העמודה Value היא המקור (COUNT / SUM),
     /// כפי שקוראים אותה גם הפרוצדורות ו-GetMetricDetails; ה-Name בעברית הוא גיבוי בלבד.
     /// </summary>
-    public static string ToCode(Domain.Entities.CtrlCalculationType type)
+    public static string ToCode(Domain.Entities.CtrlCalculationType? type)
     {
+        if (type is null)
+        {
+            return MetricConstants.CalculationDirect;
+        }
+
         var fromValue = Normalize(type.Value);
         if (fromValue is not null)
         {

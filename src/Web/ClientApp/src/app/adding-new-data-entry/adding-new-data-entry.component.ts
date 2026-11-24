@@ -3,7 +3,6 @@ import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, Validat
 import { ButtonModule } from 'primeng/button';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
-import { InputTextModule } from 'primeng/inputtext';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
@@ -18,7 +17,8 @@ import {
   FilterNode,
   FilterOperator,
   LookupOption,
-  MetricDraft
+  MetricDraft,
+  PreviewResult
 } from '../shared/models/data-definition.model';
 import { DataDefinitionService } from '../shared/services/data-definition.service';
 import { NotificationService } from '../shared/services/notification.service';
@@ -52,6 +52,12 @@ const DASHBOARD = 'DASHBOARD';
 const CALCULATION_DIRECT = 'DIRECT';
 const CALCULATION_SUM = 'SUM';
 const CALCULATION_COUNT = 'COUNT';
+
+/** סוג המקור (CTRL_DataSources.SourceType) */
+const SOURCE_TYPE_PROCEDURE = 'PROCEDURE';
+
+/** סוג הפלט של המקור (CTRL_DataSources.OutputType) */
+const OUTPUT_TYPE_ROWS = 'ROWS';
 
 function isSumCalculationType(calculationTypeId: CalculationTypeId | null, options: LookupOption[]): boolean {
   if (calculationTypeId === null) {
@@ -104,9 +110,11 @@ type FormFieldName =
     FormsModule,
     DialogModule,
     ButtonModule,
-    InputTextModule,
     SelectModule,
-    PreviewCubeComponent        
+    MultiSelectModule,
+    DatePickerModule,
+    TooltipModule,
+    PreviewCubeComponent
   ],
   templateUrl: './adding-new-data-entry.component.html',
   styleUrl: './adding-new-data-entry.component.scss'
@@ -151,7 +159,11 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
 
   saving = false;
 
- 
+  /** תוצאת התצוגה המקדימה — null כשלא הופקה תצוגה */
+  previewResult: PreviewResult | null = null;
+
+  previewing = false;
+
   dateRangeMode: DateRangeMode = 'period';
 
   /** אפשרויות "אופן התקופה" — מוצגות רק כשיש שדות תאריך במקור */
@@ -217,6 +229,34 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
   /** הסתרת התצוגה המקדימה — מחזיר את הדיאלוג למצב "לפני לחיצה" */
   clearPreview(): void {
     this.previewResult = null;
+  }
+
+  /**
+   * תצוגה מקדימה — שולח את ההגדרות הנוכחיות לשרת ומציג את התוצאה.
+   * אינה דורשת טופס תקין: תנאי סינון חסרים נשמטים, כמו בשמירה.
+   */
+  preview(): void {
+    if (this.isRangeModeInvalid) {
+      this.form.controls.dateFromFieldId.markAsTouched();
+      this.form.controls.dateToFieldId.markAsTouched();
+      this.notifications.error(DATE_RANGE_REQUIRED_MESSAGE);
+      return;
+    }
+
+    this.previewing = true;
+    this.subscriptions.add(
+      this.service.preview(this.buildDraft()).subscribe({
+        next: result => {
+          this.previewing = false;
+          this.previewResult = result;
+        },
+        error: (error: unknown) => {
+          this.previewing = false;
+          this.previewResult = null;
+          this.notifications.errorFromServer(error, 'הפקת התצוגה המקדימה נכשלה');
+        }
+      })
+    );
   }
 
   /** כותרת הדיאלוג — משתנה לפי המצב */

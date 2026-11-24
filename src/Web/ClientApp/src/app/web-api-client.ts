@@ -2500,6 +2500,7 @@ export class LookupOptionDto implements ILookupOptionDto {
     value?: string;
     label?: string;
     icon?: string | undefined;
+    isSum?: boolean;
     code?: string | undefined;
     requiresSumField?: boolean;
 
@@ -2517,6 +2518,7 @@ export class LookupOptionDto implements ILookupOptionDto {
             this.value = _data["value"];
             this.label = _data["label"];
             this.icon = _data["icon"];
+            this.isSum = _data["isSum"];
             this.code = _data["code"];
             this.requiresSumField = _data["requiresSumField"];
         }
@@ -2534,6 +2536,7 @@ export class LookupOptionDto implements ILookupOptionDto {
         data["value"] = this.value;
         data["label"] = this.label;
         data["icon"] = this.icon;
+        data["isSum"] = this.isSum;
         data["code"] = this.code;
         data["requiresSumField"] = this.requiresSumField;
         return data;
@@ -2544,6 +2547,7 @@ export interface ILookupOptionDto {
     value?: string;
     label?: string;
     icon?: string | undefined;
+    isSum?: boolean;
     code?: string | undefined;
     requiresSumField?: boolean;
 }
@@ -3188,11 +3192,6 @@ export class MetricDetailDto implements IMetricDetailDto {
     }
 }
 
-export interface ILookupOptionDto {
-    value?: string;
-    label?: string;
-    icon?: string | undefined;
-    isSum?: boolean;
 export interface IMetricDetailDto {
     key?: string;
     title?: string;
