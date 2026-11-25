@@ -496,7 +496,7 @@
                         severity="secondary"
                         [outlined]="true"
                         [loading]="previewing"
-                        [disabled]="isRangeModeInvalid"
+                        [disabled]="!isPreviewEnabled"
                         pTooltip="חישוב הנתון לפי ההגדרות בטופס"
                         tooltipPosition="top"
                         (onClick)="preview()" />

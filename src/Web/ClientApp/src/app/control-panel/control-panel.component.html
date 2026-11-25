@@ -38,10 +38,8 @@
   #cube
   [columns]="cardsPerRow() ?? 4"
   [period]="period() ?? 30"
-  [fromDate]="dateRange().from"
-  [toDate]="dateRange().to"
   [searchMetricName]="searchMetricName()"
-  [refreshToken]="refreshToken()"
+  [refreshToken]="refreshToken()" 
   (detail)="openDetail($event)">
 </app-control-panel-cube>
 

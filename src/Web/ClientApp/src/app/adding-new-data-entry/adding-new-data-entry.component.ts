@@ -126,18 +126,17 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy, AfterV
   private readonly notifications = inject(NotificationService);
   private readonly subscriptions = new Subscription();
 
-  /** גולל לתצוגה המקדימה פעם אחת — אחרי שנוספה ל-DOM */
   private shouldScrollToPreview = false;
 
   @ViewChild('previewSection') private previewSection?: ElementRef<HTMLElement>;
 
+  private previewSignature: string | null = null;
+
   @Input() visible = false;
   @Output() visibleChange = new EventEmitter<boolean>();
 
-  /** הכותרת "יצירת נתון חדש" / "עריכת נתון קיים" — מוצגת בראש גוף הדיאלוג */
   headerTitle = '';
 
-  /** האם הכותרת מוצגת — נכבה יחד עם הדיאלוג בזמן הסגירה */
   headerVisible = false;
 
 
@@ -145,33 +144,25 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy, AfterV
 
   @Output() saved = new EventEmitter<number>();
 
-  /** מספר הימים לחישוב — נטען מ-CTRL_CalculationDays */
   rangeOptions: LookupOption[] = [];
 
-  /** סוגי החישוב — נטענים מ-CTRL_CalculationTypes */
   calculationTypeOptions: LookupOption[] = [];
 
-  /** סמלי הכרטיס — נטענים מ-CTRL_ICON */
   cardIcons: LookupOption[] = [];
 
-  /** רשימת מקורות הנתונים — נטענת פעם אחת */
   sources: LookupOption[] = [];
-  /** המקור שנבחר, כולל השדות שהוגדרו עבורו */
   selectedSource: DataSource | null = null;
 
-  /** תאריך היצירה שהשרת מחזיר — מוצג ב"שדה תאריך" עד שהמקור יגדיר שדה תאריך משלו */
   creationDate: Date | null = null;
 
   saving = false;
 
-  /** תוצאת התצוגה המקדימה — null כשלא הופקה תצוגה */
   previewResult: PreviewResult | null = null;
 
   previewing = false;
 
   dateRangeMode: DateRangeMode = 'period';
 
-  /** אפשרויות "אופן התקופה" — מוצגות רק כשיש שדות תאריך במקור */
   readonly rangeModeOptions: Array<{ value: DateRangeMode; label: string }> = [
     { value: 'period', label: 'תקופה מוגדרת' },
     { value: 'range', label: 'טווח תאריכים' }
@@ -181,19 +172,14 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy, AfterV
 
   private sourceRequest?: Subscription;
 
-  /** מזהה הנתון הנערך — null במצב יצירה. קובע גם את הכותרת ואת סוג השמירה */
   private editingMetricId: number | null = null;
 
-  /** RowVersion (Base64) כפי שנשלף ברשימה — נשלח בעדכון כ-If-Match */
   private editingRowVersion: string | null = null;
 
-  /** עץ תנאי הסינון השמור — נקרא בעריכה, ונשלח חזרה בשמירה */
   private editingFiltersJson: string | null = null;
 
-  /** אופרטורי הסינון — נטענים מ-CTRL_FilterOperators */
   filterOperators: FilterOperator[] = [];
 
-  /** עץ תנאי הסינון בעריכת הטופס — null כשאין תנאים */
   filterRoot: FilterGroup | null = null;
 
  
@@ -234,6 +220,39 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy, AfterV
   /** הסתרת התצוגה המקדימה — מחזיר את הדיאלוג למצב "לפני לחיצה" */
   clearPreview(): void {
     this.previewResult = null;
+    this.previewSignature = null;
+  }
+
+  /** ההגדרות שמהן נבנית התצוגה — שינוי באחת מהן מייתר תצוגה קיימת */
+  private buildPreviewSignature(): string {
+    const v = this.form.getRawValue();
+    return JSON.stringify([
+      v.name,
+      v.sourceId,
+      v.iconCode,
+      v.cardSourceId,
+      v.dateRangeType,
+      v.dateFromFieldId,
+      v.dateToFieldId,
+      v.calculationTypeId,
+      v.sumFieldId,
+      v.groupFieldId,
+      v.detailFieldIds,
+      v.displayInDashboard,
+      this.dateRangeMode,
+      this.buildFilterJson()
+    ]);
+  }
+
+  /** שדה בטופס השתנה — תצוגה שהופקה מהגדרות אחרות אינה עדכנית */
+  private watchPreviewInvalidation(): void {
+    this.subscriptions.add(
+      this.form.valueChanges.subscribe(() => {
+        if (this.previewResult !== null && this.previewSignature !== this.buildPreviewSignature()) {
+          this.clearPreview();
+        }
+      })
+    );
   }
 
   /**
@@ -255,6 +274,8 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy, AfterV
         next: result => {
           this.previewing = false;
           this.previewResult = result;
+          // החתימה נרשמת אחרי שחזרה התשובה — שינוי שיקרה בינתיים יציג תצוגה לא עדכנית
+          this.previewSignature = this.buildPreviewSignature();
         },
         error: (error: unknown) => {
           this.previewing = false;
@@ -370,6 +391,18 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy, AfterV
       return this.isRangeFieldsInvalid;
     }
     return !this.form.controls.dateRangeType.value;
+  }
+
+  /** האם לחצן "תצוגה מקדימה" פעיל — רק כשכל השדות המסומנים ב-* מלאים */
+  get isPreviewEnabled(): boolean {
+    const c = this.form.controls;
+    const requiredFilled =
+      c.name.valid &&
+      c.sourceId.valid &&
+      (!this.isCalculationTypeVisible || c.calculationTypeId.valid) &&
+      (!this.isSummaryVisible || c.sumFieldId.valid);
+
+    return requiredFilled && !this.isRangeModeInvalid;
   }
 
   get periodOptions(): LookupOption[] {
@@ -572,6 +605,7 @@ get previewCard(): MetricCard {
     this.watchSourceChanges();
     this.watchCardSourceChanges();
     this.watchCalculationTypeChanges();
+    this.watchPreviewInvalidation();
     // טעינת המקורות קובעת את ברירת המחדל של "מקור נתונים" — אחרי שהמנוי כבר קיים
     this.loadSources();
   }
@@ -581,6 +615,9 @@ get previewCard(): MetricCard {
     if (changes['visible']?.currentValue === true) {
       this.resetForm();
       this.startMode(this.metric);
+    } else if (changes['visible']?.currentValue === false) {
+      // סגירת הדיאלוג — התצוגה המקדימה אינה נשמרת לפתיחה הבאה
+      this.clearPreview();
     } else if (changes['metric']) {
       // הנתון שנערך הוחלף בזמן שהדיאלוג פתוח — ממלאים מחדש
       this.setEditingMetric(this.metric);
@@ -897,6 +934,8 @@ get previewCard(): MetricCard {
     this.selectedSource = null;
     this.lastSourceId = null;
     this.dateRangeMode = 'period';
+    // התצוגה של הדיאלוג הקודם אינה תקפה לטופס החדש
+    this.clearPreview();
     // לפני startMode, שקובע את המצב מחדש לפי metric
     this.editingMetricId = null;
     this.editingRowVersion = null;

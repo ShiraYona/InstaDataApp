@@ -44,12 +44,13 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
 
   @Input() columns = 4;
   @Input() period: number = 30;
-  @Input() fromDate: string | null = null;
-  @Input() toDate: string | null = null;
+  // @Input() fromDate: string | null = null;
+  // @Input() toDate: string | null = null;
   @Input() searchMetricName = '';
+@Input() refreshToken = 0;
 
-  /** טריגר לרענון — כל שינוי בערך שולח בקשה חדשה לשרת */
-  @Input() refreshToken = 0;
+/** ריענון מכפתור — מחזיר לברירת מחדל של הכרטיס */
+private isRefreshMode = false;
 
   /** הסתיים החישוב של כל הכרטיסים — ההורה משחרר את כפתור הריענון */
   readonly refreshFinished = output<void>();
@@ -117,31 +118,43 @@ export class ControlPanelCubeComponent implements OnInit, OnChanges {
     this.pushFilters();
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['period'] || changes['fromDate'] || changes['toDate'] || changes['refreshToken']) {
-      this.pushFilters();
-    }
-    if (changes['searchMetricName']) {
-      this.searchTerm.set(this.searchMetricName ?? '');
-    }
+ngOnChanges(changes: SimpleChanges): void {
+  if (changes['refreshToken'] && !changes['refreshToken'].firstChange) {
+    this.isRefreshMode = true;
   }
 
-  private pushFilters(): void {
-    const { from, to } = this.resolveRange();
-    this.filter$.next({ period: this.period, fromDate: from, toDate: to });
+  if (changes['period'] || changes['fromDate'] || changes['toDate'] || changes['refreshToken']) {
+    this.pushFilters();
   }
+  if (changes['searchMetricName']) {
+    this.searchTerm.set(this.searchMetricName ?? '');
+  }
+}
+
+private pushFilters(): void {
+  // ריענון מכפתור → כל כרטיס לפי DateRangeType שלו
+  if (this.isRefreshMode) {
+    this.isRefreshMode = false;
+    this.filter$.next({ period: null, fromDate: null, toDate: null });
+    return;
+  }
+
+  // טעינה ראשונה / שינוי תקופה → הטווח שנבחר
+  const { from, to } = this.resolveRange();
+  this.filter$.next({ period: this.period, fromDate: from, toDate: to });
+}
 
   /** טווח: בחירה ידנית אם קיימת, אחרת [today - period, today] */
   private resolveRange(): { from: string | null; to: string | null } {
-    if (this.fromDate && this.toDate) {
-      return { from: this.fromDate, to: this.toDate };
-    }
+    // if (this.fromDate && this.toDate) {
+    //   return { from: this.fromDate, to: this.toDate };
+    // }
     if (this.period == null || this.period < 0) {
       return { from: null, to: null };
     }
     const to = new Date();
     const from = new Date();
-    from.setDate(from.getDate() - this.period);
+from.setDate(from.getDate() - this.period);  
     return { from: this.toIso(from), to: this.toIso(to) };
   }
 
