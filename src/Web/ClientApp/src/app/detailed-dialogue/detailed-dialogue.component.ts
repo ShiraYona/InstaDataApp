@@ -62,27 +62,28 @@ export class DetailedDialogueComponent implements OnInit, OnChanges {
   }
 
   ngOnInit(): void {
-    const key = this._metricKey();
-    if (key) this.load(key);
-    // הטווח המחושב ב-ngOnInit — ngOnChanges הראשון אחריו נחשב לטעינה הראשונה ולא לרענון
-    this.lastLoadedRange = `${this.fromDate}|${this.toDate}`;
+    // במכוון ריק: ngOnChanges רץ לפני ngOnInit עם כל הקלטים,
+    // ולכן כל הטעינה מתבצעת שם. טעינה גם כאן = בקשה כפולה.
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     const key = this._metricKey();
     if (!key) return;
-    const from = changes['fromDate'];
-    const to = changes['toDate'];
-    // טעינה ראשונה מתבצעת ב-ngOnInit. אחריה — כל שינוי טווח מרענן,
-    // ובפרט מעבר מ-null לערך אמיתי כשהתקופה נטענת מהשרת אחרי פתיחת החלון
-    if (from?.firstChange || to?.firstChange) return;
-    if (!from && !to) return;
-    // אותו טווח שכבר נטען (למשל כפל ngOnChanges/ngOnInit) — לא שולחים בקשה כפולה
-    const range = `${this.fromDate}|${this.toDate}`;
-    if (range === this.lastLoadedRange) return;
-    this.lastLoadedRange = range;
+
+    // טעינה ראשונה: הערך הראשוני של הטווח (גם null) — טוענים פעם אחת
+    if (!this.hasLoadedOnce) {
+      this.hasLoadedOnce = true;
+      this.load(key);
+      return;
+    }
+
+    // רענון: רק כשהטווח באמת השתנה
+    if (!changes['fromDate'] && !changes['toDate']) return;
     this.load(key);
   }
+
+  /** האם כבר נשלחה הבקשה הראשונה — מונע בקשה כפולה מ-ngOnChanges כפול */
+  private hasLoadedOnce = false;
 
   readonly closed = output<void>();
 
@@ -180,13 +181,14 @@ readonly columns = computed(() =>
     const calc = (d?.calcType ?? d?.signType ?? '').trim().toUpperCase();
     return calc === 'COUNT';
   });
-
-    /** אין נתונים להצגה — לא נטענו רשומות, אין ערך, ואין קבוצות עם רשומות */
+    /** אין נתונים להצגה — רק אחרי שהתקבלה תשובה מהשרת */
   readonly noData = computed(() => {
     const d = this.detail();
     if (this.loading()) return false;
-    if ((d?.records?.length ?? 0) > 0) return false;
-    if ((d?.totalRecords ?? 0) > 0) return false;
+    if (!this.hasLoadedOnce) return false;        // ← חדש: לא לפני שהתשובה התקבלה
+    if (!d) return false;                          // ← חדש: אין תשובה = אין "ריק"
+    if ((d.records?.length ?? 0) > 0) return false;
+    if ((d.totalRecords ?? 0) > 0) return false;
     const hasGroups = this.systems().some(g => (g.records ?? 0) > 0);
     if (hasGroups) return false;
     return true;
