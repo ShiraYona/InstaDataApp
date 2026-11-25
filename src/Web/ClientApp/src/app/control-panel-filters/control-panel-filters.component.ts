@@ -7,6 +7,7 @@ import { SelectModule } from 'primeng/select';
 import { DataDefinitionService } from '../shared/services/data-definition.service';
 import { DisplayLayoutService } from '../shared/services/display-layout.service';
 import { Router } from '@angular/router';
+import { DataCatalogClient } from '../web-api-client';
 
 const DEFAULT_CARDS_PER_ROW = 4;
 
@@ -41,10 +42,16 @@ export class ControlPanelFiltersComponent implements OnInit {
   @Output() cardsPerRowChanged = new EventEmitter<number | null>();
   @Output() layoutManagementRequested = new EventEmitter<void>();
 
-  private readonly dataDefinitionService = inject(DataDefinitionService);
+  /** הקלדה בשדה החיפוש — ההורה גולל לראש הקובייה (בשונה משינוי סינון אחר) */
+  @Output() searchQueryChanged = new EventEmitter<string>();
+
+  private readonly dataCatalogClient = inject(DataCatalogClient);
   private readonly layoutService = inject(DisplayLayoutService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
+
+  private readonly dataDefinitionService = inject(DataDefinitionService);
+
 
   period: number = 30;
   private savedPeriod: number = 30;
@@ -106,6 +113,12 @@ export class ControlPanelFiltersComponent implements OnInit {
 
     this.cardsPerRowChanged.emit(this.cardsPerRow);
     this.filtersChanged.emit(this.currentState());
+  }
+
+  /** הקלדה בחיפוש — מפעיל סינון וגם מסמן להורה לגלול לראש הקובייה */
+  onSearchChange(): void {
+    this.onFilterChange();
+    this.searchQueryChanged.emit(this.searchMetricName.trim());
   }
 
   refresh(): void {

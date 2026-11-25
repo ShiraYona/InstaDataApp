@@ -22,6 +22,11 @@ public class DeleteMetricCommandHandler : IRequestHandler<DeleteMetricCommand, b
         if (metric is null)
             return false;
 
+        // FK של שדות הפירוט הוא NoAction, ולכן EF לא מוחק אותם אוטומטית.
+        // הסרתם מה-ICollection לפני מחיקת המדד מפילה אותם ל-Deleted ומנקה את ה-FK היורש —
+        // בלעדיה EF זורק שגיאת "severed association" ומחיקת המדד נכשלת.
+        metric.DetailFields.Clear();
+
         _context.CtrlMetrics.Remove(metric);
 
         await _context.SaveChangesAsync(cancellationToken);

@@ -31,7 +31,8 @@
   [refreshing]="refreshing()"
   (filtersChanged)="onFiltersChanged($event)"
   (cardsPerRowChanged)="onCardsPerRowChanged($event)"
-  (refreshRequested)="onRefreshRequested()">
+  (refreshRequested)="onRefreshRequested()"
+  (searchQueryChanged)="onSearchQueryChanged()">
 </app-control-panel-filters>
 
 <app-control-panel-cube
@@ -42,7 +43,8 @@
   [toDate]="dateRange().to"
   [searchMetricName]="searchMetricName()"
   [refreshToken]="refreshToken()"
-  (detail)="openDetail($event)">
+  (detail)="openDetail($event)"
+  (refreshFinished)="onCubeRefreshed()">
 </app-control-panel-cube>
 
 <app-adding-new-data-entry
