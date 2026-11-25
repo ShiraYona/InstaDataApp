@@ -496,7 +496,7 @@
                         severity="secondary"
                         [outlined]="true"
                         [loading]="previewing"
-                        [disabled]="isRangeModeInvalid"
+                        [disabled]="!isPreviewEnabled"
                         pTooltip="חישוב הנתון לפי ההגדרות בטופס"
                         tooltipPosition="top"
                         (onClick)="preview()" />
@@ -512,7 +512,7 @@
         </form>
 
 @if (previewResult) {
-    <div id="preview" class="preview-panel">
+    <div id="preview" #previewSection class="preview-panel">
         <div class="preview-panel__head">
             <strong>תצוגה מקדימה</strong>
             <button type="button" class="close" aria-label="הסתרת התצוגה המקדימה" (click)="clearPreview()">×</button>

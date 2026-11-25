@@ -38,33 +38,27 @@ export class ControlPanelComponent {
   /** האם הקובייה מחשבת כעת — בזמן הזה כפתור הריענון disabled */
   readonly refreshing = computed(() => this.cube()?.refreshing() ?? false);
 
-  /** ערכי הסינון — cardsPerRow אינו נשמר כאן: הוא עובר ישירות מהפילטרים לקובייה */
-  readonly period = signal<number | null>(null);
+readonly period = signal<number | null>(null); 
   readonly searchMetricName = signal<string>('');
 
   /** מספר הכרטיסים בשורה — מגיע מהשרת לפי נתוני המשתמש, ולכן אינו קשיח כאן */
   readonly cardsPerRow = signal<number | null>(null);
 
   /** טווח התאריכים שמוחל גם על הפירוט — נגזר מהתקופה באותו אופן כמו בקובייה */
-  readonly dateRange = computed(() => ControlPanelComponent.resolveRange(this.period()));
+/** טווח התאריכים שמוחל גם על דיאלוג הפירוט בלבד */
+readonly dateRange = computed(() => ControlPanelComponent.resolveRange(this.period()));
 
-  onFiltersChanged(state: FilterState): void {
-    this.period.set(state.period);
-    this.searchMetricName.set(state.searchMetricName);
-  }
-
-  /**
-   * טווח: [today - period, today].
-   * ערך שלילי ("לפי מסנן הלוח") — ללא טווח, בדיוק כמו בקובייה;
-   * אחרת נוצר טווח הפוך (מחר עד היום) שמסנן את כל הרשומות.
-   */
-  private static resolveRange(period: number | null): { from: string | null; to: string | null } {
-    if (period == null || period < 0) return { from: null, to: null };
-    const to = new Date();
-    const from = new Date();
-    from.setDate(from.getDate() - period);
-    return { from: ControlPanelComponent.toIso(from), to: ControlPanelComponent.toIso(to) };
-  }
+onFiltersChanged(state: FilterState): void {
+  this.period.set(state.period);   // ← מתעדכן רק כשהמשתמש משנה
+  this.searchMetricName.set(state.searchMetricName);
+}
+private static resolveRange(period: number | null): { from: string | null; to: string | null } {
+  if (period == null || period < 0) return { from: null, to: null };
+  const to = new Date();
+  const from = new Date();
+  from.setDate(from.getDate() - (period - 1));   // ← תקון
+  return { from: ControlPanelComponent.toIso(from), to: ControlPanelComponent.toIso(to) };
+}
 
   private static toIso(d: Date): string {
     const y = d.getFullYear();
