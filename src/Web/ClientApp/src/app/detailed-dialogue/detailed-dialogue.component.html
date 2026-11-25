@@ -17,7 +17,7 @@
     <!-- @if (hasGrouping()) { -->    @if (hasGrouping() && !noData()) {
 
       <div class="panel">
-        <h2>חלוקה לפי {{ groupName() }}
+        <h2>חלוקה לפי מערכת
           @if (selectedGroup()) {
             <button type="button" class="btn light sm" (click)="clearGroup()">ניקוי סינון קבוצתי</button>
           }
@@ -26,7 +26,8 @@
           <table>
             <thead>
               <tr>
-                <th>{{ groupName() }}</th>
+                <!-- בעמודה הראשונה תמיד "מערכת": גם כששדה הקיבוץ שהוגדר הוא אחר -->
+                <th>מערכת</th>
                 <!-- בעמודת "מספר רשומות" ובעמודה המחושבת — אין מה להציג ב-COUNT (שניהם אותו ערך) -->
                 @if (!isCount()) {
                   <th>מספר רשומות</th>

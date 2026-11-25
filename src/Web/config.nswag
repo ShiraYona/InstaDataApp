@@ -59,7 +59,10 @@
       "extendedClasses": [],
       "extensionCode": null,
       "generateDefaultValues": true,
-      "excludedTypeNames": [],
+      "excludedTypeNames": [
+        "PreviewResultDto",
+        "PreviewRowDto"
+      ],
       "excludedParameterNames": [],
       "handleReferences": false,
       "generateTypeCheckFunctions": false,

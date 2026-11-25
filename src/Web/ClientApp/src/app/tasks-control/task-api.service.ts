@@ -77,7 +77,8 @@ export interface TaskQuery {
   overdueOnly?: boolean;
   /** מדד סיכום שנבחר — OPEN / PROGRESS / LATE / HIGH. שכבה נוספת מעל הסינון. */
   metricFocus?: string | null;
-  period?: number | null;
+  /** "תקופת מדדי ההשלמה": LAST_7 / LAST_30 / LAST_90 / ALL — סינון בצד השרת. */
+  completionScope?: string | null;
   sortKey?: string | null;
   sortDirection?: string | null;
   skip?: number | null;
@@ -144,10 +145,14 @@ export class TaskApiService {
     return this.http.get<TaskDto>(`/api/Tasks/${taskId}`);
   }
 
-  /** מדדים לתצוגה העליונה — לפי אותה קבוצת נתונים שהמשתמש רואה (ללא סינון הטבלה). */
-  getMetrics(period?: number): Observable<TaskMetricsDto> {
+  /**
+   * מדדים לתצוגה העליונה — לפי אותה קבוצת נתונים שהמשתמש רואה (ללא סינון הטבלה).
+   * completionScope — LAST_7 / LAST_30 / LAST_90 / ALL, כמו בטבלה, כדי שהמדדים
+   * ייחשבו על אותה קבוצת משימות שהושלמו.
+   */
+  getMetrics(completionScope?: string | null): Observable<TaskMetricsDto> {
     const params: Record<string, string> = {};
-    if (period !== undefined && period !== null) params['period'] = String(period);
+    if (completionScope) params['completionScope'] = completionScope;
     return this.http.get<TaskMetricsDto>('/api/Tasks/metrics', { params });
   }
 

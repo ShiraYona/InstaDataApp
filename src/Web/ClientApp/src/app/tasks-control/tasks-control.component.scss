@@ -174,7 +174,6 @@ p {
   margin-left: 6px;
 }
 
-/* ---------- מדדים ---------- */
 .periodline {
   display: flex;
   gap: 8px;
@@ -247,7 +246,6 @@ p {
   font-size: 11px;
 }
 
-/* ---------- פאנל ותוכן פנימי ---------- */
 .panel {
   border: 1px solid #e1e9f3;
   background: #fff;
@@ -287,7 +285,6 @@ p {
   color: #165caf;
 }
 
-/* ---------- מסננים ---------- */
 .filters {
   display: grid;
   grid-template-columns: 2fr repeat(3, minmax(115px, 1fr));
@@ -312,7 +309,6 @@ p {
   color: #697f9b;
 }
 
-/* כפתור מסנן שנראה כמו שדה select — החץ בקצה, לא מתחת לטקסט */
 .selectlike {
   display: flex;
   align-items: center;
@@ -353,14 +349,12 @@ p {
   flex: 0 0 auto;
 }
 
-/* תיבות בחירה של PrimeNG — אותו גובה, מסגרת וגופן כמו .selectlike */
 .field p-select,
 .field p-multiSelect {
   display: block;
   width: 100%;
 }
 
-/* תיבה מרובה: כשלא נבחר דבר מוצג ה-placeholder ("הכול") */
 ::ng-deep .field p-multiSelect .p-multiselect {
   width: 100%;
   box-shadow: none;
@@ -405,7 +399,6 @@ p {
   height: 10px;
 }
 
-/* השדה "תקופה" — רוחב קבוע כמו קודם, ולא נמתח על כל השורה */
 .periodline p-select.period {
   display: block;
   width: 140px;
@@ -418,8 +411,6 @@ p {
   flex: 0 0 auto;
 }
 
-/* אותה מסגרת וגובה ידניים לשדה — כדי שלא ייראה שונה מ-.selectlike
-   (הגובה של Aura גבוה יותר, ולכן נקבע כאן במפורש) */
 ::ng-deep .field p-select .p-select,
 ::ng-deep .periodline p-select .p-select,
 ::ng-deep .headline p-select.role .p-select {
@@ -457,32 +448,6 @@ p {
   color: #243b58;
 }
 
-/* ברירת המחדל של תיבה מרובה: כשהמערך ריק PrimeNG מציג placeholder,
-   והוא צריך להיראות כמו טקסט רגיל — "הכול" בתוך הכפתור ולא רמז אפור */
-::ng-deep .field p-select .p-select-label.p-placeholder {
-  color: #243b58;
-  opacity: 1;
-}
-
-::ng-deep .field p-select .p-select-dropdown,
-::ng-deep .periodline p-select .p-select-dropdown,
-::ng-deep .headline p-select.role .p-select-dropdown {
-  width: 1.6rem;
-  color: #7c91ab;
-}
-
-::ng-deep .field p-select .p-select-dropdown .p-icon,
-::ng-deep .periodline p-select .p-select-dropdown .p-icon,
-::ng-deep .headline p-select.role .p-select-dropdown .p-icon {
-  width: 10px;
-  height: 10px;
-}
-
-/* ============================================================
-   רשימת האפשרויות הפתוחה — מראה זהה בכל תיבות הבחירה במסך.
-   הרשימה נפתחת ב-body, ולכן הכללים גלובליים — אך מוגבלים
-   למחלקות .tasks-dd (הרשימה הפנימית) ו-.tasks-dd-overlay (המעטפת).
-   ============================================================ */
 .tasks-dd,
 .tasks-dd-overlay {
   width: 100%;
@@ -501,7 +466,6 @@ p {
   margin-top: 4px;
 }
 
-/* שורת אפשרות — גובה, ריווח וגופן זהים בכל הרשימות */
 .tasks-dd .p-select-option {
   display: flex;
   align-items: center;
@@ -527,7 +491,6 @@ p {
   font-weight: 700;
 }
 
-/* תוכן השורה: התווית נחתכת ולא דוחפת את שאר השורה */
 .tasks-dd .p-select-option .p-select-option-label,
 .tasks-dd .p-select-option .dd-label {
   flex: 1 1 auto;
@@ -537,7 +500,6 @@ p {
   white-space: nowrap;
 }
 
-/* בתיבה מרובה — תיבת הסימון בקצה הימני של השורה */
 .tasks-dd .p-select-option .p-checkbox {
   order: -1;
   flex: 0 0 auto;
@@ -573,12 +535,10 @@ p {
   margin-top: 2px;
 }
 
-/* שורת "הכול" — מופרדת בקו משאר האפשרויות */
 .tasks-dd .dd-all {
   font-weight: 700;
 }
 
-/* ב-p-multiSelect השורה עצמה היא .p-multiselect-option */
 .tasks-dd .p-select-option:has(.dd-all),
 .tasks-dd .p-multiselect-option:has(.dd-all) {
   border-bottom: 1px solid #dbe4ef;
@@ -586,7 +546,6 @@ p {
   margin-bottom: 4px;
 }
 
-/* ---------- רשימת p-multiSelect — אותה מראה בדיוק כמו p-select ---------- */
 .tasks-dd .p-multiselect-option {
   display: flex;
   align-items: center;
@@ -621,7 +580,6 @@ p {
   white-space: nowrap;
 }
 
-/* תיבת הסימון שבתבנית שלנו — בקצה הימני של השורה */
 .tasks-dd .p-multiselect-option .p-checkbox {
   order: -1;
   flex: 0 0 auto;
@@ -644,7 +602,6 @@ p {
 
 .tasks-dd .p-multiselect-list-container,
 .tasks-dd .p-multiselect-list {
-  /* הרשימה עצמה היא הרשימה הנגללת (אין .p-multiselect-items ב-PrimeNG 18) */
   padding: 0 !important;
   margin: 0 !important;
   max-height: 320px;
@@ -655,7 +612,6 @@ p {
 }
 
 
-/* ---------- טבלה ---------- */
 .tablewrap {
   overflow-x: auto;
 }
@@ -705,7 +661,6 @@ th.sort:hover {
   margin-inline-start: 8px;
 }
 
-/* ספינר בטבלה — שורה דקה, לא תופס את כל המסך */
 ::ng-deep .table-spinner {
   width: 22px;
   height: 22px;
@@ -714,7 +669,6 @@ th.sort:hover {
   margin-inline-end: 8px;
 }
 
-/* ---------- גלולות ---------- */
 .pill {
   font-size: 11px;
   padding: 5px 9px;
@@ -758,7 +712,6 @@ th.sort:hover {
   color: #96601f;
 }
 
-/* תג "חדש" — משימה שנוצרה או עודכנה אחרי הצפייה האחרונה של המשתמש */
 .pill.new {
   background: #fdeaf3;
   color: #a32a6d;
@@ -788,11 +741,10 @@ th.sort:hover {
   padding-top: 16px;
 }
 
-/* ---------- ספינר יצירת משימה ---------- */
 .creating-overlay {
   position: fixed;
   inset: 0;
-  z-index: 50; /* מעל המודאל (z-index: 10) */
+  z-index: 50;
   background: #071c34a6;
   display: grid;
   place-items: center;
@@ -811,7 +763,6 @@ th.sort:hover {
   min-width: 190px;
 }
 
-/* גודל ותצוגה של ספינר PrimeNG */
 ::ng-deep .creating-box .create-spinner {
   width: 64px !important;
   height: 64px !important;
@@ -827,7 +778,6 @@ th.sort:hover {
   font-size: 14px;
 }
 
-/* ---------- חלוניות ---------- */
 .modalback {
   position: fixed;
   inset: 0;
@@ -920,6 +870,10 @@ th.sort:hover {
   gap: 9px;
   border-bottom: 1px solid #e2e9f2;
   margin: 20px 0;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 2;
 }
 
 .subnav button {
@@ -934,6 +888,27 @@ th.sort:hover {
   color: #1966bc;
   border-color: #1966bc;
   font-weight: 700;
+}
+
+.detail-scroll {
+  max-height: 46vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-left: 6px;
+  padding-right: 2px;
+}
+
+.detail-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.detail-scroll::-webkit-scrollbar-thumb {
+  background: #c6d5e6;
+  border-radius: 8px;
+}
+
+.detail-scroll::-webkit-scrollbar-thumb:hover {
+  background: #9eb7d2;
 }
 
 .timeline {
@@ -974,7 +949,6 @@ th.sort:hover {
   box-shadow: 0 5px 18px #17314c44;
 }
 
-/* ---------- רספונסיביות ---------- */
 @media (max-width: 1240px) {
   .kpis {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1027,9 +1001,6 @@ th.sort:hover {
   }
 }
 
-/* ---------- חלון אישור ביטול שינויים ----------
-   ה-dialog ממוקם ב-body, ולכן הכללים כאן גלובליים —
-   אך מוגבלים למחלקה .dm-confirm-dialog ולא משפיעים על דיאלוגים אחרים. */
 .dm-confirm-dialog {
   direction: rtl;
   width: min(28rem, calc(100vw - 2rem));
@@ -1043,7 +1014,6 @@ th.sort:hover {
 .dm-confirm-dialog .p-dialog-header {
   padding: 1.15rem 1.4rem 0.6rem;
   gap: 0.8rem;
-  /* אייקון מימין, כותרת משמאל לו */
   justify-content: flex-start;
 }
 
@@ -1074,13 +1044,11 @@ th.sort:hover {
   font-size: 0.98rem;
   line-height: 1.7;
   text-align: right;
-  /* מפריד קווי בין הכותרת לגוף ההודעה */
   border-top: 1px solid #eef1f6;
   margin-top: 0.6rem;
   padding-top: 1.1rem;
 }
 
-/* אייקון האזהרה — עיגול ענבר בהיר */
 .dm-confirm-dialog .p-confirm-dialog-icon {
   display: inline-flex;
   align-items: center;
@@ -1106,7 +1074,6 @@ th.sort:hover {
   border: 0;
 }
 
-/* כפתור האישור — כחול המערכת */
 .dm-confirm-dialog .p-button.dm-confirm__accept {
   background: #0052d4;
   border: 1px solid #0052d4;
@@ -1128,7 +1095,6 @@ th.sort:hover {
   border-color: #003c9c;
 }
 
-/* כפתור הביטול — לבן עם מסגרת */
 .dm-confirm-dialog .p-button.dm-confirm__reject {
   background: #fff;
   border: 1px solid #d8e0eb;
@@ -1148,7 +1114,6 @@ th.sort:hover {
   outline: 2px solid #3f6ba8;
   outline-offset: 2px;
 }
-/* ---------- שגיאות ולידציה בטופס ---------- */
 input.invalid,
 select.invalid,
 textarea.invalid {

@@ -6,15 +6,18 @@ export type CalculationTypeId = number;
 export interface LookupOption {
   value: string;
   label: string;
-
   icon?: string;
-  /**
-   * לסוגי חישוב בלבד — הקוד הקנוני COUNT / SUM / DIRECT.
-   * לפיו הטופס מזהה SUM; אין להסיק זאת מהתווית.
-   */
+  /** סימון מפורש מהשרת: האם סוג החישוב הזה הוא "סכימה" */
+  isSum?: boolean;
+  /** הקוד הקנוני של סוג החישוב (COUNT / SUM / DIRECT) — מגיע מהשרת */
   code?: string | null;
- 
+  /** האם סוג החישוב מחייב בחירת שדה סיכום */
   requiresSumField?: boolean;
+}
+
+export interface CardIconOption {
+  id: number;
+  label: string;
 }
 
 export interface DataSourceField {
@@ -122,6 +125,6 @@ export interface MetricDraft {
 }
 
 export interface PreviewResult {
-  rows: Array<{ key: string; label: string; value: number }>;
+  rows: Array<{ key: string; label: string; value: number | null }>;
   total: number;
 }

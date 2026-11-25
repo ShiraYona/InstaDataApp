@@ -11,6 +11,7 @@ export interface DetailColumn {
   fieldName: string;
   label: string;
   dataType: string;
+  isHidden?: boolean;
 }
 
 export interface MetricDetail {

@@ -38,4 +38,5 @@ public class DetailColumnDto
     public string FieldName { get; set; } = string.Empty;
     public string Label { get; set; } = string.Empty;
     public string DataType { get; set; } = string.Empty;
+    public bool IsHidden { get; set; }   // ← זה החדש: true = להסתיר מהטבלה
 }

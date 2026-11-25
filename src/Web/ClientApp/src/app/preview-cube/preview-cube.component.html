@@ -1,0 +1,10 @@
+@if (card; as c) {
+  <p-card styleClass="preview-panel" dir="rtl">
+    <strong class="block mb-2 text-color">תצוגה מקדימה</strong>
+    <p class="m-0 text-color-secondary line-height-3">
+      {{ c.title || 'ללא שם' }} ·
+      {{ c.value }}@if (c.signType) { {{ c.signType }} }
+      · מקור: {{ c.source || 'ללא' }}
+    </p>
+  </p-card>
+}

@@ -12,13 +12,15 @@
         overlayStyleClass="tasks-dd-overlay"
         (onShow)="sizePanelOverlay()"
         class="role"
-        appendTo="body"
         panelStyleClass="tasks-dd"
         ariaLabel="תצוגת הרשאה"
         [ngModel]="role()"
         (ngModelChange)="setRole($event)"
         [options]="roleSelectOptions()"
-        optionValue="value">
+        optionValue="value"
+                        optionLabel="label"
+                optionValue="value"
+                fluid>
         <ng-template let-item pTemplate="selectedItem">
           <span class="selectlike-text">{{ item?.label }}</span>
         </ng-template>
@@ -32,21 +34,22 @@
     </div>
   </div>
 
-  <!-- תקופת המדדים -->
-  <div class="periodline">
-    <label for="period">תקופת מדדי ההשלמה</label>
+        <div class="filter filter--cards" class="periodline">
+        <label class="filter__label" for="filterCardsPerRow">תקופת מדדי ההשלמה</label>
     <p-select
       overlayStyleClass="tasks-dd-overlay"
       (onShow)="sizePanelOverlay()"
       inputId="period"
       class="period"
-      appendTo="body"
       panelStyleClass="tasks-dd"
       ariaLabel="תקופת מדדי ההשלמה"
       [ngModel]="period()"
-      (ngModelChange)="period.set(+$event); loaded.set(20)"
+      (ngModelChange)="period.set($event); loaded.set(20)"
       [options]="periodSelectOptions()"
-      optionValue="value">
+      optionValue="value"
+                optionLabel="label"
+                optionValue="value"
+                fluid>
       <ng-template let-item pTemplate="selectedItem">
         <span class="selectlike-text">{{ item?.label }}</span>
       </ng-template>
@@ -56,7 +59,6 @@
     </p-select>
   </div>
 
-  <!-- מדדים -->
   <div class="kpis">
     <button
       type="button"
@@ -70,11 +72,12 @@
   </div>
 
   <div class="statnote">
-    ארבעת המדדים הראשונים מציגים מצב נוכחי; שני האחרונים מחושבים לפי התקופה שנבחרה. לחיצה על מדד
-    מסננת את הטבלה.
+    ארבעת המדדים הראשונים מציגים מצב נוכחי; שני האחרונים מחושבים לפי התקופה שנבחרה. בחירת
+    "7/30/90 ימים אחרונים" מציגה בטבלה רק משימות שהושלמו בתקופה; "כל המשימות" מציגה את כולן.
+    אחוז ההשלמה במועד = חלק המשימות שהושלמו ביום היעד או לפניו מתוך כל המשימות שהושלמו בתקופה.
+    לחיצה על מדד מסננת את הטבלה.
   </div>
 
-  <!-- רשימת משימות -->
   <section class="panel">
     <div class="righttools">
       <h2>רשימת משימות</h2>
@@ -95,7 +98,6 @@
       </button>
     </div>
 
-    <!-- מסננים -->
     <div class="filters">
       <div class="field search">
         <label for="searchBox">חיפוש חופשי (מספר משימה, נושא, תיאור או מזהה מקור)</label>
@@ -106,21 +108,26 @@
           (ngModelChange)="onSearch($event)"
           placeholder="הקלדת מילת חיפוש..." />
       </div>
-      <div class="field">
-        <label>סטטוס</label>
+
+    <div class="filter filter--cards">
+        <label class="filter__label" for="filterCardsPerRow">סטטוס</label>
         <p-select
-          [overlayOptions]="{ styleClass: 'tasks-dd-overlay' }"
-          (onPanelShow)="sizePanelOverlay()"
-          appendTo="body"
+          overlayStyleClass="tasks-dd-overlay"
+          (onShow)="sizePanelOverlay()"
           panelStyleClass="tasks-dd"
-          placeholder="הכול"
+          placeholder="הכל"
           ariaLabel="סינון לפי סטטוס"
           [ngModel]="filters().status"
           (ngModelChange)="onMultiOptionChange('status', $event)"
           [options]="statusSelectOptions()"
-          optionValue="value">
+          optionValue="value"
+                optionLabel="label"
+                optionValue="value"
+                fluid>
+          <ng-template let-item pTemplate="selectedItem">
+            <span class="selectlike-text">{{ filterSummary(filters().status, statusLabels) }}</span>
+          </ng-template>
           <ng-template let-item pTemplate="item">
-            <!-- "הכול" נבחר כאשר אין בחירה; הסימון עצמו מחושב לפי filters() -->
             <p-checkbox
               [binary]="true"
               [ngModel]="isOptionChecked(item, filters().status)"
@@ -129,22 +136,25 @@
           </ng-template>
         </p-select>
       </div>
-      
-      <div class="field">
-        <label>עדיפות</label>
+     
+      <div class="filter filter--cards">
+        <label class="filter__label" for="filterCardsPerRow">עדיפות</label>
         <p-select
-          [overlayOptions]="{ styleClass: 'tasks-dd-overlay' }"
-          (onPanelShow)="sizePanelOverlay()"
-          appendTo="body"
+          overlayStyleClass="tasks-dd-overlay"
+          (onShow)="sizePanelOverlay()"
           panelStyleClass="tasks-dd"
-          placeholder="הכול"
+          placeholder="הכל"
           ariaLabel="סינון לפי עדיפות"
           [ngModel]="filters().priority"
           (ngModelChange)="onMultiOptionChange('priority', $event)"
           [options]="prioritySelectOptions()"
-          optionValue="value">
+                optionLabel="label"
+                optionValue="value"
+                fluid>
+          <ng-template let-item pTemplate="selectedItem">
+            <span class="selectlike-text">{{ filterSummary(filters().priority, priorityLabels) }}</span>
+          </ng-template>
           <ng-template let-item pTemplate="item">
-            <!-- "הכול" נבחר כאשר אין בחירה; הסימון עצמו מחושב לפי filters() -->
             <p-checkbox
               [binary]="true"
               [ngModel]="isOptionChecked(item, filters().priority)"
@@ -153,19 +163,22 @@
           </ng-template>
         </p-select>
       </div>
-      <div class="field">
-        <label>צוות מטפל</label>
+
+      <div class="filter filter--cards">
+        <label class="filter__label" for="filterCardsPerRow">צוות מטפל</label>
         <p-select
           overlayStyleClass="tasks-dd-overlay"
           (onShow)="sizePanelOverlay()"
-          appendTo="body"
           panelStyleClass="tasks-dd"
-          placeholder="הכול"
+          placeholder="הכל"
           [ngModel]="filters().team"
           (ngModelChange)="setFilter('team', $event)"
           [options]="teamSelectOptions()"
           optionValue="value"
-          ariaLabel="צוות מטפל">
+          ariaLabel="צוות מטפל"
+                optionLabel="label"
+                optionValue="value"
+                fluid>
           <ng-template let-item pTemplate="selectedItem">
             <span class="selectlike-text">{{ singleLabel(filters().team, teamSelectOptions()) }}</span>
           </ng-template>
@@ -181,19 +194,21 @@
     </div>
 
     <div class="filters second">
-      <div class="field">
-        <label>עובד אחראי</label>
+      <div class="filter filter--cards">
+        <label class="filter__label" for="filterCardsPerRow">עובד אחראי</label>
         <p-select
           overlayStyleClass="tasks-dd-overlay"
           (onShow)="sizePanelOverlay()"
-          appendTo="body"
           panelStyleClass="tasks-dd"
-          placeholder="הכול"
+          placeholder="הכל"
           [ngModel]="filters().worker"
           (ngModelChange)="setFilter('worker', $event)"
           [options]="workerSelectOptions()"
           optionValue="value"
-          ariaLabel="עובד אחראי">
+          ariaLabel="עובד אחראי"
+                optionLabel="label"
+                optionValue="value"
+                fluid>
           <ng-template let-item pTemplate="selectedItem">
             <span class="selectlike-text">{{ singleLabel(filters().worker, workerSelectOptions()) }}</span>
           </ng-template>
@@ -206,21 +221,27 @@
           </ng-template>
         </p-select>
       </div>
-      <div class="field">
-        <label>מקור המשימה</label>
+
+      <div class="filter filter--cards">
+        <label class="filter__label" for="filterCardsPerRow">מקור המשימה</label>
         <p-select
-          [overlayOptions]="{ styleClass: 'tasks-dd-overlay' }"
-          (onPanelShow)="sizePanelOverlay()"
-          appendTo="body"
+          overlayStyleClass="tasks-dd-overlay"
+          (onShow)="sizePanelOverlay()"
           panelStyleClass="tasks-dd"
-          placeholder="הכול"
+          placeholder="הכל"
           ariaLabel="סינון לפי מקור"
           [ngModel]="filters().source"
           (ngModelChange)="onMultiOptionChange('source', $event)"
           [options]="sourceSelectOptions()"
-          optionValue="value">
+          optionValue="value"
+                optionLabel="label"
+                optionValue="value"
+                fluid>
+          <ng-template let-item pTemplate="selectedItem">
+            <span class="selectlike-text">{{ filterSummary(filters().source, sourceLabels) }}</span>
+          </ng-template>
           <ng-template let-item pTemplate="item">
-            <!-- "הכול" נבחר כאשר אין בחירה; הסימון עצמו מחושב לפי filters() -->
+            <!-- "הכל" נבחר כאשר אין בחירה; הסימון עצמו מחושב לפי filters() -->
             <p-checkbox
               [binary]="true"
               [ngModel]="isOptionChecked(item, filters().source)"
@@ -229,21 +250,26 @@
           </ng-template>
         </p-select>
       </div>
-      <div class="field">
-        <label>מצב טיפול</label>
+
+      <div class="filter filter--cards">
+        <label class="filter__label" for="filterCardsPerRow">מצב טיפול</label>
         <p-select
-          [overlayOptions]="{ styleClass: 'tasks-dd-overlay' }"
-          (onPanelShow)="sizePanelOverlay()"
-          appendTo="body"
+          overlayStyleClass="tasks-dd-overlay"
+          (onShow)="sizePanelOverlay()"
           panelStyleClass="tasks-dd"
-          placeholder="הכול"
+          placeholder="הכל"
           ariaLabel="סינון לפי מצב טיפול"
           [ngModel]="filters().state"
           (ngModelChange)="onMultiOptionChange('state', $event)"
           [options]="stateSelectOptions()"
-          optionValue="value">
+          optionValue="value"
+                optionLabel="label"
+                optionValue="value"
+                fluid>
+          <ng-template let-item pTemplate="selectedItem">
+            <span class="selectlike-text">{{ filterSummary(filters().state, stateLabels) }}</span>
+          </ng-template>
           <ng-template let-item pTemplate="item">
-            <!-- "הכול" נבחר כאשר אין בחירה; הסימון עצמו מחושב לפי filters() -->
             <p-checkbox
               [binary]="true"
               [ngModel]="isOptionChecked(item, filters().state)"
@@ -271,7 +297,6 @@
       </div>
     </div>
 
-    <!-- טבלה -->
     <div class="tablewrap">
       <table>
         <thead>
@@ -359,14 +384,12 @@
   </section>
 </div>
 
-<!-- ================= חלון אישור ביטול שינויים ================= -->
 <p-confirmdialog
   styleClass="dm-confirm-dialog"
   [closeOnEscape]="true"
   [focusTrap]="true">
 </p-confirmdialog>
 
-<!-- ================= ספינר יצירת משימה ================= -->
 <div class="creating-overlay" *ngIf="creating()">
   <div class="creating-box">
     <p-progressSpinner
@@ -379,7 +402,6 @@
   </div>
 </div>
 
-<!-- ================= חלונית מודאלית ================= -->
 <div class="modalback" *ngIf="modalTitle() !== null" (click)="onBackdropClick($event)">
   <div class="modal">
     <div class="modalhead">
@@ -388,7 +410,6 @@
     </div>
 
     <div class="modalbody">
-      <!-- ===== טופס יצירה / עריכה ===== -->
       <form *ngIf="form() as f; else detailView" (ngSubmit)="saveTaskForm()">
         <div class="formgrid">
           <div class="field full">
@@ -527,7 +548,6 @@
         </div>
       </form>
 
-      <!-- ===== פירוט משימה ===== -->
       <ng-template #detailView>
         <ng-container *ngIf="detailTask as t">
           <div class="subnav">
@@ -540,7 +560,6 @@
             </button>
           </div>
 
-          <!-- פרטי משימה -->
           <ng-container *ngIf="detailTab() === 'info'">
             <div class="flex" style="justify-content: space-between; margin-bottom: 14px">
               <div class="flex">
@@ -623,8 +642,8 @@
             </p>
           </ng-container>
 
-          <!-- הערות -->
           <ng-container *ngIf="detailTab() === 'comments'">
+            <div class="detail-scroll">
             <form (ngSubmit)="addComment(t)">
               <div class="field">
                 <label for="newComment">הערת טיפול חדשה</label>
@@ -650,22 +669,24 @@
               </div>
             </ng-container>
             <ng-template #noComments><p>לא נוספו הערות למשימה</p></ng-template>
+            </div>
           </ng-container>
 
-          <!-- היסטוריית שינויים -->
           <ng-container *ngIf="detailTab() === 'history'">
-            <div class="timeline">
-              <div class="event" *ngFor="let h of detailHistoryRows(t)">
-                <b>
-                  {{ historyLabels[h.ActionType]
-                  }}<ng-container *ngIf="h.FieldName">
-                    · {{ historyFieldLabels[h.FieldName] }}</ng-container
-                  >
-                </b>
-                <div class="muted" *ngIf="h.FieldName">
-                  {{ h.OldValue || '—' }} ← {{ h.NewValue || '—' }}
+            <div class="detail-scroll">
+              <div class="timeline">
+                <div class="event" *ngFor="let h of detailHistoryRows(t)">
+                  <b>
+                    {{ historyLabels[h.ActionType]
+                    }}<ng-container *ngIf="h.FieldName">
+                      · {{ historyFieldLabels[h.FieldName] }}</ng-container
+                    >
+                  </b>
+                  <div class="muted" *ngIf="h.FieldName">
+                    {{ h.OldValue || '—' }} ← {{ h.NewValue || '—' }}
+                  </div>
+                  <small>{{ userName(h.ChangedBy) }} · {{ dateTimeText(h.ChangedDate) }}</small>
                 </div>
-                <small>{{ userName(h.ChangedBy) }} · {{ dateTimeText(h.ChangedDate) }}</small>
               </div>
             </div>
           </ng-container>

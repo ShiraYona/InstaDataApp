@@ -37,13 +37,12 @@
   background: #fff;
   border: 0;
   border-radius: 14px;
-  width: min(100%, 1080px);
-  max-width: calc(100vw - 32px);
-  max-height: calc(100vh - 32px);
+  width: min(100%, 1000px);
+  overflow: hidden;          // במקום visible
+  box-shadow: 0 20px 70px #06102c66;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 20px 70px #06102c66;
+  max-height: 90vh;
 
   .p-dialog-header {
     padding: 0;
@@ -54,19 +53,20 @@
   .p-dialog-content {
     padding: 0;
     background: #fff;
+    overflow: hidden;        // הגלילה עוברת ל-.modal-body
     border-radius: 14px;
-    // הגלילה היחידה — גוף הדיאלוג בלבד
-    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
     min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    scroll-padding-bottom: 8px;
+    flex: 1 1 auto;
   }
 
   .p-dialog-close-button {
     display: none;
   }
 }
+
+
 
 .modal-head {
   display: grid;
@@ -119,9 +119,11 @@
   }
 }
 
-// --- .modalbody ---
 .modal-body {
   padding: 22px 24px 26px;
+  overflow-y: auto;          // ← זה שגולל עכשיו
+  min-height: 0;
+  flex: 1 1 auto;
 }
 
 // --- .formgrid ---
