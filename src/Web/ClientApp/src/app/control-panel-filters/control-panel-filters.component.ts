@@ -7,6 +7,7 @@ import { SelectModule } from 'primeng/select';
 import { DataDefinitionService } from '../shared/services/data-definition.service';
 import { DisplayLayoutService } from '../shared/services/display-layout.service';
 import { Router } from '@angular/router';
+import { DataCatalogClient } from '../web-api-client';
 
 const DEFAULT_CARDS_PER_ROW = 4;
 
@@ -48,6 +49,9 @@ export class ControlPanelFiltersComponent implements OnInit {
   private readonly layoutService = inject(DisplayLayoutService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
+
+  private readonly dataDefinitionService = inject(DataDefinitionService);
+
 
   period: number = 30;
   private savedPeriod: number = 30;
