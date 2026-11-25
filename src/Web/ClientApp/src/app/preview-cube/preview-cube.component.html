@@ -1,10 +1,55 @@
 @if (card; as c) {
-  <p-card styleClass="preview-panel" dir="rtl">
-    <strong class="block mb-2 text-color">תצוגה מקדימה</strong>
-    <p class="m-0 text-color-secondary line-height-3">
-      {{ c.title || 'ללא שם' }} ·
-      {{ c.value }}@if (c.signType) { {{ c.signType }} }
-      · מקור: {{ c.source || 'ללא' }}
-    </p>
+  <p-card dir="rtl" class="preview-card">
+    @if (c.isError) {
+      <p-message severity="error" text="שגיאה בחישוב הנתון" class="block mb-2" />
+    }
+
+    <div class="hrow">
+      <span class="mname">{{ c.title || 'ללא שם' }}</span>
+      <span class="micon">
+        <i [class]="c.icon || 'pi pi-chart-line'"></i>
+      </span>
+    </div>
+
+    @if (c.groupValue !== undefined) {
+      <div class="mgroup">
+        <span class="mgroup-label">{{ c.groupFieldLabel ?? 'קבוצה' }}</span>
+        <p-tag [value]="c.groupValue || '—'" severity="info" [rounded]="true" />
+      </div>
+    }
+
+    <div class="value">
+      {{ c.value }}
+      @if (c.unit) {
+        <span class="unit">{{ c.unit }}</span>
+      }
+      @if (c.signType) {
+        <span class="sign">{{ c.signType }}</span>
+      }
+    </div>
+
+    <div class="mf">
+      <span>מקור : {{ c.source }}</span>
+    </div>
+
+    <div class="tagrow">
+      <p-tag [value]="statusLabel" [severity]="statusSeverity" [rounded]="true" />
+      <p-tag [value]="freshnessLabel" [severity]="freshnessSeverity" [rounded]="true" />
+    </div>
+
+    <div class="tagrow">
+      @if (c.hasComparison === false) {
+        <span class="micro">ללא נתון להשוואה</span>
+      } @else {
+        <span class="micro"
+              [class.trendup]="c.trendPositive"
+              [class.trenddown]="!c.trendPositive">
+          {{ c.trendPositive ? '▲' : '▼' }} {{ c.trend | number: '1.1-1' }}% מול תקופה קודמת
+        </span>
+      }
+      @if (c.targetText) {
+        <span class="micro">{{ c.targetText }}</span>
+      }
+    </div>
   </p-card>
 }

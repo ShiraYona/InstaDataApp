@@ -1,4 +1,5 @@
-import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, inject,
+         AfterViewChecked, ElementRef, ViewChild } from '@angular/core';
 import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -119,12 +120,16 @@ type FormFieldName =
   templateUrl: './adding-new-data-entry.component.html',
   styleUrl: './adding-new-data-entry.component.scss'
 })
-export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
+export class AddingNewDataEntryComponent implements OnChanges, OnDestroy, AfterViewChecked {
   private readonly fb = inject(FormBuilder);
   private readonly service = inject(DataDefinitionService);
   private readonly notifications = inject(NotificationService);
   private readonly subscriptions = new Subscription();
 
+  /** גולל לתצוגה המקדימה פעם אחת — אחרי שנוספה ל-DOM */
+  private shouldScrollToPreview = false;
+
+  @ViewChild('previewSection') private previewSection?: ElementRef<HTMLElement>;
 
   @Input() visible = false;
   @Output() visibleChange = new EventEmitter<boolean>();
@@ -243,6 +248,7 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
       return;
     }
 
+    this.shouldScrollToPreview = true;
     this.previewing = true;
     this.subscriptions.add(
       this.service.preview(this.buildDraft()).subscribe({
@@ -257,6 +263,15 @@ export class AddingNewDataEntryComponent implements OnChanges, OnDestroy {
         }
       })
     );
+  }
+
+  /** גלילת הדיאלוג אל הקובייה — אחרי שהתצוגה המקדימה נוספה ל-DOM */
+  ngAfterViewChecked(): void {
+    if (!this.shouldScrollToPreview || !this.previewSection) {
+      return;
+    }
+    this.shouldScrollToPreview = false;
+    this.previewSection.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   /** כותרת הדיאלוג — משתנה לפי המצב */

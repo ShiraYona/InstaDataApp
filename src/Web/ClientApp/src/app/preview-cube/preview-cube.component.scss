@@ -1,12 +1,119 @@
-// הפאנל כמו בדמו — שאר העיצוב מגיע מ-p-card
-:host ::ng-deep .preview-panel {
-  background: #fff;
-  border: 1px solid #e2eaf4;
-  border-radius: 15px;
-  box-shadow: 0 4px 16px #16334c07;
-  margin-top: 23px;
+/* ===== כרטיס התצוגה המקדימה — בנוי על p-card ועל ה-preset של PrimeNG ===== */
+
+.preview-card {
+  display: block;
 }
 
-:host ::ng-deep .preview-panel .p-card-body {
-  padding: 22px;
+/* הכרטיס עצמו — רק רדיוס, צל וריווח על גבי ה-preset */
+:host ::ng-deep .preview-card.p-card {
+  border-radius: var(--p-border-radius-xl, 14px);
+  box-shadow: var(--p-overlay-popover-shadow, 0 4px 16px rgba(23, 51, 79, 0.06));
+  padding: 0;
+}
+
+:host ::ng-deep .preview-card .p-card-body {
+  padding: 1.25rem;
+}
+
+/* ---- כותרת ---- */
+.hrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.mname {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--p-text-color);
+}
+
+.micon {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--p-border-radius-md, 8px);
+  background: var(--p-primary-50, #f0f4fa);
+  color: var(--p-primary-600, #2f5289);
+
+  .pi {
+    font-size: 1.05rem;
+    line-height: 1;
+  }
+}
+
+/* ---- ערך קבוצה ---- */
+.mgroup {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  font-size: 0.75rem;
+}
+
+.mgroup-label {
+  color: var(--p-text-muted-color);
+  white-space: nowrap;
+}
+
+/* ---- ערך מרכזי ---- */
+.value {
+  margin-top: 0.85rem;
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.5px;
+  color: var(--p-text-color);
+  direction: ltr;
+  text-align: right;
+
+  .unit {
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--p-text-muted-color);
+    margin-inline-start: 0.5rem;
+  }
+
+  .sign {
+    font-size: 0.8em;
+    font-weight: 500;
+    color: var(--p-text-muted-color);
+    margin-inline-start: 0.25rem;
+  }
+}
+
+/* ---- מקור ---- */
+.mf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--p-text-muted-color);
+}
+
+/* ---- שורות תגיות ---- */
+.tagrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.micro {
+  font-size: 0.75rem;
+  color: var(--p-text-muted-color);
+
+  &.trendup {
+    color: var(--p-green-600, #2e7d4f);
+    font-weight: 700;
+  }
+
+  &.trenddown {
+    color: var(--p-red-600, #b03a3a);
+    font-weight: 700;
+  }
 }
